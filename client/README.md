@@ -91,3 +91,4 @@ VITE_API_URL=http://localhost:5000/api
 1. Create a feature branch from `main`
 2. Make your changes following the established code style
 3. Test thoroughly before submitting a pull request
+
