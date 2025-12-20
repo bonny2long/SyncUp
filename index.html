@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SyncUp Wireframes</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background-color: #f5f5f5;
+        display: flex;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .sidebar {
+        width: 240px;
+        background-color: #e0e0e0;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+      }
+
+      .sidebar h2 {
+        margin: 0 0 1rem 0;
+        font-size: 1.2rem;
+        text-align: center;
+      }
+
+      .menu-item {
+        background-color: #d0d0d0;
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 6px;
+        text-align: center;
+      }
+
+      .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        overflow-y: auto;
+      }
+
+      .header {
+        height: 60px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .page {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .section-title {
+        font-weight: bold;
+        margin-bottom: 1rem;
+      }
+
+      .card {
+        background-color: #f0f0f0;
+        border-radius: 6px;
+        padding: 1rem;
+        height: 120px;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>SyncUp</h2>
+      <div class="menu-item">Dashboard</div>
+      <div class="menu-item">Find Teammates / Collaboration</div>
+      <div class="menu-item">Mentorship Bridge</div>
+      <div class="menu-item">Project Page / Showcase Feed</div>
+      <div class="menu-item">Profile / Skill Tracker</div>
+    </div>
+
+    <div class="main-content">
+      <div class="header">
+        <div>Welcome, [User Name]</div>
+        <div>Notifications | Settings</div>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="page">
+        <div class="section-title">Dashboard Overview</div>
+        <div class="card">Quick Stats / Progress Summary</div>
+        <div class="card">Current Projects / Collaboration Updates</div>
+        <div class="card">Mentorship Suggestions / Requests</div>
+        <div class="card">
+          Skill Growth Overview (Power BI visualization placeholder)
+        </div>
+      </div>
+
+      <!-- Find Teammates / Collaboration -->
+      <div class="page">
+        <div class="section-title">Find Teammates / Collaboration</div>
+        <div class="card">
+          Search Bar + Filters (Skills, Interests, Availability)
+        </div>
+        <div class="card">Suggested Teammates / Projects</div>
+        <div class="card">Create New Collaboration / Team</div>
+      </div>
+
+      <!-- Mentorship Bridge -->
+      <div class="page">
+        <div class="section-title">Mentorship Bridge</div>
+        <div class="card">Find Mentors by Skill or Experience</div>
+        <div class="card">Post Help Request / Ask for Advice</div>
+        <div class="card">Upcoming Mentorship Sessions or Messages</div>
+      </div>
+
+      <!-- Project Page / Showcase Feed -->
+      <div class="page">
+        <div class="section-title">Project Page / Showcase Feed</div>
+        <div class="card">Post New Project / Work Update</div>
+        <div class="card">Feed of Peer Projects / Showcase Highlights</div>
+        <div class="card">Comment or Give Feedback</div>
+      </div>
+
+      <!-- Profile / Skill Tracker -->
+      <div class="page">
+        <div class="section-title">Profile / Skill Tracker</div>
+        <div class="card">User Bio + Skills Overview</div>
+        <div class="card">Skill Progress Charts (Power BI integration)</div>
+        <div class="card">Badges / Achievements / Mentorship History</div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4c5fd5; /* Indigo Blue */
+  --color-secondary: #9b5de5; /* Electric Purple */
+  --color-accent: #00c2ba; /* Aqua Cyan */
+  --color-neutral-light: #f5f7fa; /* Ghost White */
+  --color-neutral-dark: #2b2d42; /* Graphite Gray */
+}
+
+body {
+  background-color: var(--color-neutral-light);
+  color: var(--color-neutral-dark);
+  font-family: sans-serif;
+}
