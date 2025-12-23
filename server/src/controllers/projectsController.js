@@ -60,27 +60,63 @@ export const addProjectMember = async (req, res) => {
     return res.status(400).json({ error: "user_id is required" });
   }
 
+  const connection = await pool.getConnection();
+
   try {
-    // prevent duplicate membership
-    const [existing] = await pool.query(
-      `SELECT id FROM project_members WHERE project_id = ? AND user_id = ?`,
+    await connection.beginTransaction();
+
+    // Add project membership (existing behavior)
+    await connection.query(
+      `
+      INSERT IGNORE INTO project_members (project_id, user_id)
+      VALUES (?, ?)
+      `,
       [projectId, user_id]
     );
-    if (existing.length > 0) {
-      return res.status(409).json({ error: "User already on project" });
+
+    // Fetch skills tied to this project
+    const [skills] = await connection.query(
+      `
+      SELECT skill_id
+      FROM project_skills
+      WHERE project_id = ?
+      `,
+      [projectId]
+    );
+
+    // Insert skill signals (append-only)
+    if (skills.length > 0) {
+      const signalValues = skills.map(({ skill_id }) => [
+        user_id,
+        skill_id,
+        "project",
+        projectId,
+        "joined",
+        1
+      ]);
+
+      await connection.query(
+        `
+        INSERT INTO user_skill_signals
+          (user_id, skill_id, source_type, source_id, signal_type, weight)
+        VALUES ?
+        `,
+        [signalValues]
+      );
     }
 
-    await pool.query(
-      `INSERT INTO project_members (project_id, user_id) VALUES (?, ?)`,
-      [projectId, user_id]
-    );
+    await connection.commit();
 
-    res.status(201).json({ message: "Member added" });
+    res.status(201).json({ message: "User added to project" });
   } catch (err) {
+    await connection.rollback();
     console.error("Error adding project member:", err);
-    res.status(500).json({ error: "Server error adding member" });
+    res.status(500).json({ error: "Failed to add project member" });
+  } finally {
+    connection.release();
   }
 };
+
 
 // Remove a user from a project (leave)
 export const removeProjectMember = async (req, res) => {

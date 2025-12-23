@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import HealthStatus from "../components/HealthStatus";
 import CollaborationHub from "./CollaborationHub/CollaborationHub";
 import MentorshipBridge from "./MentorshipBridge/MentorshipBridge";
-import SkillTracker from "./SkillTracker";
+import SkillTracker from "./SkillTracker/SkillTracker";
 import { UserProvider } from "../context/UserContext";
 
 export default function Dashboard() {

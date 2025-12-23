@@ -8,6 +8,7 @@ import healthRoute from "./routes/healthRoute.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import mentorshipRoutes from "./routes/mentorshipRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
+import skillsRoutes from "./routes/skillsRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -21,6 +22,7 @@ app.use("/api/mentorship", mentorshipRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/projects", projectsRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/skills", skillsRoutes);
 
 // Basic route for testing
 app.get("/", (req, res) => {

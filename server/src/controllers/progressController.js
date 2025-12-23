@@ -77,9 +77,15 @@ export const createProgressUpdate = async (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
+  const connection = await pool.getConnection();
+
   try {
+    await connection.beginTransaction();
+
+    // 1️⃣ Insert progress update (existing behavior)
     const softDelete = await ensureSoftDeleteSupport();
-    const [result] = await pool.query(
+
+    const [result] = await connection.query(
       `
       INSERT INTO progress_updates (project_id, user_id, content, created_at${
         softDelete ? ", is_deleted" : ""
@@ -89,8 +95,41 @@ export const createProgressUpdate = async (req, res) => {
       [project_id, user_id, content]
     );
 
-    // return full row so frontend can prepend
-    const [rows] = await pool.query(
+    const updateId = result.insertId;
+
+    // 2️⃣ Fetch project skills
+    const [skills] = await connection.query(
+      `
+      SELECT skill_id
+      FROM project_skills
+      WHERE project_id = ?
+      `,
+      [project_id]
+    );
+
+    // 3️⃣ Insert skill signals (append-only)
+    if (skills.length > 0) {
+      const signalValues = skills.map(({ skill_id }) => [
+        user_id,
+        skill_id,
+        "update",
+        updateId,
+        "update",
+        1
+      ]);
+
+      await connection.query(
+        `
+        INSERT INTO user_skill_signals
+          (user_id, skill_id, source_type, source_id, signal_type, weight)
+        VALUES ?
+        `,
+        [signalValues]
+      );
+    }
+
+    // 4️⃣ Return full update row (existing behavior)
+    const [rows] = await connection.query(
       `
       SELECT 
         p.id, 
@@ -106,15 +145,21 @@ export const createProgressUpdate = async (req, res) => {
       JOIN projects pr ON p.project_id = pr.id
       WHERE p.id = ?
       `,
-      [result.insertId]
+      [updateId]
     );
+
+    await connection.commit();
 
     res.status(201).json(rows[0]);
   } catch (err) {
+    await connection.rollback();
     console.error("Error inserting update:", err);
     res.status(500).json({ error: "Server error while adding update" });
+  } finally {
+    connection.release();
   }
 };
+
 
 // PUT /api/progress_updates/:id  (edit content)
 export const updateProgressUpdate = async (req, res) => {

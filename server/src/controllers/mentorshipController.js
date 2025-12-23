@@ -187,44 +187,88 @@ export const createSession = async (req, res) => {
 // Update session status (accept, complete, decline, cancel)
 export const updateSessionStatus = async (req, res) => {
   const { id } = req.params;
-  const { status, notes } = req.body;
-
-  const allowedStatuses = [
-    "pending",
-    "accepted",
-    "completed",
-    "declined",
-    "rescheduled",
-  ];
+  const { status } = req.body;
 
   if (!status) {
-    return res.status(400).json({ error: "Status field is required" });
+    return res.status(400).json({ error: "Status is required" });
   }
 
-  if (!allowedStatuses.includes(status)) {
-    return res.status(400).json({ error: "Invalid status value" });
-  }
+  const connection = await pool.getConnection();
 
   try {
-    const [result] = await pool.query(
+    await connection.beginTransaction();
+
+    // 1️⃣ Get current session
+    const [sessions] = await connection.query(
       `
-      UPDATE mentorship_sessions
-      SET status = ?, notes = IFNULL(?, notes)
+      SELECT intern_id, mentor_id, status
+      FROM mentorship_sessions
       WHERE id = ?
       `,
-      [status, notes, id]
+      [id]
     );
 
-    if (result.affectedRows === 0) {
+    if (sessions.length === 0) {
       return res.status(404).json({ error: "Session not found" });
     }
 
-    res.json({ message: "Session status updated successfully" });
+    const session = sessions[0];
+
+    // 2️⃣ Update status
+    await connection.query(
+      `
+      UPDATE mentorship_sessions
+      SET status = ?
+      WHERE id = ?
+      `,
+      [status, id]
+    );
+
+    // 3️⃣ Generate skill signals ONLY when transitioning to completed
+    if (session.status !== "completed" && status === "completed") {
+      const internId = session.intern_id;
+
+      // Soft skills for mentorship (MVP)
+      const [skills] = await connection.query(
+        `
+        SELECT id AS skill_id
+        FROM skills
+        WHERE category = 'soft'
+        `
+      );
+
+      if (skills.length > 0) {
+        const signalValues = skills.map(({ skill_id }) => [
+          internId,
+          skill_id,
+          "mentorship",
+          id,
+          "completed",
+          2
+        ]);
+
+        await connection.query(
+          `
+          INSERT INTO user_skill_signals
+            (user_id, skill_id, source_type, source_id, signal_type, weight)
+          VALUES ?
+          `,
+          [signalValues]
+        );
+      }
+    }
+
+    await connection.commit();
+    res.json({ message: "Session updated successfully" });
   } catch (err) {
-    console.error("Error updating session:", err);
-    res.status(500).json({ error: "Server error updating session" });
+    await connection.rollback();
+    console.error("Error updating mentorship session:", err);
+    res.status(500).json({ error: "Failed to update session" });
+  } finally {
+    connection.release();
   }
 };
+
 
 // Update session details (topic/details/date)
 export const updateSessionDetails = async (req, res) => {
