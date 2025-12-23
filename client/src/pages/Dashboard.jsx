@@ -8,7 +8,9 @@ import SkillTracker from "./SkillTracker/SkillTracker";
 import { UserProvider } from "../context/UserContext";
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("collaboration");
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("activeTab") || "collaboration";
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const renderPage = () => {
@@ -34,6 +36,7 @@ export default function Dashboard() {
           activeTab={activeTab}
           setActiveTab={(tab) => {
             setActiveTab(tab);
+            localStorage.setItem("activeTab", tab);
             setSidebarOpen(false);
           }}
           isMobileOpen={sidebarOpen}

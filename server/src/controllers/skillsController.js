@@ -19,23 +19,32 @@ export const getSkillMomentum = async (req, res) => {
   res.json(rows);
 };
 
+// GET /api/skills/user/:id/distribution
 export const getSkillDistribution = async (req, res) => {
-  const { id } = req.params;
-  const [rows] = await pool.query(
-    `
-    SELECT
-      s.skill_name,
-      SUM(uss.weight) AS total_signals
-    FROM user_skill_signals uss
-    JOIN skills s ON s.id = uss.skill_id
-    WHERE uss.user_id = ?
-    GROUP BY s.skill_name
-    ORDER BY total_signals DESC
-    `,
-    [id]
-  );
-  res.json(rows);
+  const { id: userId } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        s.skill_name AS skill,
+        COUNT(*) AS total
+      FROM user_skill_signals uss
+      JOIN skills s ON s.id = uss.skill_id
+      WHERE uss.user_id = ?
+      GROUP BY s.skill_name
+      ORDER BY total DESC
+      `,
+      [userId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching skill distribution:", err);
+    res.status(500).json({ error: "Failed to fetch skill distribution" });
+  }
 };
+
 
 export const getSkillActivity = async (req, res) => {
   const { id } = req.params;

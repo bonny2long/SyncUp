@@ -223,3 +223,30 @@ export async function deleteProgressUpdate(id) {
   if (!res.ok) throw new Error("Failed to delete progress update");
   return res.json();
 }
+
+// ----------------------------------------------------
+// SKILL TRACKER
+// ----------------------------------------------------
+export const getSkillDistribution = async (userId) => {
+  const res = await fetch(
+    `${API_BASE}/skills/user/${userId}/distribution`
+  );
+  if (!res.ok) throw new Error("Failed to load skill distribution");
+  return res.json();
+};
+
+export const getSkillMomentum = async (userId) => {
+  const res = await fetch(
+    `${API_BASE}/skills/user/${userId}/momentum`
+  );
+  if (!res.ok) throw new Error("Failed to load skill momentum");
+  return res.json();
+};
+
+export const getSkillActivity = async (userId) => {
+  const res = await fetch(
+    `${API_BASE}/skills/user/${userId}/activity`
+  );
+  if (!res.ok) throw new Error("Failed to load skill activity");
+  return res.json();
+};

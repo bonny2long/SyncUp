@@ -14,7 +14,9 @@ export function UserProvider({ children }) {
       setError("");
       try {
         const all = await fetchUsers();
-        setUser(all[0] || null);
+        // Select user 3 (Bonny) for demo purposes since they have data
+        const bonny = all.find(u => u.id === 3);
+        setUser(bonny || all[0] || null);
       } catch (err) {
         console.error("Failed to load user", err);
         setError("Unable to load user");
