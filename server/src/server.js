@@ -67,4 +67,4 @@ testConnection();
 // connectDB();
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Hey Sofie, Server is on port ${PORT}`));
+app.listen(PORT, () => console.log(`SyncUp is live, Server is on port ${PORT}`));

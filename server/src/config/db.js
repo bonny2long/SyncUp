@@ -32,7 +32,7 @@ const connectDB = async () => {
 // Function to handle disconnects
 const handleDisconnect = () => {
   pool.on("error", (err) => {
-    console.error("⚠️ MySQL error:", err.message);
+    console.error("MySQL error:", err.message);
 
     // Retry on lost connection
     if (err.code === "PROTOCOL_CONNECTION_LOST" || err.code === "ECONNRESET") {

@@ -82,7 +82,7 @@ export const createProgressUpdate = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // 1️⃣ Insert progress update (existing behavior)
+    // 1️ Insert progress update (existing behavior)
     const softDelete = await ensureSoftDeleteSupport();
 
     const [result] = await connection.query(
@@ -97,7 +97,7 @@ export const createProgressUpdate = async (req, res) => {
 
     const updateId = result.insertId;
 
-    // 2️⃣ Fetch project skills
+    // 2️ Fetch project skills
     const [skills] = await connection.query(
       `
       SELECT skill_id
@@ -107,7 +107,7 @@ export const createProgressUpdate = async (req, res) => {
       [project_id]
     );
 
-    // 3️⃣ Insert skill signals (append-only)
+    // 3️ Insert skill signals (append-only)
     if (skills.length > 0) {
       const signalValues = skills.map(({ skill_id }) => [
         user_id,
@@ -128,7 +128,7 @@ export const createProgressUpdate = async (req, res) => {
       );
     }
 
-    // 4️⃣ Return full update row (existing behavior)
+    // 4️ Return full update row (existing behavior)
     const [rows] = await connection.query(
       `
       SELECT 
