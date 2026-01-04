@@ -7,7 +7,14 @@ export const getSkillMomentum = async (req, res) => {
     SELECT
       s.skill_name,
       YEARWEEK(uss.created_at, 1) AS year_week,
-      COUNT(*) AS signal_count
+      SUM(
+        CASE uss.source_type
+          WHEN 'project' THEN 1
+          WHEN 'update' THEN 2
+          WHEN 'mentorship' THEN 3
+          ELSE 1
+        END
+      ) AS signal_count
     FROM user_skill_signals uss
     JOIN skills s ON s.id = uss.skill_id
     WHERE uss.user_id = ?
@@ -51,11 +58,18 @@ export const getSkillActivity = async (req, res) => {
   const [rows] = await pool.query(
     `
     SELECT
-      YEARWEEK(created_at, 1) AS year_week,
-      source_type,
-      COUNT(*) AS count
-    FROM user_skill_signals
-    WHERE user_id = ?
+      YEARWEEK(uss.created_at, 1) AS year_week,
+      uss.source_type,
+      SUM(
+        CASE uss.source_type
+          WHEN 'project' THEN 1
+          WHEN 'update' THEN 2
+          WHEN 'mentorship' THEN 3
+          ELSE 1
+        END
+      ) AS signal_count
+    FROM user_skill_signals uss
+    WHERE uss.user_id = ?
     GROUP BY year_week, source_type
     ORDER BY year_week ASC
     `,

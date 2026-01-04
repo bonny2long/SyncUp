@@ -1,9 +1,9 @@
-import SkillDistributionChart from "../../components/SkillTracker/SkillDistributionChart";
+import SkillTrackerSection from "../../components/SkillTracker/SkillTrackerSection";
 
 export default function SkillTracker() {
   return (
     <div className="space-y-6">
-      <SkillDistributionChart />
+      <SkillTrackerSection />
     </div>
   );
 }
