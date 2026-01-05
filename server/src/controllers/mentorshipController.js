@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { emitSkillSignals } from "../services/skillSignalService.js";
 
 const toMySQLDateTime = (value) => {
   if (!value) return null;
@@ -226,36 +227,14 @@ export const updateSessionStatus = async (req, res) => {
 
     // 3️⃣ Generate skill signals ONLY when transitioning to completed
     if (session.status !== "completed" && status === "completed") {
-      const internId = session.intern_id;
-
-      // Soft skills for mentorship (MVP)
-      const [skills] = await connection.query(
-        `
-        SELECT id AS skill_id
-        FROM skills
-        WHERE category = 'soft'
-        `
-      );
-
-      if (skills.length > 0) {
-        const signalValues = skills.map(({ skill_id }) => [
-          internId,
-          skill_id,
-          "mentorship",
-          id,
-          "completed",
-          2
-        ]);
-
-        await connection.query(
-          `
-          INSERT INTO user_skill_signals
-            (user_id, skill_id, source_type, source_id, signal_type, weight)
-          VALUES ?
-          `,
-          [signalValues]
-        );
-      }
+      await emitSkillSignals({
+        userId: session.intern_id,
+        sourceType: "mentorship",
+        sourceId: id,
+        signalType: "completed",
+        context: { session_focus: session.session_focus },
+        connection,
+      });
     }
 
     await connection.commit();
@@ -268,7 +247,6 @@ export const updateSessionStatus = async (req, res) => {
     connection.release();
   }
 };
-
 
 // Update session details (topic/details/date)
 export const updateSessionDetails = async (req, res) => {

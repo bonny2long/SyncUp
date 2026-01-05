@@ -1,34 +1,36 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { fetchUsers } from "../utils/api";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
+  // Load user from localStorage on app start
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setError("");
+    const stored = localStorage.getItem("syncup_user");
+    if (stored) {
       try {
-        const all = await fetchUsers();
-        // Select user 3 (Bonny) for demo purposes since they have data
-        const bonny = all.find(u => u.id === 3);
-        setUser(bonny || all[0] || null);
-      } catch (err) {
-        console.error("Failed to load user", err);
-        setError("Unable to load user");
-      } finally {
-        setLoading(false);
+        setUser(JSON.parse(stored));
+      } catch {
+        localStorage.removeItem("syncup_user");
       }
     }
-    load();
+    setLoading(false);
   }, []);
 
+  const login = (user) => {
+    localStorage.setItem("syncup_user", JSON.stringify(user));
+    setUser(user);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("syncup_user");
+    setUser(null);
+  };
+
   return (
-    <UserContext.Provider value={{ user, loading, error }}>
+    <UserContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </UserContext.Provider>
   );

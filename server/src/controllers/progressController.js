@@ -1,5 +1,6 @@
 // server/src/controllers/progressController.js
 import pool from "../config/db.js";
+import { emitSkillSignals } from "../services/skillSignalService.js";
 
 // Cache check for optional soft-delete column
 let hasSoftDeleteColumn;
@@ -108,25 +109,15 @@ export const createProgressUpdate = async (req, res) => {
     );
 
     // 3️ Insert skill signals (append-only)
-    if (skills.length > 0) {
-      const signalValues = skills.map(({ skill_id }) => [
-        user_id,
-        skill_id,
-        "update",
-        updateId,
-        "update",
-        1
-      ]);
-
-      await connection.query(
-        `
-        INSERT INTO user_skill_signals
-          (user_id, skill_id, source_type, source_id, signal_type, weight)
-        VALUES ?
-        `,
-        [signalValues]
-      );
-    }
+    await emitSkillSignals({
+      userId: user_id,
+      sourceType: "update",
+      sourceId: updateId,
+      signalType: "update",
+      skillIds: skills.map((s) => s.skill_id),
+      weight: 1,
+      connection,
+    });
 
     // 4️ Return full update row (existing behavior)
     const [rows] = await connection.query(
@@ -159,7 +150,6 @@ export const createProgressUpdate = async (req, res) => {
     connection.release();
   }
 };
-
 
 // PUT /api/progress_updates/:id  (edit content)
 export const updateProgressUpdate = async (req, res) => {

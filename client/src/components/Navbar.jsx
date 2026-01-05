@@ -3,7 +3,7 @@ import { Bell, Menu, X } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
 export default function Navbar({ activeTab, onToggleSidebar }) {
-  const { user: ctxUser } = useUser();
+  const { user: ctxUser, logout } = useUser();
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeButton, setActiveButton] = useState(null);
@@ -35,6 +35,12 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
   // Handle notification focus state
   const toggleNotification = () => {
     setActiveButton(activeButton === "notification" ? null : "notification");
+  };
+
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+    setActiveButton(null);
   };
 
   const titleMap = {
@@ -122,8 +128,14 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
             <li className="px-4 py-2 hover:bg-neutralLight cursor-pointer text-neutralDark transition-colors">
               Settings
             </li>
-            <li className="px-4 py-2 hover:bg-red-50 text-red-500 cursor-pointer font-medium border-t border-gray-100 transition-colors">
-              Logout
+            <li className="border-t border-gray-100">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-500 cursor-pointer font-medium transition-colors"
+              >
+                Logout
+              </button>
             </li>
           </ul>
         </div>

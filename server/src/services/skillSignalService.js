@@ -1,0 +1,71 @@
+import pool from "../config/db.js";
+
+/**
+ * Centralized skill signal emission.
+ * This is the ONLY place allowed to write to user_skill_signals.
+ */
+export async function emitSkillSignals({
+  userId,
+  sourceType,        // 'project' | 'update' | 'mentorship'
+  sourceId,
+  signalType,        // 'joined' | 'update' | 'completed'
+  context = {},      // { session_focus, project_id }
+  skillIds = [],
+  weight = 1,
+  connection
+}) {
+  if (!userId || !sourceType || !sourceId || !signalType) {
+    return; // silent no-op (guardrail)
+  }
+
+  // ─────────────────────────────────────────────
+  // 1️ Guardrails by source type
+  // ─────────────────────────────────────────────
+
+  // Mentorship rules (CRITICAL)
+  if (sourceType === "mentorship") {
+    const allowedFocuses = ["project_support", "technical_guidance"];
+
+    // No intent or non-technical intent → no skills
+    if (!allowedFocuses.includes(context.session_focus)) {
+      return;
+    }
+
+    // Even for allowed focuses, we DO NOT emit skills yet
+    // until skills are explicitly selected in the UI
+    return;
+  }
+
+  // Project & update require skills
+  if (!Array.isArray(skillIds) || skillIds.length === 0) {
+    return;
+  }
+
+  // ─────────────────────────────────────────────
+  // 2️ Deduplicate skill IDs (safety)
+  // ─────────────────────────────────────────────
+  const uniqueSkillIds = [...new Set(skillIds)];
+
+  // ─────────────────────────────────────────────
+  // 3️ Insert signals (append-only)
+  // ─────────────────────────────────────────────
+  const values = uniqueSkillIds.map((skillId) => [
+    userId,
+    skillId,
+    sourceType,
+    sourceId,
+    signalType,
+    weight
+  ]);
+
+  const db = connection || pool;
+
+  await db.query(
+    `
+    INSERT INTO user_skill_signals
+      (user_id, skill_id, source_type, source_id, signal_type, weight)
+    VALUES ?
+    `,
+    [values]
+  );
+}
