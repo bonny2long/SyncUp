@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
 
+const SESSION_FOCUS_LABELS = {
+  project_support: "Project Support",
+  technical_guidance: "Technical Guidance",
+  career_guidance: "Career Guidance",
+  life_leadership: "Life and Leadership",
+  alumni_advice: "Alumni Advice",
+};
+
 export default function SessionCard({
   session,
   onUpdateStatus,
@@ -16,11 +24,13 @@ export default function SessionCard({
     declined: "bg-red-100 text-red-700",
     rescheduled: "bg-purple-100 text-purple-700",
   };
+
   const canManageStatus =
     currentUser &&
     !currentUserLoading &&
     (currentUser.role === "admin" ||
       (currentUser.role === "mentor" && currentUser.id === session.mentor_id));
+
   const canReschedule = canManageStatus;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -103,21 +113,30 @@ export default function SessionCard({
 
   return (
     <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
-      {/* Top row: topic + status badge */}
-      <div className="flex justify-between items-center mb-1 gap-2">
-        {isEditing ? (
-          <input
-            type="text"
-            value={form.topic}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, topic: e.target.value }))
-            }
-            className="flex-1 px-2 py-1 text-sm border rounded"
-            placeholder="Session topic"
-          />
-        ) : (
-          <p className="font-semibold text-secondary">{session.topic}</p>
-        )}
+      {/* Top row: topic + status */}
+      <div className="flex justify-between items-start mb-1 gap-2">
+        <div className="flex flex-col gap-1">
+          {isEditing ? (
+            <input
+              type="text"
+              value={form.topic}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, topic: e.target.value }))
+              }
+              className="px-2 py-1 text-sm border rounded"
+              placeholder="Session topic"
+            />
+          ) : (
+            <p className="font-semibold text-secondary">{session.topic}</p>
+          )}
+
+          {session.session_focus && (
+            <span className="inline-block text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 w-fit">
+              {SESSION_FOCUS_LABELS[session.session_focus]}
+            </span>
+          )}
+        </div>
+
         <span
           className={`text-xs px-2 py-1 rounded-full font-medium ${
             statusColors[session.status] || "bg-gray-100 text-gray-700"
@@ -234,14 +253,10 @@ export default function SessionCard({
             !canManageStatus ? "opacity-50 cursor-not-allowed" : ""
           }`}
           disabled={!canManageStatus}
-          title={
-            !canManageStatus
-              ? "Only the assigned mentor or admin can accept"
-              : ""
-          }
         >
           Accept
         </button>
+
         <button
           type="button"
           onClick={() => handleStatusClick("completed")}
@@ -249,14 +264,10 @@ export default function SessionCard({
             !canManageStatus ? "opacity-50 cursor-not-allowed" : ""
           }`}
           disabled={!canManageStatus}
-          title={
-            !canManageStatus
-              ? "Only the assigned mentor or admin can complete"
-              : ""
-          }
         >
           Complete
         </button>
+
         <button
           type="button"
           onClick={() => handleStatusClick("declined")}
@@ -264,14 +275,10 @@ export default function SessionCard({
             !canManageStatus ? "opacity-50 cursor-not-allowed" : ""
           }`}
           disabled={!canManageStatus}
-          title={
-            !canManageStatus
-              ? "Only the assigned mentor or admin can decline"
-              : ""
-          }
         >
           Decline
         </button>
+
         <button
           type="button"
           onClick={handleDeleteClick}

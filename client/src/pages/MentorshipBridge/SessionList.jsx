@@ -9,11 +9,23 @@ import {
 import SessionCard from "./SessionCard";
 import { useUser } from "../../context/UserContext";
 
+const SESSION_FOCUS_FILTERS = [
+  "all",
+  "project_support",
+  "technical_guidance",
+  "career_guidance",
+  "life_leadership",
+  "alumni_advice",
+];
+
 export default function SessionList({ selectedMentorId, currentUser }) {
   const { user, loading: userLoading } = useUser();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Primary and secondary filters
+  const [focusFilter, setFocusFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
   async function loadSessions() {
@@ -31,7 +43,7 @@ export default function SessionList({ selectedMentorId, currentUser }) {
 
   useEffect(() => {
     loadSessions();
-  }, [selectedMentorId]); // reload when filter changes
+  }, [selectedMentorId]);
 
   const handleUpdateStatus = async (id, status) => {
     const previous = sessions;
@@ -91,33 +103,53 @@ export default function SessionList({ selectedMentorId, currentUser }) {
   if (loading) return <p className="text-sm text-gray-500">Loading...</p>;
   if (error) return <p className="text-sm text-red-500">{error}</p>;
 
-  const filteredSessions =
-    statusFilter === "all"
-      ? sessions
-      : sessions.filter((s) => s.status === statusFilter);
+  // Apply filters
+  const filteredSessions = sessions.filter((s) => {
+    const focusMatch = focusFilter === "all" || s.session_focus === focusFilter;
+
+    const statusMatch = statusFilter === "all" || s.status === statusFilter;
+
+    return focusMatch && statusMatch;
+  });
 
   const effectiveUser = currentUser || user;
   const effectiveUserLoading = userLoading;
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-xs">
-        {["all", "pending", "accepted", "completed", "declined", "rescheduled"].map(
-          (status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => setStatusFilter(status)}
-              className={`px-3 py-1 rounded-full border text-[11px] transition ${
-                statusFilter === status
-                  ? "bg-primary text-white border-primary"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-primary/40"
-              }`}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          )
-        )}
+      {/* Primary filters: Session focus */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        {SESSION_FOCUS_FILTERS.map((focus) => (
+          <button
+            key={focus}
+            onClick={() => setFocusFilter(focus)}
+            className={`px-3 py-1 rounded-full text-xs transition ${
+              focusFilter === focus
+                ? "bg-primary text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {focus === "all"
+              ? "All"
+              : focus
+                  .replace("_", " ")
+                  .replace(/\b\w/g, (letter) => letter.toUpperCase())}
+          </button>
+        ))}
+
+        {/* Secondary filter: Status */}
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="ml-auto border rounded px-2 py-1 text-xs text-gray-600"
+        >
+          <option value="all">All statuses</option>
+          <option value="pending">Pending</option>
+          <option value="accepted">Accepted</option>
+          <option value="completed">Completed</option>
+          <option value="declined">Declined</option>
+          <option value="rescheduled">Rescheduled</option>
+        </select>
       </div>
 
       {filteredSessions.length === 0 ? (
