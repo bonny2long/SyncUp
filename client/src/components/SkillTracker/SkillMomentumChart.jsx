@@ -1,15 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  CartesianGrid,
-} from "recharts";
-
+import { AgCharts } from "ag-charts-react";
 import { getSkillMomentum } from "../../utils/api";
 import { weekLabelFromYearWeek } from "../../utils/date";
 import { useUser } from "../../context/UserContext";
@@ -38,18 +28,14 @@ export default function SkillMomentumChart() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  /**
-   * Backend rows:
-   * { skill_name, year_week, signal_count }
-   */
-  const { chartData, skills, insights } = useMemo(() => {
+  const { chartData, skills, skillKeys, insights } = useMemo(() => {
     if (!rawData.length) {
-      return { chartData: [], skills: [], insights: [] };
+      return { chartData: [], skills: [], skillKeys: {}, insights: [] };
     }
 
-    const weeks = Array.from(
-      new Set(rawData.map((r) => r.year_week))
-    ).sort((a, b) => a - b);
+    const weeks = Array.from(new Set(rawData.map((r) => r.year_week))).sort(
+      (a, b) => a - b
+    );
 
     const skillWeekMap = {};
     const totals = {};
@@ -57,14 +43,17 @@ export default function SkillMomentumChart() {
     rawData.forEach((r) => {
       skillWeekMap[r.skill_name] ??= {};
       skillWeekMap[r.skill_name][r.year_week] = r.signal_count;
-      totals[r.skill_name] =
-        (totals[r.skill_name] || 0) + r.signal_count;
+      totals[r.skill_name] = (totals[r.skill_name] || 0) + r.signal_count;
     });
 
     const topSkills = Object.entries(totals)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([skill]) => skill);
+
+    const skillKeys = Object.fromEntries(
+      topSkills.map((skill) => [skill, skill.replace(/[^a-zA-Z0-9]/g, "_")])
+    );
 
     const rows = weeks.map((week, idx) => {
       const label = weekLabelFromYearWeek(week);
@@ -73,11 +62,10 @@ export default function SkillMomentumChart() {
 
       topSkills.forEach((skill) => {
         const current = skillWeekMap[skill]?.[week] || 0;
-        const previous = prevWeek
-          ? skillWeekMap[skill]?.[prevWeek] || 0
-          : 0;
+        const previous = prevWeek ? skillWeekMap[skill]?.[prevWeek] || 0 : 0;
 
-        row[skill] = current - previous;
+        const key = skillKeys[skill];
+        row[key] = current - previous;
       });
 
       return row;
@@ -91,10 +79,8 @@ export default function SkillMomentumChart() {
             const prevWeek = weeks[weeks.length - 2];
 
             const deltas = topSkills.map((skill) => {
-              const current =
-                skillWeekMap[skill]?.[lastWeek] || 0;
-              const previous =
-                skillWeekMap[skill]?.[prevWeek] || 0;
+              const current = skillWeekMap[skill]?.[lastWeek] || 0;
+              const previous = skillWeekMap[skill]?.[prevWeek] || 0;
 
               return {
                 skill,
@@ -113,9 +99,7 @@ export default function SkillMomentumChart() {
             const flat = deltas.every((d) => d.delta === 0);
 
             if (flat) {
-              return [
-                "Your activity remained steady across skills this week.",
-              ];
+              return ["Your activity remained steady across skills this week."];
             }
 
             if (positive[0] && negative[0]) {
@@ -125,19 +109,13 @@ export default function SkillMomentumChart() {
             }
 
             if (positive[0]) {
-              return [
-                `${positive[0].skill} increased compared to last week.`,
-              ];
+              return [`${positive[0].skill} increased compared to last week.`];
             }
 
             return [];
           })();
 
-    return {
-      chartData: rows,
-      skills: topSkills,
-      insights,
-    };
+    return { chartData: rows, skills: topSkills, skillKeys, insights };
   }, [rawData]);
 
   if (loading) {
@@ -157,6 +135,49 @@ export default function SkillMomentumChart() {
     );
   }
 
+  const options = {
+    data: chartData,
+    series: skills.map((skill) => ({
+      type: "area",
+      xKey: "week",
+      yKey: skillKeys[skill],
+      yName: skill,
+      stacked: true,
+      fill: COLORS[skill] || "#6b7280",
+      fillOpacity: 0.55,
+      stroke: COLORS[skill] || "#6b7280",
+      strokeWidth: 1.5,
+    })),
+    axes: {
+      x: {
+        type: "category",
+        position: "bottom",
+        label: {
+          fontSize: 12,
+          wrapping: "on-space",
+        },
+      },
+      y: {
+        type: "number",
+        position: "left",
+        nice: true,
+        label: { fontSize: 11 },
+      },
+    },
+    padding: {
+      top: 12,
+      right: 48,
+      bottom: 16,
+      left: 18,
+    },
+    legend: {
+      position: "bottom",
+    },
+    background: {
+      fill: "transparent",
+    },
+  };
+
   return (
     <div className="w-full">
       {insights.length > 0 && (
@@ -168,47 +189,9 @@ export default function SkillMomentumChart() {
           ))}
         </div>
       )}
-      <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
-          <XAxis dataKey="week" tick={{ fontSize: 12 }} />
-          <YAxis
-            allowDecimals={false}
-            tick={{ fontSize: 12 }}
-            label={{
-              value: "Week-over-week change",
-              angle: -90,
-              position: "insideLeft",
-              style: { fontSize: 11 },
-            }}
-          />
-          <Tooltip
-            formatter={(value) => [
-              `${value > 0 ? "+" : ""}${value} vs last week`,
-              "Delta",
-            ]}
-          />
-          <Legend />
-          {skills.map((skill) => {
-            const isFlatSkill = chartData.every(
-              (row) => Math.abs(row[skill] || 0) <= 1
-            );
-
-            return (
-              <Line
-                key={skill}
-                type="monotone"
-                dataKey={skill}
-                stroke={COLORS[skill] || "#6b7280"}
-                strokeWidth={isFlatSkill ? 1.5 : 3}
-                strokeOpacity={isFlatSkill ? 0.4 : 1}
-                dot={!isFlatSkill}
-                activeDot={{ r: 5 }}
-              />
-            );
-          })}
-        </LineChart>
-      </ResponsiveContainer>
+      <div style={{ height: 280 }}>
+        <AgCharts options={options} />
+      </div>
     </div>
   );
 }

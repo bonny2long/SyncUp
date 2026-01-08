@@ -1,13 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Cell,
-  ResponsiveContainer,
-} from "recharts";
+import { AgCharts } from "ag-charts-react";
 import { getSkillDistribution } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 
@@ -42,18 +34,12 @@ export default function SkillDistributionChart() {
       return { sortedData: [], insight: null };
     }
 
-    const sorted = [...data].sort((a, b) =>
-      a.skill.localeCompare(b.skill)
-    );
+    const sorted = [...data].sort((a, b) => a.skill.localeCompare(b.skill));
 
-    const totalSignals = sorted.reduce(
-      (sum, s) => sum + s.total,
-      0
-    );
+    const totalSignals = sorted.reduce((sum, s) => sum + s.total, 0);
 
     const topEntry = sorted.reduce(
-      (best, s) =>
-        !best || s.total > best.total ? s : best,
+      (best, s) => (!best || s.total > best.total ? s : best),
       null
     );
 
@@ -71,9 +57,7 @@ export default function SkillDistributionChart() {
 
   if (loading) {
     return (
-      <p className="text-sm text-gray-500">
-        Loading skill distribution...
-      </p>
+      <p className="text-sm text-gray-500">Loading skill distribution...</p>
     );
   }
 
@@ -85,36 +69,56 @@ export default function SkillDistributionChart() {
     );
   }
 
+  const chartOptions = {
+    data: sortedData,
+    series: [
+      {
+        type: "bar",
+        direction: "horizontal",
+        xKey: "skill",
+        yKey: "total",
+        cornerRadius: 4,
+        itemStyler: ({ datum }) => ({
+          fill: SKILL_COLORS[datum.skill] || "#64748b",
+        }),
+        tooltip: {
+          renderer: ({ datum }) => ({
+            title: datum.skill,
+            data: [{ label: "Signals", value: datum.total }],
+          }),
+        },
+      },
+    ],
+
+    axes: {
+      number: {
+        position: "bottom",
+        nice: true,
+      },
+      category: {
+        position: "left",
+        label: {
+          fontSize: 12,
+        },
+      },
+    },
+    padding: {
+      left: 20,
+      right: 20,
+      top: 10,
+      bottom: 10,
+    },
+    background: {
+      fill: "transparent",
+    },
+  };
+
   return (
     <div className="w-full">
-      {insight && (
-        <p className="text-xs text-gray-500 mb-2">{insight}</p>
-      )}
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={sortedData} layout="vertical">
-          <XAxis type="number" allowDecimals={false} />
-          <YAxis
-            type="category"
-            dataKey="skill"
-            width={120}
-            tick={{ fontSize: 12 }}
-          />
-          <Tooltip
-            formatter={(value) => [`${value} signals`, "Total"]}
-            labelFormatter={(label) => `Skill: ${label}`}
-          />
-          <Bar dataKey="total" radius={[0, 4, 4, 0]}>
-            {sortedData.map((entry) => (
-              <Cell
-                key={entry.skill}
-                fill={
-                  SKILL_COLORS[entry.skill] || "#64748b"
-                }
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      {insight && <p className="text-xs text-gray-500 mb-2">{insight}</p>}
+      <div style={{ height: 260 }}>
+        <AgCharts options={chartOptions} />
+      </div>
     </div>
   );
 }

@@ -1,14 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
-
+import { AgCharts } from "ag-charts-react";
 import { getSkillActivity } from "../../utils/api";
 import { weekLabelFromYearWeek } from "../../utils/date";
 import { useUser } from "../../context/UserContext";
@@ -34,7 +25,6 @@ export default function SkillActivityChart() {
   }, [user]);
 
   /**
-   * Transform rows into stacked-bar shape:
    * { week, project, update, mentorship }
    */
   const chartData = useMemo(() => {
@@ -44,8 +34,15 @@ export default function SkillActivityChart() {
 
     rawData.forEach(({ year_week, source_type, signal_count }) => {
       const label = weekLabelFromYearWeek(year_week);
-      byWeek[year_week] ??= { week: label };
-      byWeek[year_week][source_type] = signal_count;
+
+      byWeek[year_week] ??= {
+        week: label,
+        project: 0,
+        update: 0,
+        mentorship: 0,
+      };
+
+      byWeek[year_week][source_type] = Number(signal_count);
     });
 
     return Object.entries(byWeek)
@@ -66,18 +63,13 @@ export default function SkillActivityChart() {
     }
 
     const [source] = dominant;
-    const label =
-      source.charAt(0).toUpperCase() + source.slice(1);
+    const label = source.charAt(0).toUpperCase() + source.slice(1);
 
     return `${label} contributed the most to activity this week.`;
   }, [chartData]);
 
   if (loading) {
-    return (
-      <p className="text-sm text-gray-500">
-        Loading activity...
-      </p>
-    );
+    return <p className="text-sm text-gray-500">Loading activity...</p>;
   }
 
   if (!chartData.length) {
@@ -88,36 +80,72 @@ export default function SkillActivityChart() {
     );
   }
 
+  const options = {
+    data: chartData,
+    series: [
+      {
+        type: "bar",
+        xKey: "week",
+        yKey: "project",
+        yName: "Project",
+        stacked: true,
+        fill: COLORS.project,
+      },
+      {
+        type: "bar",
+        xKey: "week",
+        yKey: "update",
+        yName: "Update",
+        stacked: true,
+        fill: COLORS.update,
+      },
+      {
+        type: "bar",
+        xKey: "week",
+        yKey: "mentorship",
+        yName: "Mentorship",
+        stacked: true,
+        fill: COLORS.mentorship,
+      },
+    ],
+    axes: {
+      x: {
+        type: "category",
+        position: "bottom",
+        label: {
+          fontSize: 12,
+          wrapping: "on-space",
+        },
+      },
+      y: {
+        type: "number",
+        position: "left",
+        nice: true,
+        label: {
+          fontSize: 11,
+        },
+      },
+    },
+    padding: {
+      top: 12,
+      right: 24,
+      bottom: 16,
+      left: 18,
+    },
+    legend: {
+      position: "bottom",
+    },
+    background: {
+      fill: "transparent",
+    },
+  };
+
   return (
     <div className="w-full">
-      {insight && (
-        <p className="text-xs text-gray-500 mb-2">
-          {insight}
-        </p>
-      )}
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={chartData}>
-          <XAxis dataKey="week" />
-          <YAxis allowDecimals={false} />
-          <Tooltip />
-          <Legend />
-          <Bar
-            dataKey="project"
-            stackId="a"
-            fill={COLORS.project}
-          />
-          <Bar
-            dataKey="update"
-            stackId="a"
-            fill={COLORS.update}
-          />
-          <Bar
-            dataKey="mentorship"
-            stackId="a"
-            fill={COLORS.mentorship}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+      {insight && <p className="text-xs text-gray-500 mb-2">{insight}</p>}
+      <div style={{ height: 260 }}>
+        <AgCharts options={options} />
+      </div>
     </div>
   );
 }
