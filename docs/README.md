@@ -1,3 +1,5 @@
+Original location: /README.md
+
 # SyncUp
 
 **Intern Collaboration and Mentorship Platform**
