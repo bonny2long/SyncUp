@@ -101,23 +101,26 @@ export const createProgressUpdate = async (req, res) => {
     // 2️ Fetch project skills
     const [skills] = await connection.query(
       `
-      SELECT skill_id
-      FROM project_skills
-      WHERE project_id = ?
-      `,
+  SELECT skill_id
+  FROM project_skills
+  WHERE project_id = ?
+  `,
       [project_id]
     );
 
-    // 3️ Insert skill signals (append-only)
-    await emitSkillSignals({
-      userId: user_id,
-      sourceType: "update",
-      sourceId: updateId,
-      signalType: "update",
-      skillIds: skills.map((s) => s.skill_id),
-      weight: 1,
-      connection,
-    });
+    // Progress updates emit skill signals
+    // Evidence-based: project defines skills, update proves usage
+    if (skills.length > 0) {
+      await emitSkillSignals({
+        userId: user_id,
+        sourceType: "update",
+        sourceId: updateId,
+        signalType: "update",
+        skillIds: skills.map((s) => s.skill_id),
+        weight: 2,
+        connection,
+      });
+    }
 
     // 4️ Return full update row (existing behavior)
     const [rows] = await connection.query(

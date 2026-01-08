@@ -47,16 +47,17 @@ export const getMentorDetails = async (req, res) => {
       [id]
     );
 
-    const [sessions] = await pool.query(
+    const [sessions] = await connection.query(
       `
-      SELECT 
-        COUNT(*) AS total_sessions,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_sessions,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_sessions,
-        SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) AS accepted_sessions
-      FROM mentorship_sessions
-      WHERE mentor_id = ?
-      `,
+  SELECT 
+    intern_id,
+    mentor_id,
+    status,
+    session_focus,
+    project_id
+  FROM mentorship_sessions
+  WHERE id = ?
+  `,
       [id]
     );
 
@@ -230,10 +231,12 @@ export const updateSessionStatus = async (req, res) => {
       await emitSkillSignals({
         userId: session.intern_id,
         sourceType: "mentorship",
-        sourceId: id,
+        sourceId: session.id,
         signalType: "completed",
-        context: { session_focus: session.session_focus },
-        connection,
+        context: {
+          session_focus: session.session_focus,
+          project_id: session.project_id,
+        },
       });
     }
 

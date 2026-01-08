@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 
+// GET /api/skills/user/:id/momentum
 export const getSkillMomentum = async (req, res) => {
   const { id } = req.params;
   const [rows] = await pool.query(
@@ -52,7 +53,7 @@ export const getSkillDistribution = async (req, res) => {
   }
 };
 
-
+// GET /api/skills/user/:id/activity
 export const getSkillActivity = async (req, res) => {
   const { id } = req.params;
   const [rows] = await pool.query(
@@ -76,4 +77,56 @@ export const getSkillActivity = async (req, res) => {
     [id]
   );
   res.json(rows);
+};
+
+// GET /api/skills/summary/:id
+export const getSkillSummary = async (req, res) => {
+  const { id: userId } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT
+        s.id AS skill_id,
+        s.skill_name,
+        COUNT(uss.id) AS signal_count,
+        SUM(uss.weight) AS total_weight,
+        MAX(uss.created_at) AS last_activity_at
+      FROM user_skill_signals uss
+      JOIN skills s ON s.id = uss.skill_id
+      WHERE uss.user_id = ?
+      GROUP BY s.id, s.skill_name
+      ORDER BY total_weight DESC
+      `,
+      [userId]
+    );
+
+    const skills = rows.map((row) => {
+      let trend_readiness = "emerging";
+
+      if (row.signal_count >= 15) {
+        trend_readiness = "strong";
+      } else if (row.signal_count >= 5) {
+        trend_readiness = "growing";
+      }
+
+      return {
+        skill_id: row.skill_id,
+        skill_name: row.skill_name,
+        signal_count: Number(row.signal_count),
+        total_weight: Number(row.total_weight),
+        last_activity_at: row.last_activity_at,
+        trend_readiness,
+      };
+    });
+
+    res.json({
+      user_id: Number(userId),
+      generated_at: new Date().toISOString(),
+      skills,
+    });
+  } catch (err) {
+    console.error("Error generating skill summary:", err);
+    res.status(500).json({ error: "Failed to generate skill summary" });
+  }
 };

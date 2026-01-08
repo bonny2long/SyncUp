@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 
+// GET /api/projects
 export const getProjects = async (req, res) => {
   const { user_id: userId } = req.query;
   const params = [];
@@ -12,6 +13,7 @@ export const getProjects = async (req, res) => {
         p.title,
         p.description,
         p.status,
+        MAX(p.metadata) AS metadata,
         ${
           userId
             ? "EXISTS(SELECT 1 FROM project_members pm2 WHERE pm2.project_id = p.id AND pm2.user_id = ?) AS is_member,"
@@ -38,7 +40,7 @@ export const getProjects = async (req, res) => {
       LEFT JOIN project_members pm ON pm.project_id = p.id
       LEFT JOIN users usr ON pm.user_id = usr.id
       LEFT JOIN progress_updates u ON u.project_id = p.id
-      GROUP BY p.id, p.title, p.description, p.status
+      GROUP BY p.id, p.title, p.description, p.status, p.metadata
       ORDER BY p.id ASC;
     `,
       userId ? [userId] : params
@@ -48,6 +50,68 @@ export const getProjects = async (req, res) => {
   } catch (err) {
     console.error("Error fetching projects:", err);
     res.status(500).json({ error: "Server error fetching projects" });
+  }
+};
+
+// POST /api/projects
+export const createProject = async (req, res) => {
+  const { title, description, owner_id, skill_ideas = [] } = req.body;
+  const ownerId = owner_id;
+  const metadata = {
+    skill_ideas: Array.isArray(skill_ideas) ? skill_ideas : [],
+    created_at: new Date().toISOString(),
+  };
+
+  if (!title || !ownerId) {
+    return res.status(400).json({ error: "title and owner_id are required" });
+  }
+
+  try {
+    const [result] = await pool.query(
+      `
+      INSERT INTO projects (title, description, owner_id, metadata)
+      VALUES (?, ?, ?, ?)
+      `,
+      [title.trim(), description || "", ownerId, JSON.stringify(metadata)]
+    );
+
+    res.status(201).json({
+      id: result.insertId,
+      title,
+      status: "planned",
+    });
+  } catch (err) {
+    console.error("Error creating project:", err);
+    res.status(500).json({ error: "Failed to create project" });
+  }
+};
+
+// POST /api/projects/:id/skills
+export const attachProjectSkills = async (req, res) => {
+  const { id: projectId } = req.params;
+  const { skill_ids } = req.body;
+
+  if (!Array.isArray(skill_ids) || skill_ids.length === 0) {
+    return res
+      .status(400)
+      .json({ error: "skill_ids must be a non-empty array" });
+  }
+
+  try {
+    const values = skill_ids.map((skillId) => [projectId, skillId]);
+
+    await pool.query(
+      `
+      INSERT IGNORE INTO project_skills (project_id, skill_id)
+      VALUES ?
+      `,
+      [values]
+    );
+
+    res.status(201).json({ message: "Skills attached to project" });
+  } catch (err) {
+    console.error("Error attaching project skills:", err);
+    res.status(500).json({ error: "Failed to attach skills" });
   }
 };
 
@@ -92,7 +156,7 @@ export const addProjectMember = async (req, res) => {
         "project",
         projectId,
         "joined",
-        1
+        1,
       ]);
 
       await connection.query(
@@ -116,7 +180,6 @@ export const addProjectMember = async (req, res) => {
     connection.release();
   }
 };
-
 
 // Remove a user from a project (leave)
 export const removeProjectMember = async (req, res) => {
