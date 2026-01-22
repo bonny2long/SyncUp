@@ -7,9 +7,8 @@ export const API_BASE =
 // PROJECTS
 // ----------------------------------------------------
 export async function fetchProjects(userId) {
-  const url = userId
-    ? `${API_BASE}/projects?user_id=${userId}`
-    : `${API_BASE}/projects`;
+  const url =
+    userId ? `${API_BASE}/projects?user_id=${userId}` : `${API_BASE}/projects`;
   const res = await fetch(url);
   return res.json();
 }
@@ -81,8 +80,9 @@ export async function fetchUsers() {
 // PROGRESS UPDATES (Collaboration Hub)
 // ----------------------------------------------------
 export async function fetchUpdates(projectId) {
-  const url = projectId
-    ? `${API_BASE}/progress_updates?project_id=${projectId}`
+  const url =
+    projectId ?
+      `${API_BASE}/progress_updates?project_id=${projectId}`
     : `${API_BASE}/progress_updates`;
   const res = await fetch(url);
   return res.json();
@@ -101,8 +101,9 @@ export async function postUpdate(content, projectId, userId) {
 // MENTORSHIP - GET SESSIONS (optional mentor filter)
 // ----------------------------------------------------
 export async function fetchSessions(mentorId) {
-  const url = mentorId
-    ? `${API_BASE}/mentorship/sessions?mentor_id=${mentorId}`
+  const url =
+    mentorId ?
+      `${API_BASE}/mentorship/sessions?mentor_id=${mentorId}`
     : `${API_BASE}/mentorship/sessions`;
 
   const res = await fetch(url);
@@ -153,11 +154,11 @@ export async function fetchProjectMentors() {
 // ----------------------------------------------------
 // MENTORSHIP - UPDATE SESSION STATUS (PUT)
 // ----------------------------------------------------
-export async function updateSessionStatus(id, updates) {
+export async function updateSessionStatus(id, { status, skill_ids = [] }) {
   const res = await fetch(`${API_BASE}/mentorship/sessions/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updates), // { status, notes }
+    body: JSON.stringify({ status, skill_ids }),
   });
 
   if (!res.ok) throw new Error("Failed to update session status");

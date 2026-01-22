@@ -39,9 +39,8 @@ export async function emitSkillSignals({
       return;
     }
 
-    // Even for allowed focuses, we DO NOT emit skills yet
-    // until skills are explicitly selected in the UI
-    return;
+    // Allowed focuses proceed to skill emission
+    // (skills must be provided in skillIds)
   }
 
   // Project & update require skills
@@ -74,6 +73,6 @@ export async function emitSkillSignals({
       (user_id, skill_id, source_type, source_id, signal_type, weight)
     VALUES ?
     `,
-    [values]
+    [values],
   );
 }

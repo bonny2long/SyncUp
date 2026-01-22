@@ -4,9 +4,13 @@ import {
   getSkillDistribution,
   getSkillActivity,
   getSkillSummary,
+  getAllSkills,
 } from "../controllers/skillsController.js";
 
 const router = express.Router();
+
+// GET /api/skills
+router.get("/", getAllSkills);
 
 // GET /api/skills/user/:id/momentum
 router.get("/user/:id/momentum", getSkillMomentum);

@@ -2,6 +2,7 @@ import SkillDistributionChart from "./SkillDistributionChart";
 import SkillMomentumChart from "./SkillMomentumChart";
 import SkillActivityChart from "./SkillActivityChart";
 import SkillSummaryCard from "./TopSkillsSnapshot";
+import SkillSignalsPanel from "./SkillSignalsPanel";
 
 export default function SkillTrackerSection() {
   return (
@@ -16,6 +17,9 @@ export default function SkillTrackerSection() {
       </div>
       {/* SKILL SUMMARY */}
       <SkillSummaryCard />
+
+      {/* SKILL SIGNALS - Transition + Velocity verification */}
+      <SkillSignalsPanel />
 
       {/* SKILL DISTRIBUTION */}
       <div className="bg-white border rounded-lg p-5">

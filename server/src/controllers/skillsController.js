@@ -1,5 +1,18 @@
 import pool from "../config/db.js";
 
+// GET /api/skills
+export const getAllSkills = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, skill_name, category FROM skills ORDER BY skill_name ASC",
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching skills:", err);
+    res.status(500).json({ error: "Failed to fetch skills" });
+  }
+};
+
 // GET /api/skills/user/:id/momentum
 export const getSkillMomentum = async (req, res) => {
   const { id } = req.params;
@@ -144,6 +157,18 @@ export const getSkillSummary = async (req, res) => {
       if (delta > 0) direction = "up";
       if (delta < 0) direction = "down";
 
+      // ─────────────────────────────
+      // Velocity logic (NEW)
+      // ─────────────────────────────
+      const WINDOW_DAYS = 7;
+      const velocityPerDay = current / WINDOW_DAYS;
+
+      let velocityState = "steady";
+
+      if (delta > 2) velocityState = "accelerating";
+      else if (delta > 0) velocityState = "gaining";
+      else if (delta < 0) velocityState = "slowing";
+
       return {
         skill_id: row.skill_id,
         skill_name: row.skill_name,
@@ -157,6 +182,13 @@ export const getSkillSummary = async (req, res) => {
           delta,
           current_window_weight: current,
           previous_window_weight: previous,
+        },
+
+        velocity: {
+          per_day: Number(velocityPerDay.toFixed(2)),
+          window_days: WINDOW_DAYS,
+          window_weight: current,
+          state: velocityState,
         },
       };
     });
