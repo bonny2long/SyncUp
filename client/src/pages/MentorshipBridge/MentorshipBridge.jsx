@@ -21,17 +21,15 @@ export default function MentorshipBridge() {
           currentUser={user}
         />
       </div>
+
+      {/* Mentors */}
+      <div>
+        <h2 className="text-lg font-semibold text-primary mb-3">Mentors</h2>
+        <MentorList
+          selectedMentor={selectedMentor}
+          setSelectedMentor={setSelectedMentor}
+        />
+      </div>
     </section>
   );
 }
-
-{
-  /* Mentors */
-}
-<div>
-  <h2 className="text-lg font-semibold text-primary mb-3">Mentors</h2>
-  <MentorList
-    selectedMentor={selectedMentor}
-    setSelectedMentor={setSelectedMentor}
-  />
-</div>;

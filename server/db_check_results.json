@@ -1,0 +1,72 @@
+{
+  "projects": [
+    {
+      "id": 1,
+      "title": "Task Manager Pro"
+    },
+    {
+      "id": 2,
+      "title": "API Gateway Service"
+    },
+    {
+      "id": 3,
+      "title": "Student Portal Redesign"
+    },
+    {
+      "id": 4,
+      "title": "Data Analytics Dashboard"
+    },
+    {
+      "id": 5,
+      "title": "Task Manager Pro"
+    },
+    {
+      "id": 6,
+      "title": "API Gateway Service"
+    },
+    {
+      "id": 7,
+      "title": "Student Portal Redesign"
+    },
+    {
+      "id": 8,
+      "title": "Data Analytics Dashboard"
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "name": "Alex Rivers"
+    },
+    {
+      "id": 2,
+      "name": "Maya Chen"
+    },
+    {
+      "id": 3,
+      "name": "Jordan Park"
+    },
+    {
+      "id": 4,
+      "name": "Sam Foster"
+    },
+    {
+      "id": 5,
+      "name": "Dr. Sarah Kim"
+    },
+    {
+      "id": 6,
+      "name": "Carlos Martinez"
+    },
+    {
+      "id": 7,
+      "name": "Priya Sharma"
+    },
+    {
+      "id": 8,
+      "name": "Admin User"
+    }
+  ],
+  "update_count": 32,
+  "signal_count": 128
+}

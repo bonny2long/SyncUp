@@ -19,8 +19,7 @@ export default function SkillSummaryCard() {
   const { user } = useUser();
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+  -useEffect(() => {
     if (!user?.id) return;
 
     getSkillSummary(user.id)
@@ -49,10 +48,7 @@ export default function SkillSummaryCard() {
 
   const chartData = skills.map((s, i) => {
     const trendKey =
-      s.trend ||
-      s.trend_label ||
-      s.trend_readiness_label ||
-      s.trend_readiness;
+      s.trend || s.trend_label || s.trend_readiness_label || s.trend_readiness;
     const trendLabel =
       TREND_LABELS[trendKey] ||
       s.trend_label ||
@@ -97,11 +93,9 @@ export default function SkillSummaryCard() {
                 itemStyler: ({ datum }) => ({
                   fill: TREND_COLORS[datum.trend] || "#64748b",
                   fillOpacity:
-                    datum.trend === "growing"
-                      ? 1
-                      : datum.trend === "emerging"
-                      ? 0.75
-                      : 0.5,
+                    datum.trend === "growing" ? 1
+                    : datum.trend === "emerging" ? 0.75
+                    : 0.5,
                   stroke: TREND_COLORS[datum.trend] || "#64748b",
                   strokeWidth: datum.trend === "growing" ? 2 : 1,
                 }),
