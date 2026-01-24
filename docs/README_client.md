@@ -16,13 +16,13 @@ Frontend application for the SyncUp platform, built with React and Vite, styled 
 
 ### Color Palette
 
-| Token                   | Color                   | Usage              |
-| ----------------------- | ----------------------- | ------------------ |
-| `--color-primary`       | Indigo Blue (#4C5FD5)   | Trust and Primary UI |
+| Token                   | Color                     | Usage                |
+| ----------------------- | ------------------------- | -------------------- |
+| `--color-primary`       | Indigo Blue (#4C5FD5)     | Trust and Primary UI |
 | `--color-secondary`     | Electric Purple (#9B5DE5) | Accent and Buttons   |
-| `--color-accent`        | Aqua Cyan (#00C2BA)     | Highlights         |
-| `--color-neutral-light` | Ghost White (#F5F7FA)   | Background         |
-| `--color-neutral-dark`  | Graphite Gray (#2B2D42) | Text               |
+| `--color-accent`        | Aqua Cyan (#00C2BA)       | Highlights           |
+| `--color-neutral-light` | Ghost White (#F5F7FA)     | Background           |
+| `--color-neutral-dark`  | Graphite Gray (#2B2D42)   | Text                 |
 
 ## Folder Structure
 
@@ -31,11 +31,10 @@ client/
 ├── public/              # Static assets
 ├── src/
 │   ├── assets/          # Images, fonts, and icons
-│   ├── components/
-│   │   ├── layout/      # Layout components (Header, Footer, Sidebar)
-│   │   └── ui/          # Reusable UI components
-│   ├── data/            # Static data and constants
-│   ├── pages/           # Page-level components
+│   ├── components/      # Reusable UI components (SkillTracker, modals)
+│   ├── context/         # React Context (UserContext)
+│   ├── pages/           # Page-level components (CollaborationHub, MentorshipBridge, SkillTracker)
+│   ├── utils/           # API utilities and helpers
 │   ├── App.jsx          # Root application component
 │   ├── main.jsx         # Application entry point
 │   └── index.css        # Global styles and Tailwind imports
@@ -55,16 +54,19 @@ client/
 ### Installation
 
 1. Navigate to the client directory:
+
    ```bash
    cd client
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -73,12 +75,12 @@ client/
 
 ### Available Scripts
 
-| Command           | Description                          |
-| ----------------- | ------------------------------------ |
-| `npm run dev`     | Start development server             |
-| `npm run build`   | Build for production                 |
-| `npm run preview` | Preview production build locally     |
-| `npm run lint`    | Run ESLint for code quality checks   |
+| Command           | Description                        |
+| ----------------- | ---------------------------------- |
+| `npm run dev`     | Start development server           |
+| `npm run build`   | Build for production               |
+| `npm run preview` | Preview production build locally   |
+| `npm run lint`    | Run ESLint for code quality checks |
 
 ## Environment Variables
 

@@ -17,36 +17,35 @@ Backend API for the SyncUp platform, powered by Node.js and Express with a MySQL
 
 ### Users
 
-| Method | Endpoint         | Description              |
-| ------ | ---------------- | ------------------------ |
-| GET    | `/api/users`     | Retrieve all users       |
-| GET    | `/api/users/:id` | Retrieve user by ID      |
-| POST   | `/api/users`     | Create a new user        |
-| PUT    | `/api/users/:id` | Update an existing user  |
-| DELETE | `/api/users/:id` | Delete a user            |
+| Method | Endpoint         | Description             |
+| ------ | ---------------- | ----------------------- |
+| GET    | `/api/users`     | Retrieve all users      |
+| GET    | `/api/users/:id` | Retrieve user by ID     |
+| POST   | `/api/users`     | Create a new user       |
+| PUT    | `/api/users/:id` | Update an existing user |
+| DELETE | `/api/users/:id` | Delete a user           |
 
 ### Projects
 
-| Method | Endpoint            | Description                 |
-| ------ | ------------------- | --------------------------- |
-| GET    | `/api/projects`     | Retrieve all projects       |
-| GET    | `/api/projects/:id` | Retrieve project by ID      |
-| POST   | `/api/projects`     | Create a new project        |
-| PUT    | `/api/projects/:id` | Update an existing project  |
-| DELETE | `/api/projects/:id` | Delete a project            |
+| Method | Endpoint            | Description                |
+| ------ | ------------------- | -------------------------- |
+| GET    | `/api/projects`     | Retrieve all projects      |
+| GET    | `/api/projects/:id` | Retrieve project by ID     |
+| POST   | `/api/projects`     | Create a new project       |
+| PUT    | `/api/projects/:id` | Update an existing project |
+| DELETE | `/api/projects/:id` | Delete a project           |
 
 ## Folder Structure
 
 ```
 server/
-├── config/              # Database and application configuration
-├── controllers/         # Request handlers and business logic
-├── middleware/          # Custom middleware functions
-├── models/              # Database models and schemas
-├── routes/              # API route definitions
-├── utils/               # Utility functions and helpers
-├── app.js               # Express application setup
-├── server.js            # Server entry point
+├── src/
+│   ├── config/          # Database configuration (db.js)
+│   ├── controllers/     # Request handlers (projects, progress, mentorship, skills)
+│   ├── routes/          # API route definitions
+│   ├── services/        # Business logic (skillSignalService)
+│   ├── server.js        # Server entry point
+│   └── debug_*.js       # Debugging utilities
 ├── .env                 # Environment variables (not tracked)
 └── package.json         # Project dependencies
 ```
@@ -62,16 +61,19 @@ server/
 ### Installation
 
 1. Navigate to the server directory:
+
    ```bash
    cd server
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Configure the database connection by creating a `.env` file:
+
    ```env
    DB_HOST=localhost
    DB_USER=your_username
@@ -81,6 +83,7 @@ server/
    ```
 
 4. Import the database schema:
+
    ```bash
    mysql -u your_username -p syncup_local < schema/syncup_local.sql
    ```
@@ -92,11 +95,11 @@ server/
 
 ### Available Scripts
 
-| Command         | Description                              |
-| --------------- | ---------------------------------------- |
-| `npm run dev`   | Start development server with Nodemon    |
-| `npm start`     | Start production server                  |
-| `npm test`      | Run test suite                           |
+| Command       | Description                           |
+| ------------- | ------------------------------------- |
+| `npm run dev` | Start development server with Nodemon |
+| `npm start`   | Start production server               |
+| `npm test`    | Run test suite                        |
 
 ## Database Schema
 
@@ -104,9 +107,10 @@ The application uses the `syncup_local` MySQL database with tables for:
 
 - **users** - User accounts and profiles
 - **projects** - Collaborative project information
-- **skills** - Skill categories and assessments
-- **mentorships** - Mentor-mentee relationships
-- **reflections** - Progress tracking and personal reflections
+- **skills** - Global skill library
+- **mentorship_sessions** - Independent mentorship tracking
+- **progress_updates** - Work logs and skill signal sources
+- **user_skill_signals** - The evidence-based growth engine
 
 ## Contributing
 
