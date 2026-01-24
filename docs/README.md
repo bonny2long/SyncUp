@@ -1,40 +1,61 @@
-Original location: /README.md
-
 # SyncUp
 
-**Intern Collaboration and Mentorship Platform**
+**The Intern Collaboration and Mentorship Reflection System**
 
-## Overview
+SyncUp is a full-stack platform designed to connect interns, mentors, and alumni through real-world project collaboration and structured mentorship. Unlike traditional platforms that rely on manual skill logging, SyncUp uses an evidence-based **Skill Signal** pipeline to track professional growth.
 
-SyncUp is a full-stack web application designed to connect interns, mentors, and alumni for collaboration, skill growth, and real-time feedback. The platform provides a centralized space where interns can discover projects, find mentors, and track their professional development through structured reflections and progress monitoring.
+---
 
-## Key Features
+## The Vision: A Reflection System
 
-- **Project Discovery**: Browse and join collaborative projects with other interns
-- **Mentor Matching**: Connect with experienced mentors and alumni for guidance
-- **Skill Signals**: Evidence-based growth tracking.
-- **Real-Time Collaboration**: Work together on projects with built-in communication tools
-- **Progress Analytics**: Track development milestones and achievements
+SyncUp is built on the philosophy that professional growth should be a mirror of real activity, not a manual checklist.
 
-## Skill Signals Philosophy
+- **Evidence-Based**: Skills are derived from project work, updates, and verified mentorship.
+- **High Integrity**: Guardrails ensure that only relevant, validated activities contribute to skill growth.
+- **Decoupled Hubs**: Mentorship and Projects exist as independent but intersecting systems to support diverse career paths.
 
-Unlike traditional platforms where you manually "add skills" to your profile, SyncUp uses **Skill Signals** to track growth based on actual work:
+---
 
-- **Project Creation/Joining**: Emits a `joined` signal. This shows intent and initial exposure.
-- **Progress Updates**: Tagging skills in a progress update emits an `update` signal. This represents active work and learning-by-doing.
-- **Mentorship Sessions**: Completing a technical mentorship session allows the mentor to verify skills, emitting a `verified` signal.
+## Key Features (The Three Hubs)
 
-This creates a high-integrity "Proof of Work" profile that reflects real-world activity.
+### 1. Collaboration Hub
+
+- **Project Discovery**: Browse and join intern-led projects.
+- **Progress Feed**: Post real-time updates with dynamic skill tagging.
+- **Team Management**: Collaborative project ownership and membership tracking.
+
+### 2. Mentorship Bridge
+
+- **Mentor Directory**: Connect with experienced mentors and alumni.
+- **Independent Sessions**: Request guidance on career, technical, or life leadership.
+- **Skill Verification**: Mentors verify technical skills during session completion to provide high-weight signals.
+
+### 3. Skill Tracker
+
+- **Skill Distribution**: Visualize your total skill volume across all activities.
+- **Skill Momentum**: Track week-over-week growth and identify your fastest-rising skills.
+- **Activity Sources**: See exactly what is driving your growth (Projects vs. Updates vs. Mentorship).
+
+---
 
 ## Tech Stack
 
-| Layer           | Technologies                                      |
-| --------------- | ------------------------------------------------- |
-| Frontend        | React, Vite, Tailwind CSS                         |
-| Backend         | Node.js, Express                                  |
-| Database        | MySQL (local development), Azure SQL (production) |
-| Cloud Services  | Azure Cognitive Services, Power BI                |
-| Version Control | GitHub                                            |
+| Layer          | Technologies                           |
+| -------------- | -------------------------------------- |
+| **Frontend**   | React 18, Vite, Tailwind CSS, Recharts |
+| **Backend**    | Node.js, Express                       |
+| **Database**   | MySQL (Local), Azure SQL (Production)  |
+| **State/Auth** | React Context + LocalStorage           |
+
+---
+
+## Roadmap Status
+
+- **Phase 1 & 2 (Complete)**: Dynamic Skill Tagging, Mentor Endorsements, and Decoupled Mentorship.
+- **Phase 3 (Planning Complete)**: Smart Suggestions, AI-Assisted Tagging, and Career Readiness Dashboard.
+- **Phase 4 (Planning Complete)**: Peer Validation (Social Signals) and Team Momentum Analytics.
+
+---
 
 ## Project Structure
 
@@ -42,59 +63,56 @@ This creates a high-integrity "Proof of Work" profile that reflects real-world a
 SyncUp/
 ├── client/          # React frontend application
 ├── server/          # Node.js/Express backend API
-├── index.html       # Landing page
-└── README.md        # Project documentation
+├── docs/            # Project documentation (Architecture, Guardrails, Handoff)
+└── index.html       # Landing page
 ```
+
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js v20 or higher
-- MySQL 8.0 or higher
-- npm or yarn package manager
+- Node.js v20+
+- MySQL 8.0+
 
-### Installation
+### Installation & Setup
 
-1. Clone the repository:
+1. **Clone the repository**:
 
    ```bash
    git clone https://github.com/your-username/SyncUp.git
    cd SyncUp
    ```
 
-2. Install frontend dependencies:
+2. **Install Dependencies**:
 
    ```bash
-   cd client
-   npm install
+   # Frontend
+   cd client && npm install
+   # Backend
+   cd ../server && npm install
    ```
 
-3. Install backend dependencies:
+3. **Environment Configuration**:
+   Configure `.env` files in both `/client` and `/server` (see internal READMEs for details).
 
+4. **Start Development Servers**:
    ```bash
-   cd ../server
-   npm install
+   # Terminal 1 (Backend)
+   cd server && npm run dev
+   # Terminal 2 (Frontend)
+   cd client && npm run dev
    ```
 
-4. Configure environment variables (see individual README files in `/client` and `/server` directories)
-
-5. Start the development servers:
-
-   ```bash
-   # Terminal 1 - Backend
-   cd server
-   npm run dev
-
-   # Terminal 2 - Frontend
-   cd client
-   npm run dev
-   ```
+---
 
 ## Contributors
 
 - **Bonny Makaniankhondo** - Full-Stack Developer
 - **Sofie Garcia** - Front-End Developer and Research Lead
+
+---
 
 ## License
 
