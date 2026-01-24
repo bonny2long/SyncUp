@@ -7,22 +7,22 @@ export default function CreateProjectForm({ onCreated }) {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [skillIdeas, setSkillIdeas] = useState([]);
+  const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const addSkillIdea = () => {
+  const addSkill = () => {
     const value = skillInput.trim();
     if (!value) return;
-    if (skillIdeas.includes(value.toLowerCase())) return;
+    if (skills.some((s) => s.toLowerCase() === value.toLowerCase())) return;
 
-    setSkillIdeas((prev) => [...prev, value.toLowerCase()]);
+    setSkills((prev) => [...prev, value]);
     setSkillInput("");
   };
 
-  const removeSkillIdea = (skill) => {
-    setSkillIdeas((prev) => prev.filter((s) => s !== skill));
+  const removeSkill = (skillToRemove) => {
+    setSkills((prev) => prev.filter((s) => s !== skillToRemove));
   };
 
   async function handleSubmit(e) {
@@ -37,18 +37,17 @@ export default function CreateProjectForm({ onCreated }) {
     try {
       setLoading(true);
 
-      const project = await createProject({
+      await createProject({
         title: title.trim(),
         description,
         owner_id: user.id,
-        skill_ideas: skillIdeas,
+        skills: skills, // Send array of strings
       });
 
       setTitle("");
       setDescription("");
-      setSkillIdeas([]);
+      setSkills([]);
       setSkillInput("");
-
       onCreated?.();
     } catch (err) {
       setError("Failed to create project");
@@ -82,7 +81,7 @@ export default function CreateProjectForm({ onCreated }) {
 
       <div className="flex flex-col gap-1">
         <label className="text-xs text-gray-500">
-          Skills this project might touch (optional)
+          Tag relevant skills (type & enter)
         </label>
 
         <div className="flex gap-2">
@@ -93,24 +92,24 @@ export default function CreateProjectForm({ onCreated }) {
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                addSkillIdea();
+                addSkill();
               }
             }}
-            placeholder="e.g. React, APIs, UX"
+            placeholder="e.g. React, UX Design, Public Speaking"
             className="flex-1 border border-gray-200 rounded-lg p-2 text-sm"
           />
           <button
             type="button"
-            onClick={addSkillIdea}
+            onClick={addSkill}
             className="px-3 rounded-lg bg-gray-100 text-sm hover:bg-gray-200"
           >
             Add
           </button>
         </div>
 
-        {skillIdeas.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-1">
-            {skillIdeas.map((skill) => (
+        {skills.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {skills.map((skill) => (
               <span
                 key={skill}
                 className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary flex items-center gap-1"
@@ -118,20 +117,15 @@ export default function CreateProjectForm({ onCreated }) {
                 {skill}
                 <button
                   type="button"
-                  onClick={() => removeSkillIdea(skill)}
-                  className="text-primary/60 hover:text-primary"
+                  onClick={() => removeSkill(skill)}
+                  className="text-primary/60 hover:text-primary ml-1 font-bold"
                 >
-                  x
+                  ×
                 </button>
               </span>
             ))}
           </div>
         )}
-
-        <p className="text-[11px] text-gray-400">
-          These are just initial ideas. Skills are tracked later through real
-          activity.
-        </p>
       </div>
 
       {error && <p className="text-xs text-red-500">{error}</p>}

@@ -15,9 +15,9 @@ export const getProjects = async (req, res) => {
         p.status,
         MAX(p.metadata) AS metadata,
         ${
-          userId
-            ? "EXISTS(SELECT 1 FROM project_members pm2 WHERE pm2.project_id = p.id AND pm2.user_id = ?) AS is_member,"
-            : "0 AS is_member,"
+          userId ?
+            "EXISTS(SELECT 1 FROM project_members pm2 WHERE pm2.project_id = p.id AND pm2.user_id = ?) AS is_member,"
+          : "0 AS is_member,"
         }
         -- how many members are on this project
         COUNT(DISTINCT pm.user_id) AS team_count,
@@ -43,7 +43,7 @@ export const getProjects = async (req, res) => {
       GROUP BY p.id, p.title, p.description, p.status, p.metadata
       ORDER BY p.id ASC;
     `,
-      userId ? [userId] : params
+      userId ? [userId] : params,
     );
 
     res.json(rows);
@@ -55,10 +55,9 @@ export const getProjects = async (req, res) => {
 
 // POST /api/projects
 export const createProject = async (req, res) => {
-  const { title, description, owner_id, skill_ideas = [] } = req.body;
+  const { title, description, owner_id, skills = [] } = req.body;
   const ownerId = owner_id;
   const metadata = {
-    skill_ideas: Array.isArray(skill_ideas) ? skill_ideas : [],
     created_at: new Date().toISOString(),
   };
 
@@ -66,23 +65,102 @@ export const createProject = async (req, res) => {
     return res.status(400).json({ error: "title and owner_id are required" });
   }
 
+  const connection = await pool.getConnection();
+
   try {
-    const [result] = await pool.query(
+    await connection.beginTransaction();
+
+    // 1. Create Project
+    const [result] = await connection.query(
       `
       INSERT INTO projects (title, description, owner_id, metadata)
       VALUES (?, ?, ?, ?)
       `,
-      [title.trim(), description || "", ownerId, JSON.stringify(metadata)]
+      [title.trim(), description || "", ownerId, JSON.stringify(metadata)],
     );
 
+    const projectId = result.insertId;
+
+    // 2. Add Owner as Member
+    await connection.query(
+      `
+      INSERT INTO project_members (project_id, user_id)
+      VALUES (?, ?)
+      `,
+      [projectId, ownerId],
+    );
+
+    // 3. Process Skills (Find or Create)
+    if (Array.isArray(skills) && skills.length > 0) {
+      const skillIds = [];
+
+      for (const skillName of skills) {
+        const normalizedName = skillName.trim().toLowerCase();
+        if (!normalizedName) continue;
+
+        // Check if exists
+        const [existing] = await connection.query(
+          "SELECT id FROM skills WHERE skill_name = ?",
+          [normalizedName],
+        );
+
+        if (existing.length > 0) {
+          skillIds.push(existing[0].id);
+        } else {
+          // Create new
+          const [created] = await connection.query(
+            "INSERT INTO skills (skill_name, category) VALUES (?, 'uncategorized')",
+            [normalizedName],
+          );
+          skillIds.push(created.insertId);
+        }
+      }
+
+      // Link to project
+      if (skillIds.length > 0) {
+        const skillValues = skillIds.map((sid) => [projectId, sid]);
+        await connection.query(
+          `
+          INSERT INTO project_skills (project_id, skill_id)
+          VALUES ?
+          `,
+          [skillValues],
+        );
+
+        // 4. Emit Signals for Owner
+        const signalValues = skillIds.map((sid) => [
+          ownerId,
+          sid,
+          "project",
+          projectId,
+          "joined",
+          1, // Weight for creating a project
+        ]);
+
+        await connection.query(
+          `
+          INSERT INTO user_skill_signals
+            (user_id, skill_id, source_type, source_id, signal_type, weight)
+          VALUES ?
+          `,
+          [signalValues],
+        );
+      }
+    }
+
+    await connection.commit();
+
     res.status(201).json({
-      id: result.insertId,
+      id: projectId,
       title,
       status: "planned",
     });
   } catch (err) {
+    await connection.rollback();
     console.error("Error creating project:", err);
     res.status(500).json({ error: "Failed to create project" });
+  } finally {
+    connection.release();
   }
 };
 
@@ -105,7 +183,7 @@ export const attachProjectSkills = async (req, res) => {
       INSERT IGNORE INTO project_skills (project_id, skill_id)
       VALUES ?
       `,
-      [values]
+      [values],
     );
 
     res.status(201).json({ message: "Skills attached to project" });
@@ -135,7 +213,7 @@ export const addProjectMember = async (req, res) => {
       INSERT IGNORE INTO project_members (project_id, user_id)
       VALUES (?, ?)
       `,
-      [projectId, user_id]
+      [projectId, user_id],
     );
 
     // Fetch skills tied to this project
@@ -145,7 +223,7 @@ export const addProjectMember = async (req, res) => {
       FROM project_skills
       WHERE project_id = ?
       `,
-      [projectId]
+      [projectId],
     );
 
     // Insert skill signals (append-only)
@@ -165,7 +243,7 @@ export const addProjectMember = async (req, res) => {
           (user_id, skill_id, source_type, source_id, signal_type, weight)
         VALUES ?
         `,
-        [signalValues]
+        [signalValues],
       );
     }
 
@@ -193,7 +271,7 @@ export const removeProjectMember = async (req, res) => {
   try {
     const [result] = await pool.query(
       `DELETE FROM project_members WHERE project_id = ? AND user_id = ?`,
-      [projectId, user_id]
+      [projectId, user_id],
     );
 
     if (result.affectedRows === 0) {
@@ -223,7 +301,7 @@ export const updateProjectStatus = async (req, res) => {
   try {
     const [result] = await pool.query(
       `UPDATE projects SET status = ? WHERE id = ?`,
-      [status, id]
+      [status, id],
     );
 
     if (result.affectedRows === 0) {

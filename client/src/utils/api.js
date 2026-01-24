@@ -88,11 +88,16 @@ export async function fetchUpdates(projectId) {
   return res.json();
 }
 
-export async function postUpdate(content, projectId, userId) {
+export async function postUpdate(content, projectId, userId, skills = []) {
   const res = await fetch(`${API_BASE}/progress_updates`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content, project_id: projectId, user_id: userId }),
+    body: JSON.stringify({
+      content,
+      project_id: projectId,
+      user_id: userId,
+      skills,
+    }),
   });
   return res.json();
 }
