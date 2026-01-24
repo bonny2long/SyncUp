@@ -1,21 +1,16 @@
 import pool from "../config/db.js";
 import { emitSkillSignals } from "../services/skillSignalService.js";
 
-const toMySQLDateTime = (value) => {
-  if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const formatDateForMySQL = (isoDate) => {
+  if (!isoDate) return null;
+  return new Date(isoDate).toISOString().slice(0, 19).replace("T", " ");
 };
 
 // Fetch all mentors
 export const getMentors = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT id, name, email, role FROM users WHERE role = 'mentor'"
+      "SELECT id, name, email, role FROM users WHERE role = 'mentor'",
     );
     res.json(rows);
   } catch (err) {
@@ -30,7 +25,7 @@ export const getMentorDetails = async (req, res) => {
   try {
     const [basicRows] = await pool.query(
       `SELECT id, name, email, role FROM users WHERE id = ? AND role = 'mentor'`,
-      [id]
+      [id],
     );
     if (basicRows.length === 0) {
       return res.status(404).json({ error: "Mentor not found" });
@@ -44,20 +39,20 @@ export const getMentorDetails = async (req, res) => {
       ORDER BY available_date ASC, available_time ASC
       LIMIT 20
       `,
-      [id]
+      [id],
     );
 
     const [sessions] = await pool.query(
       `
       SELECT 
-        COUNT(*) AS total_sessions,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_sessions,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_sessions,
-        SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) AS accepted_sessions
+        COUNT(*) as total_sessions,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_sessions,
+        SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) as accepted_sessions,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_sessions
       FROM mentorship_sessions
       WHERE mentor_id = ?
       `,
-      [id]
+      [id],
     );
 
     res.json({
@@ -87,7 +82,7 @@ export const getAvailableMentors = async (req, res) => {
       JOIN users u ON u.id = ma.mentor_id
       WHERE u.role = 'mentor'
       ORDER BY ma.available_date ASC, ma.available_time ASC
-      `
+      `,
     );
     res.json(rows);
   } catch (err) {
@@ -112,7 +107,7 @@ export const getProjectMentors = async (req, res) => {
       JOIN projects p ON pm.project_id = p.id
       WHERE u.role = 'mentor'
       GROUP BY u.id, u.name, u.email, u.role
-      `
+      `,
     );
     res.json(rows);
   } catch (err) {
@@ -136,6 +131,8 @@ export const getSessions = async (req, res) => {
         s.session_date,
         s.status,
         s.notes,
+        s.session_focus,
+        s.project_id,
         s.mentor_id,
         s.intern_id,
         m.name AS mentor,
@@ -148,7 +145,7 @@ export const getSessions = async (req, res) => {
       ${hasFilter ? "WHERE s.mentor_id = ?" : ""}
       ORDER BY s.session_date DESC
     `,
-      hasFilter ? [mentorId] : []
+      hasFilter ? [mentorId] : [],
     );
     res.json(rows);
   } catch (err) {
@@ -159,7 +156,15 @@ export const getSessions = async (req, res) => {
 
 // Create a new session
 export const createSession = async (req, res) => {
-  const { intern_id, mentor_id, topic, details, session_date } = req.body;
+  const {
+    intern_id,
+    mentor_id,
+    topic,
+    details,
+    session_date,
+    session_focus,
+    project_id,
+  } = req.body;
 
   if (!intern_id || !mentor_id || !topic || !session_date) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -169,10 +174,18 @@ export const createSession = async (req, res) => {
     const [result] = await pool.query(
       `
       INSERT INTO mentorship_sessions 
-      (intern_id, mentor_id, topic, details, session_date, status)
-      VALUES (?, ?, ?, ?, ?, 'pending')
+      (intern_id, mentor_id, topic, details, session_date, status, session_focus, project_id)
+      VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
       `,
-      [intern_id, mentor_id, topic, details, session_date]
+      [
+        intern_id,
+        mentor_id,
+        topic,
+        details,
+        formatDateForMySQL(session_date),
+        session_focus || null,
+        project_id || null,
+      ],
     );
 
     res.status(201).json({
@@ -188,7 +201,7 @@ export const createSession = async (req, res) => {
 // Update session status (accept, complete, decline, cancel)
 export const updateSessionStatus = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, skill_ids = [] } = req.body;
 
   if (!status) {
     return res.status(400).json({ error: "Status is required" });
@@ -199,14 +212,14 @@ export const updateSessionStatus = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // 1️⃣ Get current session
+    // 1️ Get current session
     const [sessions] = await connection.query(
       `
-      SELECT intern_id, mentor_id, status
+      SELECT id, intern_id, mentor_id, status, session_focus, project_id
       FROM mentorship_sessions
       WHERE id = ?
       `,
-      [id]
+      [id],
     );
 
     if (sessions.length === 0) {
@@ -215,24 +228,29 @@ export const updateSessionStatus = async (req, res) => {
 
     const session = sessions[0];
 
-    // 2️⃣ Update status
+    // 2️ Update status
     await connection.query(
       `
       UPDATE mentorship_sessions
       SET status = ?
       WHERE id = ?
       `,
-      [status, id]
+      [status, id],
     );
 
-    // 3️⃣ Generate skill signals ONLY when transitioning to completed
+    // 3️ Generate skill signals ONLY when transitioning to completed
     if (session.status !== "completed" && status === "completed") {
       await emitSkillSignals({
         userId: session.intern_id,
         sourceType: "mentorship",
-        sourceId: id,
+        sourceId: session.id,
         signalType: "completed",
-        context: { session_focus: session.session_focus },
+        context: {
+          session_focus: session.session_focus,
+          project_id: session.project_id,
+        },
+        skillIds: Array.isArray(skill_ids) ? skill_ids : [],
+        weight: 3, // mentorship carries higher intent
         connection,
       });
     }
@@ -266,7 +284,7 @@ export const updateSessionDetails = async (req, res) => {
       SET topic = ?, details = ?, session_date = ?
       WHERE id = ?
       `,
-      [topic, details || "", session_date, id]
+      [topic, details || "", formatDateForMySQL(session_date), id],
     );
 
     if (result.affectedRows === 0) {
@@ -301,7 +319,7 @@ export const rescheduleSession = async (req, res) => {
       SET session_date = ?, status = 'rescheduled'
       WHERE id = ?
       `,
-      [mysqlDate, id]
+      [mysqlDate, id],
     );
 
     if (result.affectedRows === 0) {
@@ -322,7 +340,7 @@ export const deleteSession = async (req, res) => {
   try {
     const [result] = await pool.query(
       `DELETE FROM mentorship_sessions WHERE id = ?`,
-      [id]
+      [id],
     );
 
     if (result.affectedRows === 0) {

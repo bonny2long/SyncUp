@@ -45,13 +45,13 @@ export default function SessionList({ selectedMentorId, currentUser }) {
     loadSessions();
   }, [selectedMentorId]);
 
-  const handleUpdateStatus = async (id, status) => {
+  const handleUpdateStatus = async (id, status, skill_ids = []) => {
     const previous = sessions;
     setSessions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status } : s))
+      prev.map((s) => (s.id === id ? { ...s, status } : s)),
     );
     try {
-      await updateSessionStatus(id, { status });
+      await updateSessionStatus(id, { status, skill_ids });
     } catch (err) {
       setError("Failed to update status.");
       setSessions(previous);
@@ -61,7 +61,7 @@ export default function SessionList({ selectedMentorId, currentUser }) {
   const handleUpdateDetails = async (id, updates) => {
     const previous = sessions;
     setSessions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s)),
     );
     try {
       await updateSessionDetails(id, updates);
@@ -89,8 +89,10 @@ export default function SessionList({ selectedMentorId, currentUser }) {
     const previous = sessions;
     setSessions((prev) =>
       prev.map((s) =>
-        s.id === id ? { ...s, session_date: newDate, status: "rescheduled" } : s
-      )
+        s.id === id ?
+          { ...s, session_date: newDate, status: "rescheduled" }
+        : s,
+      ),
     );
     try {
       await rescheduleSession(id, newDate);
@@ -124,16 +126,17 @@ export default function SessionList({ selectedMentorId, currentUser }) {
             key={focus}
             onClick={() => setFocusFilter(focus)}
             className={`px-3 py-1 rounded-full text-xs transition ${
-              focusFilter === focus
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              focusFilter === focus ?
+                "bg-primary text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            {focus === "all"
-              ? "All"
-              : focus
-                  .replace("_", " ")
-                  .replace(/\b\w/g, (letter) => letter.toUpperCase())}
+            {focus === "all" ?
+              "All"
+            : focus
+                .replace("_", " ")
+                .replace(/\b\w/g, (letter) => letter.toUpperCase())
+            }
           </button>
         ))}
 
@@ -152,14 +155,13 @@ export default function SessionList({ selectedMentorId, currentUser }) {
         </select>
       </div>
 
-      {filteredSessions.length === 0 ? (
+      {filteredSessions.length === 0 ?
         <p className="text-sm text-gray-500">
-          {selectedMentorId
-            ? "No sessions with this mentor yet."
-            : "No mentorship sessions found."}
+          {selectedMentorId ?
+            "No sessions with this mentor yet."
+          : "No mentorship sessions found."}
         </p>
-      ) : (
-        filteredSessions.map((session) => (
+      : filteredSessions.map((session) => (
           <SessionCard
             key={session.id}
             session={session}
@@ -171,7 +173,7 @@ export default function SessionList({ selectedMentorId, currentUser }) {
             onReschedule={handleReschedule}
           />
         ))
-      )}
+      }
     </div>
   );
 }

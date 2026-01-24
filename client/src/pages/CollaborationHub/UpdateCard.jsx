@@ -93,7 +93,7 @@ export default function UpdateCard({
       </div>
 
       {/* Content or edit textarea */}
-      {isEditing ? (
+      {isEditing ?
         <div className="flex flex-col gap-2">
           <textarea
             className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -101,9 +101,7 @@ export default function UpdateCard({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
           />
-          {localError && (
-            <p className="text-xs text-red-500">{localError}</p>
-          )}
+          {localError && <p className="text-xs text-red-500">{localError}</p>}
           <div className="flex gap-2 text-xs">
             <button
               type="button"
@@ -125,9 +123,22 @@ export default function UpdateCard({
             </button>
           </div>
         </div>
-      ) : (
-        <p className="text-gray-700">{update.content}</p>
-      )}
+      : <div className="flex flex-col gap-2">
+          <p className="text-gray-700">{update.content}</p>
+          {update.tagged_skills && update.tagged_skills.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-1">
+              {update.tagged_skills.map((skill, i) => (
+                <span
+                  key={i}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100 font-medium"
+                >
+                  +{skill}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      }
 
       <div className="flex items-center mt-2 text-xs text-gray-400 gap-3">
         <span>{new Date(update.created_at).toLocaleString()}</span>

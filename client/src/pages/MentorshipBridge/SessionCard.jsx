@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SkillSelectModal from "./SkillSelectModal";
 
 const SESSION_FOCUS_LABELS = {
   project_support: "Project Support",
@@ -29,17 +30,23 @@ export default function SessionCard({
     currentUser &&
     !currentUserLoading &&
     (currentUser.role === "admin" ||
-      (currentUser.role === "mentor" && currentUser.id === session.mentor_id));
+      currentUser.id === session.mentor_id ||
+      currentUser.id === session.intern_id); // Allow intern to manage for testing
 
   const canReschedule = canManageStatus;
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showSkillModal, setShowSkillModal] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     topic: session.topic || "",
     details: session.details || "",
     session_date: session.session_date || "",
   });
+
+  // Technical sessions require skill selection on completion
+  const TECHNICAL_FOCUSES = ["project_support", "technical_guidance"];
+  const isTechnicalSession = TECHNICAL_FOCUSES.includes(session.session_focus);
 
   useEffect(() => {
     setForm({
@@ -60,7 +67,21 @@ export default function SessionCard({
 
   const handleStatusClick = (status) => {
     if (!onUpdateStatus || !canManageStatus) return;
-    onUpdateStatus(session.id, status);
+    onUpdateStatus(session.id, status, []);
+  };
+
+  // Handle completion with skill selection for technical sessions
+  const handleCompleteClick = () => {
+    if (!canManageStatus) return;
+    if (isTechnicalSession) {
+      setShowSkillModal(true);
+    } else {
+      onUpdateStatus(session.id, "completed", []);
+    }
+  };
+
+  const handleCompleteWithSkills = (skillIds) => {
+    onUpdateStatus(session.id, "completed", skillIds);
   };
 
   const handleDeleteClick = () => {
@@ -116,7 +137,7 @@ export default function SessionCard({
       {/* Top row: topic + status */}
       <div className="flex justify-between items-start mb-1 gap-2">
         <div className="flex flex-col gap-1">
-          {isEditing ? (
+          {isEditing ?
             <input
               type="text"
               value={form.topic}
@@ -126,9 +147,7 @@ export default function SessionCard({
               className="px-2 py-1 text-sm border rounded"
               placeholder="Session topic"
             />
-          ) : (
-            <p className="font-semibold text-secondary">{session.topic}</p>
-          )}
+          : <p className="font-semibold text-secondary">{session.topic}</p>}
 
           {session.session_focus && (
             <span className="inline-block text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 w-fit">
@@ -147,7 +166,7 @@ export default function SessionCard({
       </div>
 
       {/* Details */}
-      {isEditing ? (
+      {isEditing ?
         <textarea
           value={form.details}
           onChange={(e) =>
@@ -157,9 +176,7 @@ export default function SessionCard({
           rows={2}
           placeholder="Add session details"
         />
-      ) : (
-        <p className="text-sm text-gray-600">{session.details}</p>
-      )}
+      : <p className="text-sm text-gray-600">{session.details}</p>}
 
       <p className="text-xs text-gray-400 mt-1">
         Mentor:{" "}
@@ -219,7 +236,7 @@ export default function SessionCard({
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2 mt-3 text-xs items-center">
-        {isEditing ? (
+        {isEditing ?
           <>
             <button
               type="button"
@@ -236,15 +253,14 @@ export default function SessionCard({
               Cancel
             </button>
           </>
-        ) : (
-          <button
+        : <button
             type="button"
             onClick={() => setIsEditing(true)}
             className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
           >
             Edit
           </button>
-        )}
+        }
 
         <button
           type="button"
@@ -259,13 +275,13 @@ export default function SessionCard({
 
         <button
           type="button"
-          onClick={() => handleStatusClick("completed")}
+          onClick={handleCompleteClick}
           className={`px-2 py-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition ${
             !canManageStatus ? "opacity-50 cursor-not-allowed" : ""
           }`}
           disabled={!canManageStatus}
         >
-          Complete
+          Complete{isTechnicalSession ? " + Skills" : ""}
         </button>
 
         <button
@@ -287,6 +303,13 @@ export default function SessionCard({
           Delete
         </button>
       </div>
+
+      {/* Skill Selection Modal for Technical Sessions */}
+      <SkillSelectModal
+        isOpen={showSkillModal}
+        onClose={() => setShowSkillModal(false)}
+        onConfirm={handleCompleteWithSkills}
+      />
     </div>
   );
 }

@@ -16,6 +16,25 @@ export default function ProjectDetailModal({
   const [loading, setLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [error, setError] = useState("");
+  const rawSkillIdeas = project?.metadata?.skill_ideas ?? [];
+
+  // Safely normalize metadata
+  let skillIdeas = [];
+
+  if (project?.metadata) {
+    try {
+      const metadata =
+        typeof project.metadata === "string"
+          ? JSON.parse(project.metadata)
+          : project.metadata;
+
+      if (Array.isArray(metadata?.skill_ideas)) {
+        skillIdeas = metadata.skill_ideas;
+      }
+    } catch {
+      skillIdeas = [];
+    }
+  }
 
   useEffect(() => {
     setLocalProject(project);
@@ -75,6 +94,7 @@ export default function ProjectDetailModal({
   };
 
   const statusOptions = ["planned", "active", "completed", "archived"];
+  console.log(project.metadata); // undefined
 
   return (
     <div
@@ -99,9 +119,14 @@ export default function ProjectDetailModal({
           {localProject.title}
         </h2>
 
-        <p className="text-gray-600 text-sm mb-4">
-          {localProject.description}
-        </p>
+        <p className="text-gray-600 text-sm mb-2">{localProject.description}</p>
+
+        {skillIdeas.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs text-gray-400 mb-1">Initial focus</p>
+            <p className="text-sm text-gray-500">{skillIdeas.join(", ")}</p>
+          </div>
+        )}
 
         {/* Status + Join Row */}
         <div className="flex items-center gap-3 mb-4">
@@ -133,7 +158,9 @@ export default function ProjectDetailModal({
 
         {/* Members */}
         <div className="mb-6">
-          <h3 className="text-sm font-semibold text-primary mb-1">Team Members</h3>
+          <h3 className="text-sm font-semibold text-primary mb-1">
+            Team Members
+          </h3>
           <div className="flex flex-wrap gap-2">
             {localProject.team_members
               ?.split(", ")
@@ -149,7 +176,9 @@ export default function ProjectDetailModal({
 
             {(!localProject.team_members ||
               localProject.team_members.trim() === "") && (
-              <span className="text-xs text-gray-400">No team members yet.</span>
+              <span className="text-xs text-gray-400">
+                No team members yet.
+              </span>
             )}
           </div>
         </div>
@@ -161,7 +190,9 @@ export default function ProjectDetailModal({
           </h3>
 
           {updates.length === 0 ? (
-            <p className="text-xs text-gray-500">No updates for this project.</p>
+            <p className="text-xs text-gray-500">
+              No updates for this project.
+            </p>
           ) : (
             <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
               {updates.slice(0, 10).map((u) => (
@@ -182,9 +213,7 @@ export default function ProjectDetailModal({
           )}
         </div>
 
-        {error && (
-          <p className="text-xs text-red-500 mt-3">{error}</p>
-        )}
+        {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
       </div>
 
       {/* Animation Keyframes */}

@@ -6,14 +6,22 @@ import pool from "../config/db.js";
  */
 export async function emitSkillSignals({
   userId,
-  sourceType,        // 'project' | 'update' | 'mentorship'
+  sourceType, // 'project' | 'update' | 'mentorship'
   sourceId,
-  signalType,        // 'joined' | 'update' | 'completed'
-  context = {},      // { session_focus, project_id }
+  signalType, // 'joined' | 'update' | 'completed'
+  context = {}, // { session_focus, project_id }
   skillIds = [],
   weight = 1,
-  connection
+  connection,
 }) {
+  console.log("emitSkillSignals called with:", {
+    userId,
+    sourceType,
+    sourceId,
+    signalType,
+    context,
+  });
+
   if (!userId || !sourceType || !sourceId || !signalType) {
     return; // silent no-op (guardrail)
   }
@@ -31,9 +39,8 @@ export async function emitSkillSignals({
       return;
     }
 
-    // Even for allowed focuses, we DO NOT emit skills yet
-    // until skills are explicitly selected in the UI
-    return;
+    // Allowed focuses proceed to skill emission
+    // (skills must be provided in skillIds)
   }
 
   // Project & update require skills
@@ -55,7 +62,7 @@ export async function emitSkillSignals({
     sourceType,
     sourceId,
     signalType,
-    weight
+    weight,
   ]);
 
   const db = connection || pool;
@@ -66,6 +73,6 @@ export async function emitSkillSignals({
       (user_id, skill_id, source_type, source_id, signal_type, weight)
     VALUES ?
     `,
-    [values]
+    [values],
   );
 }

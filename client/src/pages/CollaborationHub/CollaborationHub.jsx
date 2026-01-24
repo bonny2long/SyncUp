@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import CreateProjectForm from "./CreateProjectForm";
 import ProjectList from "./ProjectList";
 import ProgressFeed from "./ProgressFeed";
 import {
@@ -19,39 +20,43 @@ export default function CollaborationHub() {
   const [weeklyUpdates, setWeeklyUpdates] = useState([]);
   const [mentorEngagement, setMentorEngagement] = useState([]);
 
-  useEffect(() => {
-    async function loadMetrics() {
-      setMetricsError("");
-      try {
-        const [projectsData, updatesData] = await Promise.all([
-          fetchProjects(),
-          fetchUpdates(),
-        ]);
-        setProjects(projectsData);
-        setUpdates(updatesData);
+  const loadProjects = useCallback(async () => {
+    console.log("🔄 Reloading projects from DB");
+    setMetricsError("");
+    setLoadingMetrics(true);
+    try {
+      const [projectsData, updatesData] = await Promise.all([
+        fetchProjects(),
+        fetchUpdates(),
+      ]);
+      setProjects(projectsData);
+      setUpdates(updatesData);
+      console.log("Projects from DB:", projectsData);
 
-        try {
-          const [activeProjectsData, weeklyUpdatesData, mentorEngagementData] =
-            await Promise.all([
-              fetchActiveProjectsAnalytics(),
-              fetchWeeklyUpdatesAnalytics(),
-              fetchMentorEngagementAnalytics(),
-            ]);
-          setActiveProjectsCount(activeProjectsData.active_projects || 0);
-          setWeeklyUpdates(weeklyUpdatesData || []);
-          setMentorEngagement(mentorEngagementData || []);
-        } catch (analyticsErr) {
-          console.warn("Analytics fetch failed", analyticsErr);
-        }
-      } catch (err) {
-        console.error("Error loading metrics:", err);
-        setMetricsError("Unable to load metrics right now.");
-      } finally {
-        setLoadingMetrics(false);
+      try {
+        const [activeProjectsData, weeklyUpdatesData, mentorEngagementData] =
+          await Promise.all([
+            fetchActiveProjectsAnalytics(),
+            fetchWeeklyUpdatesAnalytics(),
+            fetchMentorEngagementAnalytics(),
+          ]);
+        setActiveProjectsCount(activeProjectsData.active_projects || 0);
+        setWeeklyUpdates(weeklyUpdatesData || []);
+        setMentorEngagement(mentorEngagementData || []);
+      } catch (analyticsErr) {
+        console.warn("Analytics fetch failed", analyticsErr);
       }
+    } catch (err) {
+      console.error("Error loading metrics:", err);
+      setMetricsError("Unable to load metrics right now.");
+    } finally {
+      setLoadingMetrics(false);
     }
-    loadMetrics();
   }, []);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   const activeProjects = projects.filter((p) => p.status === "active").length;
   const updatesThisWeek = updates.filter((u) => {
@@ -68,6 +73,8 @@ export default function CollaborationHub() {
 
   return (
     <section className="flex flex-col gap-4">
+      <CreateProjectForm onCreated={loadProjects} />
+
       {/* Metrics Panel */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
         {loadingMetrics ? (
@@ -116,9 +123,7 @@ export default function CollaborationHub() {
           </>
         )}
       </div>
-      {metricsError && (
-        <p className="text-xs text-red-500">{metricsError}</p>
-      )}
+      {metricsError && <p className="text-xs text-red-500">{metricsError}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.6fr] gap-4">
         {/* LEFT SIDE - PROJECTS */}

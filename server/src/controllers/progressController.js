@@ -15,7 +15,7 @@ async function ensureSoftDeleteSupport() {
       WHERE TABLE_NAME = 'progress_updates'
         AND COLUMN_NAME = 'is_deleted'
       LIMIT 1;
-      `
+      `,
     );
     hasSoftDeleteColumn = rows.length > 0;
   } catch (err) {
@@ -53,7 +53,14 @@ export const getProgressUpdates = async (req, res) => {
         u.name AS user_name, 
         u.role AS user_role,
         pr.title AS project_title, 
-        p.created_at
+        p.created_at,
+        (
+          SELECT JSON_ARRAYAGG(s.skill_name)
+          FROM user_skill_signals uss
+          JOIN skills s ON uss.skill_id = s.id
+          WHERE uss.source_type = 'update' 
+            AND uss.source_id = p.id
+        ) AS tagged_skills
       FROM progress_updates p
       JOIN users u ON p.user_id = u.id
       JOIN projects pr ON p.project_id = pr.id
@@ -61,7 +68,7 @@ export const getProgressUpdates = async (req, res) => {
       ORDER BY p.created_at DESC
       LIMIT 50
     `,
-      params
+      params,
     );
     res.json(rows);
   } catch (err) {
@@ -93,31 +100,59 @@ export const createProgressUpdate = async (req, res) => {
       })
       VALUES (?, ?, ?, NOW()${softDelete ? ", 0" : ""})
       `,
-      [project_id, user_id, content]
+      [project_id, user_id, content],
     );
 
     const updateId = result.insertId;
 
-    // 2️ Fetch project skills
-    const [skills] = await connection.query(
-      `
-      SELECT skill_id
-      FROM project_skills
-      WHERE project_id = ?
-      `,
-      [project_id]
-    );
+    // 2. Process Skills (Find or Create)
+    // We accept explicit skills from the request body now
+    const { skills: inputSkills = [] } = req.body;
+    let skillIdsToSignal = [];
 
-    // 3️ Insert skill signals (append-only)
-    await emitSkillSignals({
-      userId: user_id,
-      sourceType: "update",
-      sourceId: updateId,
-      signalType: "update",
-      skillIds: skills.map((s) => s.skill_id),
-      weight: 1,
-      connection,
-    });
+    if (Array.isArray(inputSkills) && inputSkills.length > 0) {
+      for (const skillName of inputSkills) {
+        const normalizedName = skillName.trim().toLowerCase();
+        if (!normalizedName) continue;
+
+        // Check if exists
+        const [existing] = await connection.query(
+          "SELECT id FROM skills WHERE skill_name = ?",
+          [normalizedName],
+        );
+
+        if (existing.length > 0) {
+          skillIdsToSignal.push(existing[0].id);
+        } else {
+          // Create new
+          const [created] = await connection.query(
+            "INSERT INTO skills (skill_name, category) VALUES (?, 'uncategorized')",
+            [normalizedName],
+          );
+          skillIdsToSignal.push(created.insertId);
+        }
+      }
+    } else {
+      // Fallback: If no explicit skills, use project skills (Legacy behavior)
+      const [projectSkills] = await connection.query(
+        `SELECT skill_id FROM project_skills WHERE project_id = ?`,
+        [project_id],
+      );
+      skillIdsToSignal = projectSkills.map((s) => s.skill_id);
+    }
+
+    // 3. Emit Signals
+    if (skillIdsToSignal.length > 0) {
+      await emitSkillSignals({
+        userId: user_id,
+        sourceType: "update",
+        sourceId: updateId,
+        signalType: "update",
+        skillIds: skillIdsToSignal,
+        weight: 1, // lowered to 1 for "Building Trust" phase
+        connection,
+      });
+    }
 
     // 4️ Return full update row (existing behavior)
     const [rows] = await connection.query(
@@ -136,7 +171,7 @@ export const createProgressUpdate = async (req, res) => {
       JOIN projects pr ON p.project_id = pr.id
       WHERE p.id = ?
       `,
-      [updateId]
+      [updateId],
     );
 
     await connection.commit();
@@ -167,7 +202,7 @@ export const updateProgressUpdate = async (req, res) => {
       SET content = ?
       WHERE id = ?
       `,
-      [content, id]
+      [content, id],
     );
 
     if (result.affectedRows === 0) {
@@ -191,7 +226,7 @@ export const updateProgressUpdate = async (req, res) => {
       JOIN projects pr ON p.project_id = pr.id
       WHERE p.id = ?
       `,
-      [id]
+      [id],
     );
 
     res.json(rows[0]);
@@ -210,7 +245,7 @@ export const deleteProgressUpdate = async (req, res) => {
     if (softDelete) {
       const [result] = await pool.query(
         `UPDATE progress_updates SET is_deleted = 1 WHERE id = ?`,
-        [id]
+        [id],
       );
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: "Update not found" });
@@ -219,7 +254,7 @@ export const deleteProgressUpdate = async (req, res) => {
     } else {
       const [result] = await pool.query(
         `DELETE FROM progress_updates WHERE id = ?`,
-        [id]
+        [id],
       );
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: "Update not found" });
@@ -248,7 +283,7 @@ export const getUpdatesByProject = async (req, res) => {
       WHERE p.project_id = ?
       ORDER BY p.created_at DESC
       LIMIT 20`,
-      [projectId]
+      [projectId],
     );
     res.json(rows);
   } catch (err) {

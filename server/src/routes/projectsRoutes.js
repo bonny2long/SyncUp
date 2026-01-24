@@ -4,12 +4,20 @@ import {
   addProjectMember,
   removeProjectMember,
   updateProjectStatus,
+  createProject,
+  attachProjectSkills,
 } from "../controllers/projectsController.js";
 
 const router = express.Router();
 
 // GET /api/projects
 router.get("/", getProjects);
+
+// POST /api/projects
+router.post("/", createProject);
+
+// POST /api/projects/:id/skills
+router.post("/:id/skills", attachProjectSkills);
 
 // POST /api/projects/:projectId/members
 router.post("/:projectId/members", addProjectMember);

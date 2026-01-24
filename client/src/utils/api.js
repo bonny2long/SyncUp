@@ -1,14 +1,14 @@
 // src/utils/api.js
 // Allow overriding the API base via Vite env (VITE_API_BASE); fallback to local dev server.
-export const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+export const API_BASE =
+  import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 // ----------------------------------------------------
 // PROJECTS
 // ----------------------------------------------------
 export async function fetchProjects(userId) {
-  const url = userId
-    ? `${API_BASE}/projects?user_id=${userId}`
-    : `${API_BASE}/projects`;
+  const url =
+    userId ? `${API_BASE}/projects?user_id=${userId}` : `${API_BASE}/projects`;
   const res = await fetch(url);
   return res.json();
 }
@@ -80,18 +80,24 @@ export async function fetchUsers() {
 // PROGRESS UPDATES (Collaboration Hub)
 // ----------------------------------------------------
 export async function fetchUpdates(projectId) {
-  const url = projectId
-    ? `${API_BASE}/progress_updates?project_id=${projectId}`
+  const url =
+    projectId ?
+      `${API_BASE}/progress_updates?project_id=${projectId}`
     : `${API_BASE}/progress_updates`;
   const res = await fetch(url);
   return res.json();
 }
 
-export async function postUpdate(content, projectId, userId) {
+export async function postUpdate(content, projectId, userId, skills = []) {
   const res = await fetch(`${API_BASE}/progress_updates`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content, project_id: projectId, user_id: userId }),
+    body: JSON.stringify({
+      content,
+      project_id: projectId,
+      user_id: userId,
+      skills,
+    }),
   });
   return res.json();
 }
@@ -100,8 +106,9 @@ export async function postUpdate(content, projectId, userId) {
 // MENTORSHIP - GET SESSIONS (optional mentor filter)
 // ----------------------------------------------------
 export async function fetchSessions(mentorId) {
-  const url = mentorId
-    ? `${API_BASE}/mentorship/sessions?mentor_id=${mentorId}`
+  const url =
+    mentorId ?
+      `${API_BASE}/mentorship/sessions?mentor_id=${mentorId}`
     : `${API_BASE}/mentorship/sessions`;
 
   const res = await fetch(url);
@@ -152,11 +159,11 @@ export async function fetchProjectMentors() {
 // ----------------------------------------------------
 // MENTORSHIP - UPDATE SESSION STATUS (PUT)
 // ----------------------------------------------------
-export async function updateSessionStatus(id, updates) {
+export async function updateSessionStatus(id, { status, skill_ids = [] }) {
   const res = await fetch(`${API_BASE}/mentorship/sessions/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(updates), // { status, notes }
+    body: JSON.stringify({ status, skill_ids }),
   });
 
   if (!res.ok) throw new Error("Failed to update session status");
@@ -228,25 +235,66 @@ export async function deleteProgressUpdate(id) {
 // SKILL TRACKER
 // ----------------------------------------------------
 export const getSkillDistribution = async (userId) => {
-  const res = await fetch(
-    `${API_BASE}/skills/user/${userId}/distribution`
-  );
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/distribution`);
   if (!res.ok) throw new Error("Failed to load skill distribution");
   return res.json();
 };
 
 export const getSkillMomentum = async (userId) => {
-  const res = await fetch(
-    `${API_BASE}/skills/user/${userId}/momentum`
-  );
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/momentum`);
   if (!res.ok) throw new Error("Failed to load skill momentum");
   return res.json();
 };
 
 export const getSkillActivity = async (userId) => {
-  const res = await fetch(
-    `${API_BASE}/skills/user/${userId}/activity`
-  );
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/activity`);
   if (!res.ok) throw new Error("Failed to load skill activity");
   return res.json();
 };
+
+// ----------------------------------------------------
+// CREATE PROJECT
+// ----------------------------------------------------
+export async function createProject(data) {
+  const res = await fetch("/api/projects", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Failed to create project");
+  return res.json();
+}
+
+// ----------------------------------------------------
+// ATTACH PROJECT SKILLS
+// ----------------------------------------------------
+export async function attachProjectSkills(projectId, skillIds) {
+  const res = await fetch(`/api/projects/${projectId}/skills`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ skill_ids: skillIds }),
+  });
+
+  if (!res.ok) throw new Error("Failed to attach project skills");
+}
+
+// ----------------------------------------------------
+// FETCH SKILLS
+// ----------------------------------------------------
+export async function fetchSkills() {
+  const res = await fetch("/api/skills");
+  if (!res.ok) {
+    throw new Error("Failed to fetch skills");
+  }
+  return res.json();
+}
+
+// ----------------------------------------------------
+// GET SKILL SUMMARY
+// ----------------------------------------------------
+export async function getSkillSummary(userId) {
+  const res = await fetch(`/api/skills/user/${userId}/summary`);
+  if (!res.ok) throw new Error("Failed to fetch skill summary");
+  return res.json();
+}

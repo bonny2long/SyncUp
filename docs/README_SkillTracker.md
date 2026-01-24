@@ -1,3 +1,5 @@
+Original location: /client/src/components/SkillTracker/README.md
+
 # Skill Tracker (MVP)
 
 The Skill Tracker is a read-only analytics layer designed to make intern growth visible, explainable, and grounded in real work.

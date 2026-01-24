@@ -1,3 +1,5 @@
+Original location: /server/README.md
+
 # SyncUp Backend
 
 Backend API for the SyncUp platform, powered by Node.js and Express with a MySQL database.
