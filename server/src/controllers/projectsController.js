@@ -337,3 +337,177 @@ export const getProjectSkills = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch project skills" });
   }
 };
+
+// GET /api/projects/user/:userId
+// Fetch all projects for a user (as owner) with metrics
+export const getUserProjects = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const [projects] = await pool.query(
+      `
+      SELECT 
+        p.id,
+        p.title,
+        p.description,
+        p.owner_id,
+        p.start_date,
+        p.end_date,
+        p.status,
+        p.metadata,
+        u.name as owner_name,
+        COUNT(DISTINCT pm.user_id) as team_size,
+        COUNT(DISTINCT ps.skill_id) as skill_count,
+        COUNT(DISTINCT pu.id) as update_count,
+        COUNT(DISTINCT ms.id) as mentorship_count
+      FROM projects p
+      LEFT JOIN users u ON p.owner_id = u.id
+      LEFT JOIN project_members pm ON p.id = pm.project_id
+      LEFT JOIN project_skills ps ON p.id = ps.project_id
+      LEFT JOIN progress_updates pu ON p.id = pu.project_id AND pu.is_deleted = 0
+      LEFT JOIN mentorship_sessions ms ON p.id = ms.project_id AND ms.status = 'completed'
+      WHERE p.owner_id = ?
+      GROUP BY p.id, p.title, p.description, p.owner_id, p.start_date, p.end_date, p.status, p.metadata, u.name
+      ORDER BY p.start_date DESC
+      `,
+      [userId],
+    );
+
+    res.json(projects);
+  } catch (err) {
+    console.error("Error fetching user projects:", err);
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+};
+
+// GET /api/projects/:projectId/portfolio-details
+// Fetch detailed portfolio information for a project
+export const getProjectPortfolioDetails = async (req, res) => {
+  const { projectId } = req.params;
+
+  try {
+    // Get basic project info
+    const [projects] = await pool.query(`SELECT * FROM projects WHERE id = ?`, [
+      projectId,
+    ]);
+
+    if (projects.length === 0) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    const project = projects[0];
+
+    // Get team members
+    const [team] = await pool.query(
+      `
+      SELECT u.id, u.name, u.role
+      FROM project_members pm
+      JOIN users u ON pm.user_id = u.id
+      WHERE pm.project_id = ?
+      `,
+      [projectId],
+    );
+
+    // Get skills
+    const [skills] = await pool.query(
+      `
+      SELECT s.id, s.skill_name, s.category
+      FROM project_skills ps
+      JOIN skills s ON ps.skill_id = s.id
+      WHERE ps.project_id = ?
+      ORDER BY s.skill_name ASC
+      `,
+      [projectId],
+    );
+
+    // Get signal metrics per skill
+    const [skillMetrics] = await pool.query(
+      `
+      SELECT 
+        s.skill_name,
+        s.id as skill_id,
+        COUNT(uss.id) as signal_count,
+        SUM(uss.weight) as total_weight,
+        uss.source_type,
+        COUNT(CASE WHEN uss.source_type = 'mentorship' THEN 1 END) as mentorship_count
+      FROM project_skills ps
+      JOIN skills s ON ps.skill_id = s.id
+      LEFT JOIN user_skill_signals uss ON s.id = uss.skill_id AND uss.source_type IN ('project', 'update', 'mentorship')
+      WHERE ps.project_id = ?
+      GROUP BY s.skill_name, s.id, uss.source_type
+      ORDER BY s.skill_name ASC
+      `,
+      [projectId],
+    );
+
+    // Get recent updates
+    const [updates] = await pool.query(
+      `
+      SELECT id, content, created_at, user_id
+      FROM progress_updates
+      WHERE project_id = ? AND is_deleted = 0
+      ORDER BY created_at DESC
+      LIMIT 10
+      `,
+      [projectId],
+    );
+
+    // Get mentorship sessions
+    const [sessions] = await pool.query(
+      `
+      SELECT id, topic, session_date, status, mentor_id, intern_id
+      FROM mentorship_sessions
+      WHERE project_id = ? AND status = 'completed'
+      ORDER BY session_date DESC
+      LIMIT 5
+      `,
+      [projectId],
+    );
+
+    res.json({
+      project,
+      team,
+      skills,
+      skillMetrics,
+      updates,
+      sessions,
+    });
+  } catch (err) {
+    console.error("Error fetching project details:", err);
+    res.status(500).json({ error: "Failed to fetch project details" });
+  }
+};
+
+// GET /api/projects/:projectId/metrics
+// Get aggregated metrics for a project
+export const getProjectMetrics = async (req, res) => {
+  const { projectId } = req.params;
+
+  try {
+    const [metrics] = await pool.query(
+      `
+      SELECT 
+        COUNT(DISTINCT pm.user_id) as team_size,
+        COUNT(DISTINCT ps.skill_id) as skill_count,
+        COUNT(DISTINCT pu.id) as update_count,
+        COUNT(DISTINCT ms.id) as completed_sessions,
+        SUM(CASE WHEN uss.source_type = 'mentorship' THEN uss.weight ELSE 0 END) as mentorship_weight,
+        SUM(CASE WHEN uss.source_type = 'update' THEN uss.weight ELSE 0 END) as update_weight,
+        SUM(CASE WHEN uss.source_type = 'project' THEN uss.weight ELSE 0 END) as project_weight
+      FROM projects p
+      LEFT JOIN project_members pm ON p.id = pm.project_id
+      LEFT JOIN project_skills ps ON p.id = ps.project_id
+      LEFT JOIN progress_updates pu ON p.id = pu.project_id AND pu.is_deleted = 0
+      LEFT JOIN mentorship_sessions ms ON p.id = ms.project_id AND ms.status = 'completed'
+      LEFT JOIN user_skill_signals uss ON p.id = uss.source_id AND uss.source_type IN ('project', 'update', 'mentorship')
+      WHERE p.id = ?
+      `,
+      [projectId],
+    );
+
+    res.json(metrics[0] || {});
+  } catch (err) {
+    console.error("Error fetching project metrics:", err);
+    res.status(500).json({ error: "Failed to fetch metrics" });
+  }
+};

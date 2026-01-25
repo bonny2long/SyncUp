@@ -7,6 +7,9 @@ import {
   createProject,
   attachProjectSkills,
   getProjectSkills,
+  getUserProjects,
+  getProjectPortfolioDetails,
+  getProjectMetrics,
 } from "../controllers/projectsController.js";
 
 const router = express.Router();
@@ -31,5 +34,14 @@ router.put("/:id/status", updateProjectStatus);
 
 // GET /api/projects/:id/skills
 router.get("/:id/skills", getProjectSkills);
+
+// GET /api/projects/user/:userId
+router.get("/user/:userId", getUserProjects);
+
+// GET /api/projects/:projectId/portfolio-details
+router.get(":projectId/portfolio-details", getProjectPortfolioDetails);
+
+// GET /api/projects/:projectId/metrics
+router.get(":projectId/metrics", getProjectMetrics);
 
 export default router;
