@@ -19,7 +19,7 @@ export default function SkillSummaryCard() {
   const { user } = useUser();
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
-  -useEffect(() => {
+  useEffect(() => {
     if (!user?.id) return;
 
     getSkillSummary(user.id)

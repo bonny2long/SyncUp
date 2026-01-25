@@ -3,14 +3,17 @@ import { AgCharts } from "ag-charts-react";
 import { getSkillDistribution } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 
+// Updated to match SkillMomentum colors with lowercase keys
 const SKILL_COLORS = {
-  React: "#4f46e5",
-  "Node.js": "#16a34a",
-  SQL: "#dc2626",
-  "API Design": "#ea580c",
-  "System Design": "#0f766e",
-  Communication: "#7c3aed",
-  Debugging: "#0891b2",
+  react: "#4f46e5",
+  "node.js": "#16a34a",
+  sql: "#dc2626",
+  "api design": "#ea580c",
+  "system design": "#0f766e",
+  communication: "#7c3aed",
+  debugging: "#0891b2",
+  python: "#f59e0b",
+  git: "#10b981",
 };
 
 export default function SkillDistributionChart() {
@@ -35,35 +38,36 @@ export default function SkillDistributionChart() {
     }
 
     const sorted = [...data].sort((a, b) => a.skill.localeCompare(b.skill));
-
     const totalSignals = sorted.reduce((sum, s) => sum + s.total, 0);
 
     const topEntry = sorted.reduce(
       (best, s) => (!best || s.total > best.total ? s : best),
-      null
+      null,
     );
 
     const insight =
-      topEntry && totalSignals > 0
-        ? topEntry.total / totalSignals > 0.25
-          ? `${topEntry.skill} represents ${Math.round(
-              (topEntry.total / totalSignals) * 100
-            )}% of recent activity.`
-          : "Your activity is evenly distributed across skills."
-        : null;
+      topEntry && totalSignals > 0 ?
+        topEntry.total / totalSignals > 0.25 ?
+          `${topEntry.skill} represents ${Math.round(
+            (topEntry.total / totalSignals) * 100,
+          )}% of recent activity.`
+        : "Your activity is evenly distributed across skills."
+      : null;
 
     return { sortedData: sorted, insight };
   }, [data]);
 
   if (loading) {
     return (
-      <p className="text-sm text-gray-500">Loading skill distribution...</p>
+      <p className="text-sm text-gray-500 text-center py-12">
+        Loading skill distribution...
+      </p>
     );
   }
 
   if (!sortedData.length) {
     return (
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-gray-500 text-center py-12">
         No activity yet. This updates automatically as you work.
       </p>
     );
@@ -78,8 +82,9 @@ export default function SkillDistributionChart() {
         xKey: "skill",
         yKey: "total",
         cornerRadius: 4,
+        // Match logic from Momentum chart: lookup lowercase skill name
         itemStyler: ({ datum }) => ({
-          fill: SKILL_COLORS[datum.skill] || "#64748b",
+          fill: SKILL_COLORS[datum.skill.toLowerCase()] || "#64748b",
         }),
         tooltip: {
           renderer: ({ datum }) => ({
@@ -89,11 +94,11 @@ export default function SkillDistributionChart() {
         },
       },
     ],
-
     axes: {
       number: {
         position: "bottom",
         nice: true,
+        label: { fontSize: 11 },
       },
       category: {
         position: "left",

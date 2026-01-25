@@ -96,7 +96,7 @@ export async function postUpdate(content, projectId, userId, skills = []) {
       content,
       project_id: projectId,
       user_id: userId,
-      skills,
+      skills, // ✅ Already set up correctly!
     }),
   });
   return res.json();
@@ -256,7 +256,7 @@ export const getSkillActivity = async (userId) => {
 // CREATE PROJECT
 // ----------------------------------------------------
 export async function createProject(data) {
-  const res = await fetch("/api/projects", {
+  const res = await fetch(`${API_BASE}/projects`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -270,7 +270,7 @@ export async function createProject(data) {
 // ATTACH PROJECT SKILLS
 // ----------------------------------------------------
 export async function attachProjectSkills(projectId, skillIds) {
-  const res = await fetch(`/api/projects/${projectId}/skills`, {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/skills`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ skill_ids: skillIds }),
@@ -283,7 +283,7 @@ export async function attachProjectSkills(projectId, skillIds) {
 // FETCH SKILLS
 // ----------------------------------------------------
 export async function fetchSkills() {
-  const res = await fetch("/api/skills");
+  const res = await fetch(`${API_BASE}/skills`);
   if (!res.ok) {
     throw new Error("Failed to fetch skills");
   }
@@ -294,7 +294,7 @@ export async function fetchSkills() {
 // GET SKILL SUMMARY
 // ----------------------------------------------------
 export async function getSkillSummary(userId) {
-  const res = await fetch(`/api/skills/user/${userId}/summary`);
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/summary`);
   if (!res.ok) throw new Error("Failed to fetch skill summary");
   return res.json();
 }
