@@ -3,9 +3,14 @@ import {
   fetchUpdates,
   updateProgressUpdate,
   deleteProgressUpdate,
+  fetchSkills,
 } from "../../utils/api";
+import SkillMultiSelect from "../../components/shared/SkillMultiSelect";
+
 import AddUpdateForm from "./AddUpdateForm";
 import UpdateCard from "./UpdateCard";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 export default function ProgressFeed({
   selectedProjectId,
@@ -15,6 +20,55 @@ export default function ProgressFeed({
   const [updates, setUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [allSkills, setAllSkills] = useState([]);
+  const [selectedSkills, setSelectedSkills] = useState([]);
+  const [projectSkills, setProjectSkills] = useState([]);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+
+  // Load all skills once when component mounts
+  useEffect(() => {
+    async function loadSkills() {
+      try {
+        setLoadingSkills(true);
+        const skills = await fetchSkills();
+        setAllSkills(skills);
+      } catch (err) {
+        console.error("Failed to load skills:", err);
+      } finally {
+        setLoadingSkills(false);
+      }
+    }
+
+    loadSkills();
+  }, []);
+
+  // Load project-specific skills when project is selected
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setProjectSkills([]);
+      return;
+    }
+
+    async function loadProjectSkills() {
+      try {
+        const response = await fetch(
+          `${API_BASE}/projects/${selectedProjectId}/skills`,
+        );
+        if (!response.ok) throw new Error("Failed to fetch project skills");
+        const data = await response.json();
+
+        // Convert skill objects to lowercase names for matching
+        const skillNames = data.map((s) => s.skill_name.toLowerCase());
+        setProjectSkills(skillNames);
+      } catch (err) {
+        console.error("Failed to load project skills:", err);
+        setProjectSkills([]);
+      }
+    }
+
+    loadProjectSkills();
+  }, [selectedProjectId]);
 
   async function loadUpdates() {
     setLoading(true);
@@ -41,13 +95,13 @@ export default function ProgressFeed({
   const handleEdit = async (id, content) => {
     const previous = updates;
     setUpdates((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, content } : u))
+      prev.map((u) => (u.id === id ? { ...u, content } : u)),
     );
     try {
       const updated = await updateProgressUpdate(id, content);
       if (updated) {
         setUpdates((prev) =>
-          prev.map((u) => (u.id === id ? { ...u, ...updated } : u))
+          prev.map((u) => (u.id === id ? { ...u, ...updated } : u)),
         );
       }
     } catch (err) {
@@ -74,6 +128,9 @@ export default function ProgressFeed({
       <AddUpdateForm
         onNewUpdate={handleNewUpdate}
         selectedProjectId={selectedProjectId}
+        allSkills={allSkills}
+        projectSkills={projectSkills}
+        loadingSkills={loadingSkills}
       />
 
       {selectedProjectId && (
@@ -91,7 +148,7 @@ export default function ProgressFeed({
 
       {error && <p className="text-xs text-red-500">{error}</p>}
 
-      {loading ? (
+      {loading ?
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
             <div
@@ -100,10 +157,9 @@ export default function ProgressFeed({
             />
           ))}
         </div>
-      ) : updates.length === 0 ? (
+      : updates.length === 0 ?
         <p className="text-gray-500 text-sm">No updates yet...</p>
-      ) : (
-        <div className="flex flex-col gap-3">
+      : <div className="flex flex-col gap-3">
           {updates.map((update) => (
             <UpdateCard
               key={update.id}
@@ -118,7 +174,7 @@ export default function ProgressFeed({
             />
           ))}
         </div>
-      )}
+      }
     </div>
   );
 }

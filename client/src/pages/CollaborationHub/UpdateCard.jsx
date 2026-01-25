@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+import { getCategoryColor } from "../../components/shared/SkillMultiSelect";
+
 export default function UpdateCard({
   update,
   onEdit,
@@ -125,16 +127,26 @@ export default function UpdateCard({
         </div>
       : <div className="flex flex-col gap-2">
           <p className="text-gray-700">{update.content}</p>
+
+          {/* Enhanced skill chips with color coding */}
           {update.tagged_skills && update.tagged_skills.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-1">
-              {update.tagged_skills.map((skill, i) => (
-                <span
-                  key={i}
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100 font-medium"
-                >
-                  +{skill}
-                </span>
-              ))}
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {update.tagged_skills.map((skill, i) => {
+                // Try to determine category (you can enhance this by passing skill metadata)
+                // For now, we'll use a simple heuristic or default color
+                const category = "technical"; // Default, could be enhanced
+                const colorClass = getCategoryColor(category);
+
+                return (
+                  <span
+                    key={i}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}
+                    title={`Skill: ${skill}`}
+                  >
+                    <span className="capitalize">{skill}</span>
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>

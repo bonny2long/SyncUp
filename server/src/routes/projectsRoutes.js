@@ -6,6 +6,7 @@ import {
   updateProjectStatus,
   createProject,
   attachProjectSkills,
+  getProjectSkills,
 } from "../controllers/projectsController.js";
 
 const router = express.Router();
@@ -27,5 +28,8 @@ router.delete("/:projectId/members", removeProjectMember);
 
 // PUT /api/projects/:id/status
 router.put("/:id/status", updateProjectStatus);
+
+// GET /api/projects/:id/skills
+router.get("/:id/skills", getProjectSkills);
 
 export default router;

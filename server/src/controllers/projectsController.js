@@ -314,3 +314,26 @@ export const updateProjectStatus = async (req, res) => {
     res.status(500).json({ error: "Server error updating status" });
   }
 };
+
+// GET /api/projects/:id/skills
+export const getProjectSkills = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT s.id, s.skill_name, s.category
+      FROM project_skills ps
+      JOIN skills s ON ps.skill_id = s.id
+      WHERE ps.project_id = ?
+      ORDER BY s.skill_name ASC
+      `,
+      [id],
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching project skills:", err);
+    res.status(500).json({ error: "Failed to fetch project skills" });
+  }
+};
