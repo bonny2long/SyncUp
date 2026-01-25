@@ -13,6 +13,37 @@ export const getAllSkills = async (req, res) => {
   }
 };
 
+// GET /api/skills/user/:id/recent
+// Returns top 3 most recent skills for quick-add suggestions
+export const getRecentSkills = async (req, res) => {
+  const { id: userId } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        s.id,
+        s.skill_name,
+        s.category,
+        MAX(uss.created_at) AS last_used,
+        COUNT(uss.id) AS signal_count
+      FROM user_skill_signals uss
+      JOIN skills s ON s.id = uss.skill_id
+      WHERE uss.user_id = ?
+      GROUP BY s.id, s.skill_name, s.category
+      ORDER BY last_used DESC
+      LIMIT 3
+      `,
+      [userId],
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching recent skills:", err);
+    res.status(500).json({ error: "Failed to fetch recent skills" });
+  }
+};
+
 // GET /api/skills/user/:id/momentum
 export const getSkillMomentum = async (req, res) => {
   const { id } = req.params;

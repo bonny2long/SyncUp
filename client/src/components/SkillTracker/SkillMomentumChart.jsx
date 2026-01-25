@@ -3,8 +3,10 @@ import { AgCharts } from "ag-charts-react";
 import { getSkillMomentum } from "../../utils/api";
 import { weekLabelFromYearWeek } from "../../utils/date";
 import { useUser } from "../../context/UserContext";
+import SkeletonLoader from "../../components/shared/SkeletonLoader";
+import { ChartError } from "../../components/shared/ErrorBoundary";
+import { getErrorMessage } from "../../utils/errorHandler";
 
-// Expanded color palette with lowercase keys for easier matching
 const COLORS = {
   react: "#4f46e5",
   "node.js": "#16a34a",
@@ -21,15 +23,28 @@ export default function SkillMomentumChart() {
   const { user } = useUser();
   const [rawData, setRawData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const loadData = async () => {
     if (!user?.id) return;
 
-    getSkillMomentum(user.id)
-      .then(setRawData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [user]);
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getSkillMomentum(user.id);
+      setRawData(data);
+    } catch (err) {
+      const { message } = getErrorMessage(err);
+      setError(message);
+      console.error("Failed to load skill momentum:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [user?.id]);
 
   const { chartData, skills, skillKeys, insights } = useMemo(() => {
     if (!rawData.length) {
@@ -111,14 +126,21 @@ export default function SkillMomentumChart() {
     return { chartData: rows, skills: topSkills, skillKeys, insights };
   }, [rawData]);
 
+  // Loading state
   if (loading) {
     return (
-      <p className="text-sm text-gray-500 text-center py-12">
-        Loading skill momentum...
-      </p>
+      <div className="w-full">
+        <SkeletonLoader type="chart" height={280} />
+      </div>
     );
   }
 
+  // Error state
+  if (error) {
+    return <ChartError onRetry={loadData} error={error} />;
+  }
+
+  // Empty state
   if (!chartData.length) {
     return (
       <div className="text-center py-12">
@@ -133,7 +155,6 @@ export default function SkillMomentumChart() {
   const options = {
     data: chartData,
     series: skills.map((skill) => {
-      // Logic from debug version: case-insensitive lookup
       const color = COLORS[skill.toLowerCase()] || "#6b7280";
       return {
         type: "area",

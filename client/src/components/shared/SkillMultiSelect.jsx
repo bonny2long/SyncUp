@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Plus, Check } from "lucide-react";
+import { X, Plus } from "lucide-react";
 
 // Get category color
 export const getCategoryColor = (category) => {
@@ -18,7 +18,7 @@ export const getCategoryColor = (category) => {
  * Features:
  * - Tag-based UI (chips you can add/remove)
  * - Searchable dropdown
- * - Suggested skills (from project) shown differently
+ * - Suggested skills (from project + recent user skills) shown differently
  * - Color-coded by category
  *
  * Usage:
@@ -26,13 +26,15 @@ export const getCategoryColor = (category) => {
  *   selectedSkills={["react", "node.js"]}
  *   onChange={(skills) => setSkills(skills)}
  *   suggestedSkills={["react", "sql"]}
+ *   recentSkills={["node.js", "javascript"]}
  * />
  */
 export default function SkillMultiSelect({
   selectedSkills = [],
   onChange,
   suggestedSkills = [],
-  allSkills = [], // Pass from parent via API fetch
+  recentSkills = [],
+  allSkills = [],
   loading = false,
   placeholder = "Add skills...",
 }) {
@@ -80,16 +82,23 @@ export default function SkillMultiSelect({
     onChange(selectedSkills.filter((s) => s !== skillName));
   };
 
-  // Accept all suggested skills
-  const handleAcceptAllSuggestions = () => {
+  // Accept all suggested skills from project
+  const handleAcceptAllProjectSuggestions = () => {
     const newSkills = [...new Set([...selectedSkills, ...suggestedSkills])];
     onChange(newSkills);
   };
 
-  // Check if a skill is suggested (not yet selected)
-  const isSuggested = (skillName) => {
+  // Check if a skill is from project suggestions
+  const isSuggestedFromProject = (skillName) => {
     return (
       suggestedSkills.includes(skillName) && !selectedSkills.includes(skillName)
+    );
+  };
+
+  // Check if a skill is from recent skills
+  const isRecentSkill = (skillName) => {
+    return (
+      recentSkills.includes(skillName) && !selectedSkills.includes(skillName)
     );
   };
 
@@ -101,10 +110,20 @@ export default function SkillMultiSelect({
     return skill?.category || "technical";
   };
 
+  // Get unselected recent skills
+  const unselectedRecentSkills = recentSkills.filter(
+    (s) => !selectedSkills.includes(s),
+  );
+
+  // Get unselected project skills
+  const unselectedProjectSkills = suggestedSkills.filter(
+    (s) => !selectedSkills.includes(s),
+  );
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Input area with chips */}
-      <div className="min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
+      <div className="min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
         <div className="flex flex-wrap gap-2 items-center">
           {/* Selected skills as chips */}
           {selectedSkills.map((skillName) => {
@@ -114,13 +133,13 @@ export default function SkillMultiSelect({
             return (
               <div
                 key={skillName}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass} transition`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass} transition-all hover:shadow-sm`}
               >
                 <span className="capitalize">{skillName}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveSkill(skillName)}
-                  className="hover:bg-black/10 rounded-full p-0.5 transition"
+                  className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
                   aria-label={`Remove ${skillName}`}
                 >
                   <X className="w-3 h-3" />
@@ -150,33 +169,52 @@ export default function SkillMultiSelect({
         </div>
       </div>
 
-      {/* Suggested skills banner (if any not selected) */}
-      {suggestedSkills.some((s) => !selectedSkills.includes(s)) && (
-        <div className="mt-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+      {/* Recent skills banner (only show if not selected yet) */}
+      {unselectedRecentSkills.length > 0 && (
+        <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-50/80 transition-colors">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-amber-700">
+              Your recent:
+            </span>
+            {unselectedRecentSkills.map((skill) => (
+              <button
+                key={skill}
+                type="button"
+                onClick={() => handleAddSkill(skill)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-white border border-amber-300 text-amber-700 rounded-full hover:bg-amber-100 hover:border-amber-400 transition-all active:scale-95"
+              >
+                <Plus className="w-3 h-3" />
+                <span className="capitalize">{skill}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Project suggested skills banner (only show if not selected yet) */}
+      {unselectedProjectSkills.length > 0 && (
+        <div className="mt-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-50/80 transition-colors flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-medium text-blue-700">
-              Suggested from project:
+              Project skills:
             </span>
-            {suggestedSkills
-              .filter((s) => !selectedSkills.includes(s))
-              .map((skill) => (
-                <button
-                  key={skill}
-                  type="button"
-                  onClick={() => handleAddSkill(skill)}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-white border border-blue-300 text-blue-700 rounded-full hover:bg-blue-100 transition"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span className="capitalize">{skill}</span>
-                </button>
-              ))}
+            {unselectedProjectSkills.map((skill) => (
+              <button
+                key={skill}
+                type="button"
+                onClick={() => handleAddSkill(skill)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-white border border-blue-300 text-blue-700 rounded-full hover:bg-blue-100 hover:border-blue-400 transition-all active:scale-95"
+              >
+                <Plus className="w-3 h-3" />
+                <span className="capitalize">{skill}</span>
+              </button>
+            ))}
           </div>
-          {suggestedSkills.filter((s) => !selectedSkills.includes(s)).length >
-            1 && (
+          {unselectedProjectSkills.length > 1 && (
             <button
               type="button"
-              onClick={handleAcceptAllSuggestions}
-              className="text-xs font-medium text-blue-700 hover:text-blue-800 whitespace-nowrap ml-2"
+              onClick={handleAcceptAllProjectSuggestions}
+              className="text-xs font-medium text-blue-700 hover:text-blue-800 hover:underline whitespace-nowrap ml-2 transition-colors"
             >
               Add all
             </button>
@@ -195,9 +233,10 @@ export default function SkillMultiSelect({
             </div>
           : <div className="py-1">
               {filteredSkills.map((skill) => {
-                const isSuggestedSkill = isSuggested(
+                const isFromProject = isSuggestedFromProject(
                   skill.skill_name.toLowerCase(),
                 );
+                const isRecent = isRecentSkill(skill.skill_name.toLowerCase());
                 const colorClass = getCategoryColor(skill.category);
 
                 return (
@@ -205,9 +244,9 @@ export default function SkillMultiSelect({
                     key={skill.id}
                     type="button"
                     onClick={() => handleAddSkill(skill.skill_name)}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center justify-between group transition ${
-                      isSuggestedSkill ? "bg-blue-50/50" : ""
-                    }`}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 active:bg-gray-100 flex items-center justify-between group transition-colors ${
+                      isFromProject ? "bg-blue-50/50" : ""
+                    } ${isRecent ? "bg-amber-50/50" : ""}`}
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-900 capitalize">
@@ -221,11 +260,18 @@ export default function SkillMultiSelect({
                         </span>
                       )}
                     </div>
-                    {isSuggestedSkill && (
-                      <span className="text-xs text-blue-600 font-medium">
-                        Suggested
-                      </span>
-                    )}
+                    <div className="flex gap-1 items-center">
+                      {isRecent && (
+                        <span className="text-xs text-amber-600 font-medium">
+                          Recent
+                        </span>
+                      )}
+                      {isFromProject && (
+                        <span className="text-xs text-blue-600 font-medium">
+                          Project
+                        </span>
+                      )}
+                    </div>
                   </button>
                 );
               })}

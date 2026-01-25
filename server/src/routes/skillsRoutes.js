@@ -5,6 +5,7 @@ import {
   getSkillActivity,
   getSkillSummary,
   getAllSkills,
+  getRecentSkills,
 } from "../controllers/skillsController.js";
 
 const router = express.Router();
@@ -23,5 +24,8 @@ router.get("/user/:id/activity", getSkillActivity);
 
 // GET /api/skills/user/:id/summary
 router.get("/user/:id/summary", getSkillSummary);
+
+// GET /api/skills/user/:id/recent
+router.get("/user/:id/recent", getRecentSkills);
 
 export default router;

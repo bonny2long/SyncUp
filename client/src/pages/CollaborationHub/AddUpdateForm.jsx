@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { postUpdate } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
-
+import { useToast } from "../../context/ToastContext";
 import SkillMultiSelect from "../../components/shared/SkillMultiSelect";
 
 export default function AddUpdateForm({
@@ -12,47 +12,78 @@ export default function AddUpdateForm({
   loadingSkills = false,
 }) {
   const { user, loading: userLoading } = useUser();
+  const { addToast } = useToast();
   const [content, setContent] = useState("");
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [recentSkills, setRecentSkills] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(false);
+
+  // Fetch user's recent skills on mount
+  useEffect(() => {
+    if (!user?.id) return;
+
+    async function fetchRecentSkills() {
+      try {
+        setLoadingRecent(true);
+        const res = await fetch(
+          `http://localhost:5000/api/skills/user/${user.id}/recent`,
+        );
+        if (!res.ok) throw new Error("Failed to fetch recent skills");
+        const data = await res.json();
+        const skillNames = data.map((s) => s.skill_name.toLowerCase());
+        setRecentSkills(skillNames);
+      } catch (err) {
+        console.error("Error fetching recent skills:", err);
+        // Don't show error toast for this - it's not critical
+      } finally {
+        setLoadingRecent(false);
+      }
+    }
+
+    fetchRecentSkills();
+  }, [user?.id]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!content.trim() || loading || userLoading) return;
     if (!user?.id) {
-      setError("User not loaded yet.");
+      addToast("User not loaded yet", "error");
       return;
     }
 
-    // Use selected project or fallback to project 1
     const projectId = selectedProjectId || 1;
 
     try {
       setLoading(true);
-      setError("");
 
-      // Post update with skills array
       const newUpdate = await postUpdate(content, projectId, user.id, skills);
+
+      // Success feedback
+      addToast(
+        `Update posted with ${skills.length} skill${skills.length !== 1 ? "s" : ""}`,
+        "success",
+      );
 
       // Reset form
       setContent("");
       setSkills([]);
 
-      // Notify parent component
       if (onNewUpdate) onNewUpdate(newUpdate);
     } catch (err) {
       console.error("Error posting update:", err);
-      setError("Something went wrong. Try again.");
+      addToast("Failed to post update. Try again.", "error", 4000);
     } finally {
       setLoading(false);
     }
   }
 
+  const isSubmitDisabled = loading || !content.trim();
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-4 rounded-2xl shadow-md flex flex-col gap-4"
+      className="bg-white p-4 rounded-2xl shadow-md flex flex-col gap-4 transition-opacity"
     >
       {/* Content textarea */}
       <div>
@@ -61,7 +92,8 @@ export default function AddUpdateForm({
         </label>
         <textarea
           className="w-full border border-gray-200 rounded-xl p-3 resize-none text-sm
-                     focus:outline-none focus:ring-2 focus:ring-primary/40"
+                     focus:outline-none focus:ring-2 focus:ring-primary/40
+                     disabled:bg-gray-50 disabled:text-gray-500 transition"
           rows={3}
           placeholder="Describe your progress, challenges, or achievements..."
           value={content}
@@ -69,6 +101,11 @@ export default function AddUpdateForm({
           disabled={loading}
           required
         />
+        <div className="flex justify-between items-center mt-1">
+          <span className="text-xs text-gray-400">
+            {content.length > 0 ? `${content.length} characters` : ""}
+          </span>
+        </div>
       </div>
 
       {/* Skill Tagging */}
@@ -80,33 +117,38 @@ export default function AddUpdateForm({
           selectedSkills={skills}
           onChange={setSkills}
           suggestedSkills={projectSkills}
+          recentSkills={recentSkills}
           allSkills={allSkills}
-          loading={loadingSkills}
+          loading={loadingSkills || loadingRecent}
           placeholder="Select skills you practiced..."
         />
         {skills.length > 0 && (
-          <p className="text-xs text-gray-500 mt-1">
-            {skills.length} skill{skills.length !== 1 ? "s" : ""} selected
+          <p className="text-xs text-primary font-medium mt-1">
+            ✓ {skills.length} skill{skills.length !== 1 ? "s" : ""} selected
           </p>
         )}
       </div>
 
-      {/* Submit button and error */}
-      <div className="flex justify-between items-center w-full">
-        {error && <p className="text-red-500 text-xs">{error}</p>}
+      {/* Submit button */}
+      <div className="flex justify-end w-full pt-2">
         <button
           type="submit"
-          disabled={loading || !content.trim()}
+          disabled={isSubmitDisabled}
           className={`
-            ml-auto px-4 py-2 rounded-xl font-medium text-white text-sm transition
+            px-5 py-2.5 rounded-xl font-medium text-white text-sm transition-all
             ${
-              loading || !content.trim() ?
-                "bg-primary/50 cursor-not-allowed"
-              : "bg-primary hover:bg-secondary"
+              isSubmitDisabled ?
+                "bg-primary/40 cursor-not-allowed"
+              : "bg-primary hover:bg-secondary active:scale-95"
             }
           `}
         >
-          {loading ? "Posting..." : "Post Update"}
+          {loading ?
+            <span className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Posting...
+            </span>
+          : "Post Update"}
         </button>
       </div>
     </form>

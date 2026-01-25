@@ -96,7 +96,7 @@ export async function postUpdate(content, projectId, userId, skills = []) {
       content,
       project_id: projectId,
       user_id: userId,
-      skills, // ✅ Already set up correctly!
+      skills,
     }),
   });
   return res.json();
@@ -177,7 +177,7 @@ export async function updateSessionDetails(id, payload) {
   const res = await fetch(`${API_BASE}/mentorship/sessions/${id}/details`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload), // { topic, details, session_date }
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) throw new Error("Failed to update session");
@@ -232,25 +232,45 @@ export async function deleteProgressUpdate(id) {
 }
 
 // ----------------------------------------------------
-// SKILL TRACKER
+// SKILLS - TRACKER & DISTRIBUTION
 // ----------------------------------------------------
-export const getSkillDistribution = async (userId) => {
+export async function fetchSkills() {
+  const res = await fetch(`${API_BASE}/skills`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch skills");
+  }
+  return res.json();
+}
+
+export async function getRecentSkills(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/recent`);
+  if (!res.ok) throw new Error("Failed to load recent skills");
+  return res.json();
+}
+
+export async function getSkillDistribution(userId) {
   const res = await fetch(`${API_BASE}/skills/user/${userId}/distribution`);
   if (!res.ok) throw new Error("Failed to load skill distribution");
   return res.json();
-};
+}
 
-export const getSkillMomentum = async (userId) => {
+export async function getSkillMomentum(userId) {
   const res = await fetch(`${API_BASE}/skills/user/${userId}/momentum`);
   if (!res.ok) throw new Error("Failed to load skill momentum");
   return res.json();
-};
+}
 
-export const getSkillActivity = async (userId) => {
+export async function getSkillActivity(userId) {
   const res = await fetch(`${API_BASE}/skills/user/${userId}/activity`);
   if (!res.ok) throw new Error("Failed to load skill activity");
   return res.json();
-};
+}
+
+export async function getSkillSummary(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/summary`);
+  if (!res.ok) throw new Error("Failed to fetch skill summary");
+  return res.json();
+}
 
 // ----------------------------------------------------
 // CREATE PROJECT
@@ -277,24 +297,4 @@ export async function attachProjectSkills(projectId, skillIds) {
   });
 
   if (!res.ok) throw new Error("Failed to attach project skills");
-}
-
-// ----------------------------------------------------
-// FETCH SKILLS
-// ----------------------------------------------------
-export async function fetchSkills() {
-  const res = await fetch(`${API_BASE}/skills`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch skills");
-  }
-  return res.json();
-}
-
-// ----------------------------------------------------
-// GET SKILL SUMMARY
-// ----------------------------------------------------
-export async function getSkillSummary(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/summary`);
-  if (!res.ok) throw new Error("Failed to fetch skill summary");
-  return res.json();
 }

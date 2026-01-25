@@ -353,3 +353,31 @@ export const deleteSession = async (req, res) => {
     res.status(500).json({ error: "Server error deleting session" });
   }
 };
+
+// GET /api/mentorship/sessions/:id/skills
+// Fetch all skills that were practiced in a completed mentorship session
+export const getSessionSkills = async (req, res) => {
+  const { id: sessionId } = req.params;
+
+  try {
+    const [skills] = await pool.query(
+      `
+      SELECT DISTINCT
+        s.id,
+        s.skill_name,
+        s.category
+      FROM user_skill_signals uss
+      JOIN skills s ON s.id = uss.skill_id
+      WHERE uss.source_type = 'mentorship'
+        AND uss.source_id = ?
+      ORDER BY s.skill_name ASC
+      `,
+      [sessionId],
+    );
+
+    res.json(skills);
+  } catch (err) {
+    console.error("Error fetching session skills:", err);
+    res.status(500).json({ error: "Failed to fetch session skills" });
+  }
+};

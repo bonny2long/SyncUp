@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { AgCharts } from "ag-charts-react";
 import { getSkillActivity } from "../../utils/api";
 import { weekLabelFromYearWeek } from "../../utils/date";
 import { useUser } from "../../context/UserContext";
+import SkeletonLoader from "../../components/shared/SkeletonLoader";
+import { ChartError } from "../../components/shared/ErrorBoundary";
+import { getErrorMessage } from "../../utils/errorHandler";
 
 const COLORS = {
   project: "#4f46e5",
@@ -14,19 +17,29 @@ export default function SkillActivityChart() {
   const { user } = useUser();
   const [rawData, setRawData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!user?.id) return;
 
-    getSkillActivity(user.id)
-      .then(setRawData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [user]);
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getSkillActivity(user.id);
+      setRawData(data);
+    } catch (err) {
+      const { message } = getErrorMessage(err);
+      setError(message);
+      console.error("Activity fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
-  /**
-   * { week, project, update, mentorship }
-   */
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   const chartData = useMemo(() => {
     if (!rawData.length) return [];
 
@@ -69,14 +82,21 @@ export default function SkillActivityChart() {
   }, [chartData]);
 
   if (loading) {
-    return <p className="text-sm text-gray-500">Loading activity...</p>;
+    return <SkeletonLoader type="chart" height={260} />;
+  }
+
+  if (error) {
+    return <ChartError onRetry={loadData} error={error} />;
   }
 
   if (!chartData.length) {
     return (
-      <p className="text-sm text-gray-500">
-        No activity yet. This updates automatically as you work.
-      </p>
+      <div className="text-center py-12">
+        <p className="text-sm text-gray-500">No activity yet.</p>
+        <p className="text-xs text-gray-400 mt-2">
+          This updates automatically as you work.
+        </p>
+      </div>
     );
   }
 
@@ -112,32 +132,18 @@ export default function SkillActivityChart() {
       x: {
         type: "category",
         position: "bottom",
-        label: {
-          fontSize: 12,
-          wrapping: "on-space",
-        },
+        label: { fontSize: 12, wrapping: "on-space" },
       },
       y: {
         type: "number",
         position: "left",
         nice: true,
-        label: {
-          fontSize: 11,
-        },
+        label: { fontSize: 11 },
       },
     },
-    padding: {
-      top: 12,
-      right: 24,
-      bottom: 16,
-      left: 18,
-    },
-    legend: {
-      position: "bottom",
-    },
-    background: {
-      fill: "transparent",
-    },
+    padding: { top: 12, right: 24, bottom: 16, left: 18 },
+    legend: { position: "bottom" },
+    background: { fill: "transparent" },
   };
 
   return (

@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { AgCharts } from "ag-charts-react";
 import { getSkillDistribution } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
+import SkeletonLoader from "../../components/shared/SkeletonLoader";
+import { ChartError } from "../../components/shared/ErrorBoundary";
+import { getErrorMessage } from "../../utils/errorHandler";
 
-// Updated to match SkillMomentum colors with lowercase keys
 const SKILL_COLORS = {
   react: "#4f46e5",
   "node.js": "#16a34a",
@@ -20,17 +22,28 @@ export default function SkillDistributionChart() {
   const { user } = useUser();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!user?.id) return;
 
-    getSkillDistribution(user.id)
-      .then(setData)
-      .catch((err) => {
-        console.error("Skill fetch error:", err);
-      })
-      .finally(() => setLoading(false));
-  }, [user]);
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await getSkillDistribution(user.id);
+      setData(result);
+    } catch (err) {
+      const { message } = getErrorMessage(err);
+      setError(message);
+      console.error("Skill fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const { sortedData, insight } = useMemo(() => {
     if (!data.length) {
@@ -58,18 +71,21 @@ export default function SkillDistributionChart() {
   }, [data]);
 
   if (loading) {
-    return (
-      <p className="text-sm text-gray-500 text-center py-12">
-        Loading skill distribution...
-      </p>
-    );
+    return <SkeletonLoader type="chart" height={260} />;
+  }
+
+  if (error) {
+    return <ChartError onRetry={loadData} error={error} />;
   }
 
   if (!sortedData.length) {
     return (
-      <p className="text-sm text-gray-500 text-center py-12">
-        No activity yet. This updates automatically as you work.
-      </p>
+      <div className="text-center py-12">
+        <p className="text-sm text-gray-500">No activity yet.</p>
+        <p className="text-xs text-gray-400 mt-2">
+          This updates automatically as you work.
+        </p>
+      </div>
     );
   }
 
@@ -82,7 +98,6 @@ export default function SkillDistributionChart() {
         xKey: "skill",
         yKey: "total",
         cornerRadius: 4,
-        // Match logic from Momentum chart: lookup lowercase skill name
         itemStyler: ({ datum }) => ({
           fill: SKILL_COLORS[datum.skill.toLowerCase()] || "#64748b",
         }),
@@ -102,20 +117,11 @@ export default function SkillDistributionChart() {
       },
       category: {
         position: "left",
-        label: {
-          fontSize: 12,
-        },
+        label: { fontSize: 12 },
       },
     },
-    padding: {
-      left: 20,
-      right: 20,
-      top: 10,
-      bottom: 10,
-    },
-    background: {
-      fill: "transparent",
-    },
+    padding: { left: 20, right: 20, top: 10, bottom: 10 },
+    background: { fill: "transparent" },
   };
 
   return (

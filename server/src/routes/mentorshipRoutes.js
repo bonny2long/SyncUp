@@ -10,6 +10,7 @@ import {
   updateSessionDetails,
   rescheduleSession,
   deleteSession,
+  getSessionSkills,
 } from "../controllers/mentorshipController.js";
 
 const router = express.Router();
@@ -42,5 +43,8 @@ router.put("/sessions/:id/reschedule", rescheduleSession);
 
 // DELETE session
 router.delete("/sessions/:id", deleteSession);
+
+// GET session skills
+router.get("/sessions/:id/skills", getSessionSkills);
 
 export default router;

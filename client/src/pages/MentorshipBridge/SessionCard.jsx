@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { Zap } from "lucide-react";
 import SkillSelectModal from "./SkillSelectModal";
+import SkillBadge from "../../components/shared/SkillBadge";
 
 const SESSION_FOCUS_LABELS = {
   project_support: "Project Support",
@@ -8,6 +10,8 @@ const SESSION_FOCUS_LABELS = {
   life_leadership: "Life and Leadership",
   alumni_advice: "Alumni Advice",
 };
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 export default function SessionCard({
   session,
@@ -31,13 +35,16 @@ export default function SessionCard({
     !currentUserLoading &&
     (currentUser.role === "admin" ||
       currentUser.id === session.mentor_id ||
-      currentUser.id === session.intern_id); // Allow intern to manage for testing
+      currentUser.id === session.intern_id);
 
   const canReschedule = canManageStatus;
 
   const [isEditing, setIsEditing] = useState(false);
   const [showSkillModal, setShowSkillModal] = useState(false);
   const [error, setError] = useState("");
+  const [practiceSkills, setPracticeSkills] = useState([]);
+  const [loadingSkills, setLoadingSkills] = useState(false);
+
   const [form, setForm] = useState({
     topic: session.topic || "",
     details: session.details || "",
@@ -47,6 +54,35 @@ export default function SessionCard({
   // Technical sessions require skill selection on completion
   const TECHNICAL_FOCUSES = ["project_support", "technical_guidance"];
   const isTechnicalSession = TECHNICAL_FOCUSES.includes(session.session_focus);
+  const isCompleted = session.status === "completed";
+
+  // Fetch practiced skills when session is completed
+  useEffect(() => {
+    if (!isCompleted || !isTechnicalSession) return;
+
+    async function fetchPracticedSkills() {
+      try {
+        setLoadingSkills(true);
+        const res = await fetch(
+          `${API_BASE}/mentorship/sessions/${session.id}/skills`,
+        );
+        if (!res.ok) throw new Error("Failed to fetch skills");
+        const data = await res.json();
+        // Extract skill names from response
+        const skillNames = data.map((s) =>
+          typeof s === "string" ? s : s.skill_name,
+        );
+        setPracticeSkills(skillNames);
+      } catch (err) {
+        console.error("Failed to load practiced skills:", err);
+        setPracticeSkills([]);
+      } finally {
+        setLoadingSkills(false);
+      }
+    }
+
+    fetchPracticedSkills();
+  }, [session.id, isCompleted, isTechnicalSession]);
 
   useEffect(() => {
     setForm({
@@ -70,7 +106,6 @@ export default function SessionCard({
     onUpdateStatus(session.id, status, []);
   };
 
-  // Handle completion with skill selection for technical sessions
   const handleCompleteClick = () => {
     if (!canManageStatus) return;
     if (isTechnicalSession) {
@@ -82,6 +117,7 @@ export default function SessionCard({
 
   const handleCompleteWithSkills = (skillIds) => {
     onUpdateStatus(session.id, "completed", skillIds);
+    setShowSkillModal(false);
   };
 
   const handleDeleteClick = () => {
@@ -133,10 +169,10 @@ export default function SessionCard({
   };
 
   return (
-    <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+    <div className="p-4 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
       {/* Top row: topic + status */}
-      <div className="flex justify-between items-start mb-1 gap-2">
-        <div className="flex flex-col gap-1">
+      <div className="flex justify-between items-start mb-2 gap-2">
+        <div className="flex flex-col gap-2 flex-1">
           {isEditing ?
             <input
               type="text"
@@ -147,17 +183,25 @@ export default function SessionCard({
               className="px-2 py-1 text-sm border rounded"
               placeholder="Session topic"
             />
-          : <p className="font-semibold text-secondary">{session.topic}</p>}
+          : <p className="font-semibold text-gray-900">{session.topic}</p>}
 
-          {session.session_focus && (
-            <span className="inline-block text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 w-fit">
-              {SESSION_FOCUS_LABELS[session.session_focus]}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {session.session_focus && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                {SESSION_FOCUS_LABELS[session.session_focus]}
+              </span>
+            )}
+            {isCompleted && isTechnicalSession && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                3x Mentorship Weight
+              </span>
+            )}
+          </div>
         </div>
 
         <span
-          className={`text-xs px-2 py-1 rounded-full font-medium ${
+          className={`text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap ${
             statusColors[session.status] || "bg-gray-100 text-gray-700"
           }`}
         >
@@ -172,13 +216,34 @@ export default function SessionCard({
           onChange={(e) =>
             setForm((prev) => ({ ...prev, details: e.target.value }))
           }
-          className="w-full mt-1 px-2 py-1 text-sm border rounded"
+          className="w-full mt-2 px-2 py-1 text-sm border rounded"
           rows={2}
           placeholder="Add session details"
         />
-      : <p className="text-sm text-gray-600">{session.details}</p>}
+      : <p className="text-sm text-gray-600 mb-2">{session.details}</p>}
 
-      <p className="text-xs text-gray-400 mt-1">
+      {/* Practiced skills section (for completed sessions) */}
+      {isCompleted && isTechnicalSession && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          {loadingSkills ?
+            <p className="text-xs text-gray-400">Loading skills...</p>
+          : practiceSkills.length > 0 ?
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold text-gray-700">
+                Skills Practiced:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {practiceSkills.map((skill, idx) => (
+                  <SkillBadge key={idx} skill={skill} size="sm" />
+                ))}
+              </div>
+            </div>
+          : <p className="text-xs text-gray-400">No skills recorded</p>}
+        </div>
+      )}
+
+      {/* Mentor & Intern info */}
+      <p className="text-xs text-gray-500 mt-2">
         Mentor:{" "}
         <span className="font-medium">
           {session.mentor}{" "}
@@ -201,13 +266,13 @@ export default function SessionCard({
       </p>
 
       {session.status === "rescheduled" && (
-        <p className="text-[11px] text-purple-700 bg-purple-50 px-2 py-1 rounded mt-1 inline-block">
+        <p className="text-[11px] text-purple-700 bg-purple-50 px-2 py-1 rounded mt-2 inline-block">
           Rescheduled to {new Date(session.session_date).toLocaleString()}
         </p>
       )}
 
       {isEditing && (
-        <div className="mt-2">
+        <div className="mt-3">
           <label className="text-xs text-gray-500">Session date/time</label>
           <input
             type="datetime-local"
@@ -232,7 +297,7 @@ export default function SessionCard({
         </div>
       )}
 
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2 mt-3 text-xs items-center">
