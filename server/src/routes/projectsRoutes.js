@@ -35,13 +35,13 @@ router.put("/:id/status", updateProjectStatus);
 // GET /api/projects/:id/skills
 router.get("/:id/skills", getProjectSkills);
 
-// GET /api/projects/user/:userId
+// GET /api/projects/user/:userId - MUST come before /:id routes
 router.get("/user/:userId", getUserProjects);
 
 // GET /api/projects/:projectId/portfolio-details
-router.get(":projectId/portfolio-details", getProjectPortfolioDetails);
+router.get("/:projectId/portfolio-details", getProjectPortfolioDetails);
 
 // GET /api/projects/:projectId/metrics
-router.get(":projectId/metrics", getProjectMetrics);
+router.get("/:projectId/metrics", getProjectMetrics);
 
 export default router;

@@ -3,6 +3,7 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import { useUser } from "./context/UserContext";
 import { ToastProvider } from "./context/ToastContext";
+import ProjectPortfolio from "./pages/ProjectPortfolio";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useUser();
@@ -26,6 +27,14 @@ export default function App() {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route
+          path="/portfolio"
+          element={
+            <ProtectedRoute>
+              <ProjectPortfolio />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </ToastProvider>
