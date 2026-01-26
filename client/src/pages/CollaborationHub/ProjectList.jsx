@@ -1,32 +1,37 @@
 import React, { useEffect, useState } from "react";
 import {
-  fetchProjects,
   updateProjectStatus,
   addProjectMember,
   removeProjectMember,
 } from "../../utils/api";
 
 import MemberModal from "./MemberModal";
-import ProjectDetailModal from "../../components/modals/ProjectDetailModal"; // ← NEW
+import ProjectDetailModal from "../../components/modals/ProjectDetailModal";
 import { useUser } from "../../context/UserContext";
 
 export default function ProjectList({
   selectedProject,
   setSelectedProject,
   updatesData = [],
+  projects: passedProjects = [], // ← NEW: Accept projects as prop
+  loading: passedLoading = false, // ← NEW: Accept loading state as prop
 }) {
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [joining, setJoining] = useState(null);
-  const { user: currentUser, loading: userLoading } = useUser();
+  const { user: currentUser } = useUser();
 
   const [showMembersFor, setShowMembersFor] = useState(null);
-  const [modalProject, setModalProject] = useState(null); // ← NEW
+  const [modalProject, setModalProject] = useState(null);
 
-  // ------------------------------
+  // ✅ Use passed-in projects instead of fetching
+  useEffect(() => {
+    if (passedProjects && passedProjects.length > 0) {
+      setProjects(passedProjects);
+    }
+  }, [passedProjects]);
+
   // 7-day activity bucket
-  // ------------------------------
   const now = new Date();
   const dayBuckets = [...Array(7)].map((_, idx) => {
     const d = new Date(now);
@@ -58,36 +63,13 @@ export default function ProjectList({
     archived: "bg-red-100 text-red-600",
   };
 
-  // ------------------------------
-  // Load projects
-  // ------------------------------
-  useEffect(() => {
-    async function load() {
-      if (!currentUser?.id) {
-        if (!userLoading) setLoading(false);
-        return;
-      }
-      try {
-        const data = await fetchProjects(currentUser.id);
-        setProjects(data);
-      } catch (err) {
-        setError("Failed to load projects.");
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, [currentUser, userLoading]);
-
-  // ------------------------------
   // Update status
-  // ------------------------------
   const handleStatusChange = async (id, nextStatus) => {
     setError("");
     const previous = projects;
 
     setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: nextStatus } : p))
+      prev.map((p) => (p.id === id ? { ...p, status: nextStatus } : p)),
     );
 
     try {
@@ -98,20 +80,18 @@ export default function ProjectList({
     }
   };
 
-  // Refresh after membership changes
+  // Refresh projects after membership changes
   const refreshProjects = async () => {
     try {
       if (!currentUser?.id) return;
-      const data = await fetchProjects(currentUser.id);
-      setProjects(data);
+      // Update from passed-in projects (parent will handle reload)
+      setProjects(passedProjects);
     } catch {
       setError("Failed to refresh projects.");
     }
   };
 
-  // ------------------------------
   // JOIN / LEAVE project
-  // ------------------------------
   const handleMembership = async (projectId, isMember) => {
     if (!currentUser?.id) return;
 
@@ -124,14 +104,14 @@ export default function ProjectList({
         if (p.id !== projectId) return p;
 
         const names =
-          p.team_members && typeof p.team_members === "string"
-            ? p.team_members.split(", ").filter(Boolean)
-            : [];
+          p.team_members && typeof p.team_members === "string" ?
+            p.team_members.split(", ").filter(Boolean)
+          : [];
 
         const details =
-          Array.isArray(p.team_member_details) && p.team_member_details.length
-            ? p.team_member_details
-            : [];
+          Array.isArray(p.team_member_details) && p.team_member_details.length ?
+            p.team_member_details
+          : [];
 
         let nextNames = names;
         let nextDetails = details;
@@ -167,7 +147,7 @@ export default function ProjectList({
           team_member_details: nextDetails,
           team_count: nextCount,
         };
-      })
+      }),
     );
 
     try {
@@ -186,10 +166,8 @@ export default function ProjectList({
     }
   };
 
-  // ------------------------------
   // Loading skeleton
-  // ------------------------------
-  if (loading) {
+  if (passedLoading) {
     return (
       <div className="space-y-2">
         {[...Array(2)].map((_, i) => (
@@ -199,9 +177,7 @@ export default function ProjectList({
     );
   }
 
-  // ------------------------------
   // Render list
-  // ------------------------------
   return (
     <>
       {/* MEMBER MODAL */}
@@ -236,23 +212,21 @@ export default function ProjectList({
               tabIndex={0}
               onClick={() =>
                 setSelectedProject(
-                  active ? null : { id: project.id, title: project.title }
+                  active ? null : { id: project.id, title: project.title },
                 )
               }
-              onDoubleClick={() => setModalProject(project)} // ← OPEN MODAL
+              onDoubleClick={() => setModalProject(project)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") setModalProject(project);
               }}
               className={`w-full text-left p-4 rounded-xl border transition shadow-sm
                 ${
-                  active
-                    ? "bg-secondary/20 border-secondary"
-                    : "bg-white border-gray-200 hover:shadow-md"
+                  active ?
+                    "bg-secondary/20 border-secondary"
+                  : "bg-white border-gray-200 hover:shadow-md"
                 }
                 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40`}
             >
-           
-
               <div className="flex items-center justify-between gap-3">
                 <h3 className="font-semibold text-primary">{project.title}</h3>
 
@@ -286,13 +260,13 @@ export default function ProjectList({
                       e.stopPropagation();
                       handleMembership(
                         project.id,
-                        project.is_member === 1 || project.is_member === true
+                        project.is_member === 1 || project.is_member === true,
                       );
                     }}
                     className={`text-[11px] px-2 py-1 rounded-full border transition ${
-                      project.is_member
-                        ? "border-red-200 text-red-600 hover:bg-red-50"
-                        : "border-primary text-primary hover:bg-primary/10"
+                      project.is_member ?
+                        "border-red-200 text-red-600 hover:bg-red-50"
+                      : "border-primary text-primary hover:bg-primary/10"
                     }`}
                     disabled={joining === project.id}
                   >
@@ -314,9 +288,7 @@ export default function ProjectList({
                   className="underline-offset-2 hover:underline"
                 >
                   Team:{" "}
-                  <span className="font-medium">
-                    {project.team_count ?? 0}
-                  </span>
+                  <span className="font-medium">{project.team_count ?? 0}</span>
                 </button>
 
                 <span>
@@ -330,9 +302,7 @@ export default function ProjectList({
                   <span>
                     Last:{" "}
                     <span className="font-medium">
-                      {new Date(
-                        project.last_update
-                      ).toLocaleDateString()}
+                      {new Date(project.last_update).toLocaleDateString()}
                     </span>
                   </span>
                 )}
@@ -358,8 +328,8 @@ export default function ProjectList({
                     4 && (
                     <span className="text-[10px] px-2 py-1 rounded-full bg-neutral-light text-neutral-dark border border-gray-100">
                       +
-                      {project.team_members.split(", ").filter(Boolean)
-                        .length - 4}{" "}
+                      {project.team_members.split(", ").filter(Boolean).length -
+                        4}{" "}
                       more
                     </span>
                   )}
@@ -371,9 +341,9 @@ export default function ProjectList({
                 <div className="flex items-center justify-between text-[11px] text-gray-500">
                   <span>Activity (7d)</span>
                   <span className="text-gray-400">
-                    {activity.length > 0
-                      ? `${activity.reduce((a, b) => a + b, 0)} updates`
-                      : "No updates"}
+                    {activity.length > 0 ?
+                      `${activity.reduce((a, b) => a + b, 0)} updates`
+                    : "No updates"}
                   </span>
                 </div>
 

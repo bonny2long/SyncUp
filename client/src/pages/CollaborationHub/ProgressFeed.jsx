@@ -16,6 +16,8 @@ export default function ProgressFeed({
   selectedProjectId,
   selectedProjectTitle,
   onClearProject,
+  updates: passedUpdates = null, // NEW: Accept updates as prop
+  currentUserId, // NEW: Accept currentUserId as prop
 }) {
   const [updates, setUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,16 @@ export default function ProgressFeed({
     loadProjectSkills();
   }, [selectedProjectId]);
 
+  // Load updates from API OR use passed-in updates
   async function loadUpdates() {
+    // If updates are passed in as props, use those
+    if (passedUpdates) {
+      setUpdates(passedUpdates);
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise, fetch from API
     setLoading(true);
     setError("");
     try {
@@ -86,7 +97,7 @@ export default function ProgressFeed({
 
   useEffect(() => {
     loadUpdates();
-  }, [selectedProjectId]);
+  }, [selectedProjectId, passedUpdates]);
 
   const handleNewUpdate = (u) => {
     setUpdates((prev) => [u, ...prev]);
@@ -123,6 +134,12 @@ export default function ProgressFeed({
     }
   };
 
+  // Filter updates if currentUserId is provided
+  const displayUpdates =
+    currentUserId ?
+      updates.filter((u) => u.user_id === currentUserId)
+    : updates;
+
   return (
     <div className="flex flex-col gap-6">
       <AddUpdateForm
@@ -157,10 +174,10 @@ export default function ProgressFeed({
             />
           ))}
         </div>
-      : updates.length === 0 ?
+      : displayUpdates.length === 0 ?
         <p className="text-gray-500 text-sm">No updates yet...</p>
       : <div className="flex flex-col gap-3">
-          {updates.map((update) => (
+          {displayUpdates.map((update) => (
             <UpdateCard
               key={update.id}
               update={update}

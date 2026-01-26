@@ -1,165 +1,362 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useUser } from "../../context/UserContext";
 import CreateProjectForm from "./CreateProjectForm";
-import ProjectList from "./ProjectList";
-import ProgressFeed from "./ProgressFeed";
-import {
-  fetchProjects,
-  fetchUpdates,
-  fetchActiveProjectsAnalytics,
-  fetchWeeklyUpdatesAnalytics,
-  fetchMentorEngagementAnalytics,
-} from "../../utils/api";
+import { fetchProjects, fetchUpdates } from "../../utils/api";
+import MyWorkPanel from "./MyWorkPanel";
+import DiscoverPanel from "./DiscoverPanel";
+import ActivityPanel from "./ActivityPanel";
+import JoinProjectModal from "./JoinProjectModal";
+import { getErrorMessage } from "../../utils/errorHandler";
 
 export default function CollaborationHub() {
-  const [selectedProject, setSelectedProject] = useState(null); // { id, title } | null
-  const [projects, setProjects] = useState([]);
-  const [updates, setUpdates] = useState([]);
-  const [loadingMetrics, setLoadingMetrics] = useState(true);
-  const [metricsError, setMetricsError] = useState("");
-  const [activeProjectsCount, setActiveProjectsCount] = useState(0);
-  const [weeklyUpdates, setWeeklyUpdates] = useState([]);
-  const [mentorEngagement, setMentorEngagement] = useState([]);
+  const { user: currentUser } = useUser();
 
-  const loadProjects = useCallback(async () => {
-    console.log("🔄 Reloading projects from DB");
-    setMetricsError("");
-    setLoadingMetrics(true);
+  // Tab state
+  const [activeTab, setActiveTab] = useState("mywork");
+
+  // Data state
+  const [allProjects, setAllProjects] = useState([]);
+  const [allUpdates, setAllUpdates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Selection & modal state
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [projectToJoin, setProjectToJoin] = useState(null);
+  const [joining, setJoining] = useState(false);
+
+  // Load all data
+  const loadData = useCallback(async () => {
+    if (!currentUser?.id) return;
+
+    console.log("🔄 Loading CollaborationHub data for user:", currentUser.id);
+    setError("");
+    setLoading(true);
+
     try {
       const [projectsData, updatesData] = await Promise.all([
-        fetchProjects(),
+        fetchProjects(currentUser.id),
         fetchUpdates(),
       ]);
-      setProjects(projectsData);
-      setUpdates(updatesData);
-      console.log("Projects from DB:", projectsData);
 
-      try {
-        const [activeProjectsData, weeklyUpdatesData, mentorEngagementData] =
-          await Promise.all([
-            fetchActiveProjectsAnalytics(),
-            fetchWeeklyUpdatesAnalytics(),
-            fetchMentorEngagementAnalytics(),
-          ]);
-        setActiveProjectsCount(activeProjectsData.active_projects || 0);
-        setWeeklyUpdates(weeklyUpdatesData || []);
-        setMentorEngagement(mentorEngagementData || []);
-      } catch (analyticsErr) {
-        console.warn("Analytics fetch failed", analyticsErr);
-      }
+      setAllProjects(projectsData);
+      setAllUpdates(updatesData);
+
+      console.log("✅ Projects loaded:", projectsData.length);
+      console.log("✅ Updates loaded:", updatesData.length);
     } catch (err) {
-      console.error("Error loading metrics:", err);
-      setMetricsError("Unable to load metrics right now.");
+      const { message } = getErrorMessage(err);
+      setError(message);
+      console.error("Error loading data:", err);
     } finally {
-      setLoadingMetrics(false);
+      setLoading(false);
     }
-  }, []);
+  }, [currentUser?.id]);
 
   useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
+    loadData();
+  }, [loadData]);
 
-  const activeProjects = projects.filter((p) => p.status === "active").length;
-  const updatesThisWeek = updates.filter((u) => {
-    if (!u.created_at) return false;
-    const created = new Date(u.created_at);
-    const now = new Date();
-    const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-    return diffDays <= 7;
-  }).length;
-  const totalTeam = projects.reduce(
-    (sum, p) => sum + (p.team_count ? Number(p.team_count) : 0),
-    0
+  // ========== DATA FILTERING ==========
+
+  // Column 1: YOUR PROJECTS (owned + joined)
+  const userProjects = allProjects.filter(
+    (p) =>
+      p.owner_id === currentUser?.id || // You own it
+      p.is_member === 1 || // You're a member
+      p.is_member === true,
   );
 
-  return (
-    <section className="flex flex-col gap-4">
-      <CreateProjectForm onCreated={loadProjects} />
+  // Column 2: DISCOVER PROJECTS (projects you're NOT on + active only)
+  const discoverProjects = allProjects.filter(
+    (p) =>
+      p.owner_id !== currentUser?.id && // You don't own it
+      p.is_member !== 1 && // You're not a member
+      p.is_member !== true &&
+      p.status === "active", // Only active projects
+  );
 
-      {/* Metrics Panel */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        {loadingMetrics ? (
-          [...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-20 rounded-2xl bg-white border border-gray-100 shadow-sm animate-pulse"
+  // Column 3: YOUR UPDATES (current user only)
+  const userUpdates = allUpdates.filter((u) => u.user_id === currentUser?.id);
+
+  // ========== HANDLERS ==========
+
+  const handleJoinClick = (project) => {
+    setProjectToJoin(project);
+    setShowJoinModal(true);
+  };
+
+  const handleJoinConfirm = async () => {
+    if (!projectToJoin) return;
+
+    setJoining(true);
+    try {
+      // Import here to avoid circular dependency
+      const { addProjectMember } = await import("../../utils/api");
+
+      await addProjectMember(projectToJoin.id, currentUser.id);
+
+      // Reload data
+      await loadData();
+
+      // Close modal and clear
+      setShowJoinModal(false);
+      setProjectToJoin(null);
+
+      console.log("✅ Successfully joined project:", projectToJoin.title);
+    } catch (err) {
+      const { message } = getErrorMessage(err);
+      setError(message);
+      console.error("Error joining project:", err);
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // Reset selection when changing tabs
+    setSelectedProject(null);
+  };
+
+  // ========== STATS ==========
+
+  const statsCards = [
+    {
+      label: "Your Projects",
+      value: userProjects.length,
+      color: "text-primary",
+    },
+    {
+      label: "Available to Join",
+      value: discoverProjects.length,
+      color: "text-accent",
+    },
+    {
+      label: "Your Updates",
+      value: userUpdates.length,
+      color: "text-secondary",
+    },
+    {
+      label: "Active",
+      value: userProjects.filter((p) => p.status === "active").length,
+      color: "text-primary",
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* CREATE PROJECT FORM */}
+      <CreateProjectForm onCreated={loadData} />
+
+      {/* STATS CARDS */}
+      <div className="grid grid-cols-4 gap-4">
+        {statsCards.map((stat, idx) => (
+          <div
+            key={idx}
+            className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm"
+          >
+            <p className="text-xs text-gray-500 mb-2">{stat.label}</p>
+            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* TAB NAVIGATION */}
+      <div className="flex gap-4 border-b border-gray-200">
+        <button
+          onClick={() => handleTabChange("mywork")}
+          className={`px-4 py-3 font-medium transition-all duration-300 ${
+            activeTab === "mywork" ?
+              "text-primary border-b-2 border-primary"
+            : "text-gray-600 hover:text-neutralDark"
+          }`}
+        >
+          My Work ({userProjects.length})
+        </button>
+
+        <button
+          onClick={() => handleTabChange("discover")}
+          className={`px-4 py-3 font-medium transition-all duration-300 ${
+            activeTab === "discover" ?
+              "text-accent border-b-2 border-accent"
+            : "text-gray-600 hover:text-neutralDark"
+          }`}
+        >
+          Discover ({discoverProjects.length})
+        </button>
+
+        <button
+          onClick={() => handleTabChange("activity")}
+          className={`px-4 py-3 font-medium transition-all duration-300 ${
+            activeTab === "activity" ?
+              "text-secondary border-b-2 border-secondary"
+            : "text-gray-600 hover:text-neutralDark"
+          }`}
+        >
+          Activity ({userUpdates.length})
+        </button>
+      </div>
+
+      {/* TAB CONTENT - TWO COLUMN LAYOUT */}
+      <div className="grid grid-cols-2 gap-6 min-h-[600px]">
+        {/* LEFT COLUMN */}
+        <div>
+          {activeTab === "mywork" && (
+            <MyWorkPanel
+              projects={userProjects}
+              selectedProject={selectedProject}
+              setSelectedProject={setSelectedProject}
+              updatesData={allUpdates}
+              loading={loading}
             />
-          ))
-        ) : (
-          <>
-            <MetricCard
-              title="Active Projects"
-              value={activeProjectsCount}
-              hint="Projects currently in flight"
-              colorClass="text-primary"
+          )}
+
+          {activeTab === "discover" && (
+            <DiscoverPanel
+              projects={discoverProjects}
+              selectedProject={selectedProject}
+              setSelectedProject={setSelectedProject}
+              onJoinClick={handleJoinClick}
+              loading={loading}
             />
-            <MetricCard
-              title="Updates This Week"
-              value={updatesThisWeek}
-              hint="Fresh activity in the last 7 days"
-              colorClass="text-secondary"
-            />
-            <MetricCard
-              title="Total Team Members"
-              value={totalTeam}
-              hint="Across all listed projects"
-              colorClass="text-accent"
-            />
-            <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <p className="text-xs text-gray-500 mb-1">Mentor Engagement</p>
-              <div className="text-[11px] text-gray-600 space-y-1">
-                {mentorEngagement.slice(0, 3).map((m) => (
-                  <div key={m.id} className="flex justify-between">
-                    <span className="font-medium text-primary">{m.name}</span>
-                    <span className="text-gray-500">
-                      {m.completed_sessions || 0} / {m.total_sessions || 0} done
-                    </span>
-                  </div>
-                ))}
-                {mentorEngagement.length === 0 && (
-                  <p className="text-gray-400">No mentor data</p>
-                )}
-              </div>
+          )}
+
+          {activeTab === "activity" && (
+            <div>
+              <h2 className="text-lg font-bold text-secondary mb-3">
+                Your Updates
+              </h2>
+              <p className="text-sm text-gray-600">
+                {selectedProject ?
+                  `Filtered to: ${selectedProject.title}`
+                : "All your updates"}
+              </p>
+              {selectedProject && (
+                <button
+                  onClick={() => setSelectedProject(null)}
+                  className="mt-3 text-xs px-3 py-1 rounded-lg bg-secondary/20 text-secondary hover:bg-secondary/30 transition"
+                >
+                  ← Clear Filter
+                </button>
+              )}
             </div>
-          </>
-        )}
-      </div>
-      {metricsError && <p className="text-xs text-red-500">{metricsError}</p>}
-
-      <div className="grid grid-cols-1 md:grid-cols-[0.9fr_1.6fr] gap-4">
-        {/* LEFT SIDE - PROJECTS */}
-        <div>
-          <h2 className="text-lg font-semibold text-primary mb-3">Projects</h2>
-
-          <ProjectList
-            selectedProject={selectedProject}
-            setSelectedProject={setSelectedProject}
-            updatesData={updates}
-          />
+          )}
         </div>
 
-        {/* RIGHT SIDE - TEAM UPDATES */}
+        {/* RIGHT COLUMN */}
         <div>
-          <h2 className="text-lg font-semibold text-primary mb-3">
-            Team Updates
-          </h2>
+          {activeTab === "mywork" && (
+            <ActivityPanel
+              selectedProject={selectedProject}
+              allUpdates={allUpdates}
+              currentUser={currentUser}
+              projectId={selectedProject?.id}
+            />
+          )}
 
-          <ProgressFeed
-            selectedProjectId={selectedProject?.id || null}
-            selectedProjectTitle={selectedProject?.title || ""}
-            onClearProject={() => setSelectedProject(null)}
-          />
+          {activeTab === "discover" && (
+            <div className="bg-white rounded-lg border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-neutralDark mb-4">
+                Project Preview
+              </h2>
+              {selectedProject ?
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-bold text-neutralDark">
+                      {selectedProject.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {selectedProject.description}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Team Size</p>
+                      <p className="text-lg font-bold text-primary">
+                        {selectedProject.team_count ?? 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Skills</p>
+                      <p className="text-lg font-bold text-accent">
+                        {selectedProject.skill_count ?? 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedProject.team_member_details &&
+                    selectedProject.team_member_details.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Team Members
+                        </p>
+                        <div className="space-y-1">
+                          {selectedProject.team_member_details
+                            .slice(0, 5)
+                            .map((member) => (
+                              <div
+                                key={member.id}
+                                className="text-xs text-gray-600"
+                              >
+                                {member.name}
+                              </div>
+                            ))}
+                          {selectedProject.team_member_details.length > 5 && (
+                            <div className="text-xs text-gray-500">
+                              +{selectedProject.team_member_details.length - 5}{" "}
+                              more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  <button
+                    onClick={() => handleJoinClick(selectedProject)}
+                    className="w-full mt-4 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition font-medium"
+                  >
+                    Join Project
+                  </button>
+                </div>
+              : <p className="text-gray-500 text-center py-8">
+                  Select a project to see details
+                </p>
+              }
+            </div>
+          )}
+
+          {activeTab === "activity" && (
+            <ActivityPanel
+              selectedProject={selectedProject}
+              allUpdates={allUpdates}
+              currentUser={currentUser}
+              projectId={selectedProject?.id}
+            />
+          )}
         </div>
       </div>
-    </section>
-  );
-}
 
-function MetricCard({ title, value, hint, colorClass = "text-primary" }) {
-  return (
-    <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200">
-      <p className="text-xs text-gray-500 mb-1">{title}</p>
-      <div className={`text-2xl font-semibold ${colorClass}`}>{value}</div>
-      <p className="text-[11px] text-gray-400 mt-1">{hint}</p>
+      {/* JOIN PROJECT MODAL */}
+      {showJoinModal && (
+        <JoinProjectModal
+          project={projectToJoin}
+          onConfirm={handleJoinConfirm}
+          onCancel={() => {
+            setShowJoinModal(false);
+            setProjectToJoin(null);
+          }}
+          loading={joining}
+        />
+      )}
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Bell, Menu, X } from "lucide-react";
-import { useUser } from "../context/UserContext";
+import { Bell, Menu, X, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../../context/UserContext";
 
 export default function Navbar({ activeTab, onToggleSidebar }) {
   const { user: ctxUser, logout } = useUser();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeButton, setActiveButton] = useState(null);
@@ -37,6 +39,13 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     setActiveButton(activeButton === "notification" ? null : "notification");
   };
 
+  const handleProfileClick = () => {
+    if (user?.id) {
+      navigate(`/profile/${user.id}`);
+      setMenuOpen(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     setMenuOpen(false);
@@ -47,6 +56,7 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     collaboration: "Collaboration Hub",
     mentorship: "Mentorship Bridge",
     skills: "Skill Tracker",
+    portfolio: "Project Portfolio",
     health: "System Health",
   };
   const pageTitle = titleMap[activeTab] || "SyncUp";
@@ -63,11 +73,15 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
           <Menu className="w-5 h-5 text-neutralDark" />
         </button>
         <div className="flex flex-col gap-1">
-          {user ? (
+          {user ?
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-secondary/20 flex items-center justify-center rounded-full text-secondary font-semibold">
+              <button
+                onClick={handleProfileClick}
+                className="w-9 h-9 bg-secondary/20 flex items-center justify-center rounded-full text-secondary font-semibold hover:bg-secondary/30 transition cursor-pointer"
+                title="View your profile"
+              >
                 {user.name.charAt(0)}
-              </div>
+              </button>
               <div>
                 <p className="text-sm font-medium text-neutralDark">
                   Welcome,{" "}
@@ -80,9 +94,7 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
                 </p>
               </div>
             </div>
-          ) : (
-            <div className="text-gray-400 text-sm">Loading user...</div>
-          )}
+          : <div className="text-gray-400 text-sm">Loading user...</div>}
           <h1 className="text-lg font-semibold text-primary">{pageTitle}</h1>
         </div>
       </div>
@@ -106,24 +118,29 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
           className={`p-2 rounded-full transition-all duration-300 hover:bg-neutralLight
             ${activeButton === "menu" ? "ring-2 ring-accent" : ""}`}
         >
-          {menuOpen ? (
+          {menuOpen ?
             <X className="w-5 h-5 text-neutralDark transition-transform duration-300 rotate-180" />
-          ) : (
-            <Menu className="w-5 h-5 text-neutralDark transition-transform duration-300" />
-          )}
+          : <Menu className="w-5 h-5 text-neutralDark transition-transform duration-300" />
+          }
         </button>
 
         {/* Dropdown */}
         <div
           className={`absolute right-0 top-12 w-44 bg-white shadow-lg rounded-xl border border-gray-100 z-10 overflow-hidden transform transition-all duration-300 origin-top-right ${
-            menuOpen
-              ? "opacity-100 scale-100 translate-y-0"
-              : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+            menuOpen ?
+              "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
           }`}
         >
           <ul className="text-sm">
-            <li className="px-4 py-2 hover:bg-neutralLight cursor-pointer text-neutralDark transition-colors">
-              Profile
+            <li>
+              <button
+                onClick={handleProfileClick}
+                className="w-full text-left px-4 py-2 hover:bg-neutralLight text-neutralDark transition-colors flex items-center gap-2"
+              >
+                <User className="w-4 h-4" />
+                View Profile
+              </button>
             </li>
             <li className="px-4 py-2 hover:bg-neutralLight cursor-pointer text-neutralDark transition-colors">
               Settings

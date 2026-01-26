@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import { useUser } from "./context/UserContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProjectPortfolio from "./pages/ProjectPortfolio";
+import UserProfile from "./pages/UserProfile";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useUser();
@@ -23,6 +24,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/:userId"
+          element={
+            <ProtectedRoute>
+              <UserProfile />
             </ProtectedRoute>
           }
         />

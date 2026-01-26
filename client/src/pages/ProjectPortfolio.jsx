@@ -5,6 +5,8 @@ import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { ChartError } from "../components/shared/ErrorBoundary";
 import ProjectCard from "../components/ProjectPortfolio/ProjectCard";
 import ProjectDetailModal from "../components/ProjectPortfolio/ProjectDetailModal";
+import Navbar from "../components/layout/Navbar";
+import Sidebar from "../components/layout/Sidebar";
 import { getErrorMessage } from "../utils/errorHandler";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
@@ -25,7 +27,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function ProjectPortfolio() {
-  const { user, loading: userLoading } = useUser();
+  const { user } = useUser();
   const { addToast } = useToast();
 
   const [projects, setProjects] = useState([]);
@@ -36,6 +38,7 @@ export default function ProjectPortfolio() {
   const [sortBy, setSortBy] = useState("recent");
   const [selectedProject, setSelectedProject] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const loadProjects = async () => {
     if (!user?.id) return;
@@ -88,136 +91,151 @@ export default function ProjectPortfolio() {
     setSelectedProject(null);
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <SkeletonLoader type="text" lines={2} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <SkeletonLoader key={i} type="chart" height={300} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <ChartError onRetry={loadProjects} error={error} />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Project Portfolio
-          </h1>
-          <p className="text-gray-600">
-            Showcase your work, track skill growth, and celebrate your progress
-          </p>
+    <div className="flex h-screen bg-neutralLight">
+      {/* Sidebar */}
+      <Sidebar
+        activeTab="portfolio"
+        setActiveTab={() => {}}
+        isMobileOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Navbar */}
+        <div className="px-6 pt-6">
+          <Navbar
+            activeTab="portfolio"
+            onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+          />
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-600">Total Projects</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {projects.length}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-600">Active</p>
-            <p className="text-2xl font-bold text-green-600">
-              {projects.filter((p) => p.status === "active").length}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-600">Completed</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {projects.filter((p) => p.status === "completed").length}
-            </p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-600">Total Skills</p>
-            <p className="text-2xl font-bold text-primary">
-              {
-                new Set(
-                  projects.flatMap((p) => Array(p.skill_count).fill(p.id)),
-                ).size
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="min-h-screen bg-neutralLight p-6">
+            <div className="max-w-7xl mx-auto">
+              {/* Header */}
+              <div className="mb-8">
+                <h1 className="text-4xl font-bold text-neutralDark mb-2">
+                  Project Portfolio
+                </h1>
+                <p className="text-gray-600">
+                  Showcase your work, track skill growth, and celebrate your
+                  progress
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="bg-white p-4 rounded-lg border border-gray-100">
+                  <p className="text-sm text-gray-600">Total Projects</p>
+                  <p className="text-2xl font-bold text-neutralDark">
+                    {projects.length}
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-100">
+                  <p className="text-sm text-gray-600">Active</p>
+                  <p className="text-2xl font-bold text-accent">
+                    {projects.filter((p) => p.status === "active").length}
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-100">
+                  <p className="text-sm text-gray-600">Completed</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {projects.filter((p) => p.status === "completed").length}
+                  </p>
+                </div>
+                <div className="bg-white p-4 rounded-lg border border-gray-100">
+                  <p className="text-sm text-gray-600">Total Skills</p>
+                  <p className="text-2xl font-bold text-secondary">
+                    {
+                      new Set(
+                        projects.flatMap((p) =>
+                          Array(p.skill_count).fill(p.id),
+                        ),
+                      ).size
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {/* Loading state */}
+              {loading ?
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <SkeletonLoader key={i} type="chart" height={300} />
+                  ))}
+                </div>
+              : error ?
+                // Error state
+                <div className="max-w-7xl mx-auto">
+                  <ChartError onRetry={loadProjects} error={error} />
+                </div>
+              : <>
+                  {/* Filters & Sort */}
+                  <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-neutralDark mb-2">
+                        Filter by Status
+                      </label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      >
+                        {STATUS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-neutralDark mb-2">
+                        Sort by
+                      </label>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      >
+                        {SORT_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Empty state */}
+                  {sortedProjects.length === 0 ?
+                    <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
+                      <p className="text-gray-500 text-lg mb-2">
+                        No projects yet
+                      </p>
+                      <p className="text-gray-400 text-sm">
+                        Create your first project to get started
+                      </p>
+                    </div>
+                  : /* Projects Grid */
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {sortedProjects.map((project) => (
+                        <ProjectCard
+                          key={project.id}
+                          project={project}
+                          onClick={() => handleProjectClick(project)}
+                        />
+                      ))}
+                    </div>
+                  }
+                </>
               }
-            </p>
+            </div>
           </div>
         </div>
-
-        {/* Filters & Sort */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Filter by Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sort by
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Empty state */}
-        {sortedProjects.length === 0 ?
-          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-            <p className="text-gray-500 text-lg mb-2">No projects yet</p>
-            <p className="text-gray-400 text-sm">
-              Create your first project to get started
-            </p>
-          </div>
-        : /* Projects Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onClick={() => handleProjectClick(project)}
-              />
-            ))}
-          </div>
-        }
       </div>
 
       {/* Project Detail Modal */}
