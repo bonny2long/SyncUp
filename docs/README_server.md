@@ -35,18 +35,46 @@ Backend API for the SyncUp platform, powered by Node.js and Express with a MySQL
 | PUT    | `/api/projects/:id` | Update an existing project |
 | DELETE | `/api/projects/:id` | Delete a project           |
 
+### Analytics
+
+| Method | Endpoint                    | Description                           |
+| ------ | --------------------------- | ------------------------------------- |
+| GET    | `/api/analytics/top-skills` | Get top skills distribution and trend |
+
+### Health
+
+| Method | Endpoint      | Description             |
+| ------ | ------------- | ----------------------- |
+| GET    | `/api/health` | Check API health status |
+
 ## Folder Structure
 
 ```
 server/
 ├── src/
 │   ├── config/          # Database configuration (db.js)
-│   ├── controllers/     # Request handlers (projects, progress, mentorship, skills)
+│   ├── controllers/     # Request handlers
+│   │   ├── analyticsController.js
+│   │   ├── mentorshipController.js
+│   │   ├── progressController.js
+│   │   ├── projectsController.js
+│   │   ├── skillsController.js
+│   │   └── usersController.js
 │   ├── routes/          # API route definitions
-│   ├── services/        # Business logic (skillSignalService)
+│   │   ├── analyticsRoutes.js
+│   │   ├── healthRoute.js
+│   │   ├── mentorshipRoutes.js
+│   │   ├── progressRoutes.js
+│   │   ├── projectsRoutes.js
+│   │   ├── skillsRoutes.js
+│   │   └── usersRoutes.js
+│   ├── services/        # Business logic
+│   │   ├── skillSignalService.js
+│   │   └── __tests__/   # Service tests
 │   ├── server.js        # Server entry point
 │   └── debug_*.js       # Debugging utilities
 ├── .env                 # Environment variables (not tracked)
+├── check_db.js          # Database connectivity check
 └── package.json         # Project dependencies
 ```
 

@@ -31,16 +31,30 @@ client/
 ├── public/              # Static assets
 ├── src/
 │   ├── assets/          # Images, fonts, and icons
-│   ├── components/      # Reusable UI components (SkillTracker, modals)
+│   ├── components/      # Reusable UI components
+│   │   ├── layout/      # Layout components (Navbar, Sidebar)
+│   │   ├── ui/          # Generic UI components
+│   │   ├── ProjectPortfolio/ # Project-specific components
+│   │   ├── SkillTracker/ # Skill tracking visualizations
+│   │   ├── modals/      # Modal dialogs
+│   │   ├── shared/      # Shared components (SkillMultiSelect)
+│   │   └── HealthStatus.jsx # Backend health indicator
 │   ├── context/         # React Context (UserContext)
-│   ├── pages/           # Page-level components (CollaborationHub, MentorshipBridge, SkillTracker)
+│   ├── pages/           # Page-level components
+│   │   ├── CollaborationHub/ # Project discovery and updates
+│   │   ├── MentorshipBridge/ # Mentor directory and sessions
+│   │   ├── SkillTracker/ # Skill analytics dashboard
+│   │   ├── Dashboard.jsx # Main overview
+│   │   ├── Login.jsx    # Authentication page
+│   │   └── ProjectPortfolio.jsx # User project showcase
 │   ├── utils/           # API utilities and helpers
 │   ├── App.jsx          # Root application component
 │   ├── main.jsx         # Application entry point
 │   └── index.css        # Global styles and Tailwind imports
 ├── index.html           # HTML template
 ├── vite.config.js       # Vite configuration
-├── tailwind.config.js   # Tailwind CSS configuration
+├── postcss.config.js    # PostCSS configuration
+├── eslint.config.js     # ESLint configuration
 └── package.json         # Project dependencies
 ```
 
