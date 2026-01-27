@@ -96,7 +96,6 @@ export default function ProjectPortfolio() {
       {/* Sidebar */}
       <Sidebar
         activeTab="portfolio"
-        setActiveTab={() => {}}
         isMobileOpen={isMobileSidebarOpen}
         onClose={() => setIsMobileSidebarOpen(false)}
       />

@@ -19,8 +19,33 @@ export default function App() {
   return (
     <ToastProvider>
       <Routes>
+        <Route path="/" element={<Navigate to="/collaboration" replace />} />
         <Route
-          path="/"
+          path="/collaboration"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mentorship"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/skills"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/health"
           element={
             <ProtectedRoute>
               <Dashboard />

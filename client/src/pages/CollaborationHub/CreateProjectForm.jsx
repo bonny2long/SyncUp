@@ -9,6 +9,7 @@ export default function CreateProjectForm({ onCreated }) {
   const [description, setDescription] = useState("");
   const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState("");
+  const [visibility, setVisibility] = useState(""); // "" = not selected, "seeking" or "public"
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,6 +35,11 @@ export default function CreateProjectForm({ onCreated }) {
       return;
     }
 
+    if (!visibility) {
+      setError("Please choose Build in Public or Seeking Members");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -41,13 +47,15 @@ export default function CreateProjectForm({ onCreated }) {
         title: title.trim(),
         description,
         owner_id: user.id,
-        skills: skills, // Send array of strings
+        skills: skills,
+        visibility: visibility,
       });
 
       setTitle("");
       setDescription("");
       setSkills([]);
       setSkillInput("");
+      setVisibility("");
       onCreated?.();
     } catch (err) {
       setError("Failed to create project");
@@ -79,6 +87,72 @@ export default function CreateProjectForm({ onCreated }) {
         className="border rounded p-2 text-sm resize-none"
       />
 
+      {/* VISIBILITY SELECTOR */}
+      <div className="flex flex-col gap-2">
+        <label className="text-xs text-gray-500 font-medium">
+          How do you want to share this project?
+        </label>
+
+        <div className="flex gap-3">
+          {/* Build in Public Option */}
+          <label
+            className="flex-1 p-3 border-2 rounded-lg cursor-pointer transition hover:bg-gray-50"
+            style={{
+              borderColor: visibility === "public" ? "#4C5FD5" : "#e5e7eb",
+              backgroundColor: visibility === "public" ? "#F5F7FA" : "white",
+            }}
+          >
+            <div className="flex items-start gap-2">
+              <input
+                type="radio"
+                name="visibility"
+                value="public"
+                checked={visibility === "public"}
+                onChange={(e) => setVisibility(e.target.value)}
+                className="mt-0.5"
+              />
+              <div>
+                <p className="text-sm font-semibold text-neutralDark">
+                  Build in Public
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Share your progress with the community. No join requests.
+                </p>
+              </div>
+            </div>
+          </label>
+
+          {/* Seeking Members Option */}
+          <label
+            className="flex-1 p-3 border-2 rounded-lg cursor-pointer transition hover:bg-gray-50"
+            style={{
+              borderColor: visibility === "seeking" ? "#9B5DE5" : "#e5e7eb",
+              backgroundColor: visibility === "seeking" ? "#F5F7FA" : "white",
+            }}
+          >
+            <div className="flex items-start gap-2">
+              <input
+                type="radio"
+                name="visibility"
+                value="seeking"
+                checked={visibility === "seeking"}
+                onChange={(e) => setVisibility(e.target.value)}
+                className="mt-0.5"
+              />
+              <div>
+                <p className="text-sm font-semibold text-neutralDark">
+                  👥 Seeking Members
+                </p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Accept join requests from interested collaborators.
+                </p>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* SKILLS SECTION */}
       <div className="flex flex-col gap-1">
         <label className="text-xs text-gray-500">
           Tag relevant skills (type & enter)
@@ -133,7 +207,7 @@ export default function CreateProjectForm({ onCreated }) {
       <button
         type="submit"
         disabled={loading}
-        className="bg-primary text-white py-2 rounded-lg text-sm hover:opacity-90 transition"
+        className="bg-primary text-white py-2 rounded-lg text-sm hover:opacity-90 transition disabled:opacity-50"
       >
         {loading ? "Creating..." : "Create Project"}
       </button>

@@ -6,18 +6,37 @@ const ToastContext = createContext();
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = "success", duration = 3000) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type, duration }]);
+  const addToast = useCallback(
+    (messageOrOptions, type = "success", duration = 3000) => {
+      let message = messageOrOptions;
+      let toastType = type;
+      let toastDuration = duration;
 
-    if (duration > 0) {
-      setTimeout(() => {
-        removeToast(id);
-      }, duration);
-    }
+      if (typeof messageOrOptions === "object" && messageOrOptions !== null) {
+        message = messageOrOptions.message;
+        toastType = messageOrOptions.type || "success";
+        toastDuration =
+          messageOrOptions.duration !== undefined ?
+            messageOrOptions.duration
+          : 3000;
+      }
 
-    return id;
-  }, []);
+      const id = Date.now();
+      setToasts((prev) => [
+        ...prev,
+        { id, message, type: toastType, duration: toastDuration },
+      ]);
+
+      if (toastDuration > 0) {
+        setTimeout(() => {
+          removeToast(id);
+        }, toastDuration);
+      }
+
+      return id;
+    },
+    [],
+  );
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));

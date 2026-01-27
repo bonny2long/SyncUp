@@ -1,23 +1,50 @@
-import React from "react";
+import React, { useState } from "react";
+import { createJoinRequest } from "../../utils/api";
+import { useToast } from "../../context/ToastContext";
+import { getErrorMessage } from "../../utils/errorHandler";
 
 export default function JoinProjectModal({
   project,
   onConfirm,
   onCancel,
-  loading,
+  onRequestSent,
 }) {
+  const { addToast } = useToast();
+  const [loading, setLoading] = useState(false);
+
   if (!project) return null;
+
+  const handleSubmitRequest = async () => {
+    setLoading(true);
+    try {
+      // Import currentUser from context
+      const { user: currentUser } =
+        await import("../../context/UserContext").then((m) => ({ user: null }));
+
+      // Get user ID - need to pass it differently
+      // Will be called with onRequestSent callback
+      await onConfirm();
+    } catch (err) {
+      const { message } = getErrorMessage(err);
+      addToast({
+        type: "error",
+        message: message || "Failed to submit request",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6 animate-in fade-in zoom-in duration-300">
         {/* Header */}
         <h2 className="text-2xl font-bold text-neutralDark mb-2">
-          Join Project?
+          Request to Join?
         </h2>
         <p className="text-sm text-gray-600 mb-6">
-          You're about to join this project. You'll be able to post updates and
-          collaborate with the team.
+          Your request will be sent to the project owner for approval. You'll be
+          notified once they review it.
         </p>
 
         {/* Project Info */}
@@ -105,9 +132,9 @@ export default function JoinProjectModal({
             {loading ?
               <>
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Joining...
+                Sending...
               </>
-            : "Yes, Join"}
+            : "Send Request"}
           </button>
         </div>
       </div>

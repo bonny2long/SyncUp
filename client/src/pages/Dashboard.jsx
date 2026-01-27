@@ -10,18 +10,9 @@ import HealthStatus from "../components/HealthStatus";
 export default function Dashboard() {
   const location = useLocation();
 
-  // Initialize activeTab from location state if available, otherwise default to "collaboration"
-  const [activeTab, setActiveTab] = useState(
-    location.state?.activeTab || "collaboration",
-  );
+  // Derive activeTab from location.pathname
+  const activeTab = location.pathname.substring(1) || "collaboration";
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Still keep this to handle state updates if the user navigates while already on the Dashboard
-  useEffect(() => {
-    if (location.state?.activeTab) {
-      setActiveTab(location.state.activeTab);
-    }
-  }, [location.state]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -43,7 +34,6 @@ export default function Dashboard() {
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
         isMobileOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
       />

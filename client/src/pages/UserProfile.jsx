@@ -78,7 +78,7 @@ export default function UserProfile() {
   const handleMentorshipRequest = () => {
     addToast({
       type: "success",
-      message: `Mentorship request sent to ${user.name}! 🎯`,
+      message: `Mentorship request sent to ${user.name}! `,
     });
     // TODO: Add API call to create mentorship request
   };
@@ -251,7 +251,7 @@ export default function UserProfile() {
                   </div>
                   <div className="flex gap-4 mt-3 text-xs text-gray-600">
                     <span>👥 {project.team_size} members</span>
-                    <span>🎯 {project.skill_count} skills</span>
+                    <span> {project.skill_count} skills</span>
                   </div>
                 </div>
               ))}

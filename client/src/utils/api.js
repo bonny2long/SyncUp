@@ -298,3 +298,64 @@ export async function attachProjectSkills(projectId, skillIds) {
 
   if (!res.ok) throw new Error("Failed to attach project skills");
 }
+
+// ============================================================
+// PROJECT JOIN REQUESTS
+// ============================================================
+
+export async function createJoinRequest(projectId, userId) {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/join-request`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to create join request");
+  }
+  return res.json();
+}
+
+export async function getProjectRequests(projectId) {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/requests`);
+  if (!res.ok) throw new Error("Failed to fetch project requests");
+  return res.json();
+}
+
+export async function getUserProjectRequests(userId) {
+  const res = await fetch(`${API_BASE}/projects/requests/user/${userId}`);
+  if (!res.ok) throw new Error("Failed to fetch user requests");
+  return res.json();
+}
+
+export async function checkJoinRequestStatus(projectId, userId) {
+  const res = await fetch(
+    `${API_BASE}/projects/${projectId}/join-request/status/${userId}`,
+  );
+  if (!res.ok) throw new Error("Failed to check request status");
+  return res.json();
+}
+
+export async function approveJoinRequest(projectId, requestId) {
+  const res = await fetch(
+    `${API_BASE}/projects/${projectId}/requests/${requestId}/approve`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+  if (!res.ok) throw new Error("Failed to approve request");
+  return res.json();
+}
+
+export async function rejectJoinRequest(projectId, requestId) {
+  const res = await fetch(
+    `${API_BASE}/projects/${projectId}/requests/${requestId}/reject`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+  if (!res.ok) throw new Error("Failed to reject request");
+  return res.json();
+}

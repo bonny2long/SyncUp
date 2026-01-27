@@ -1,47 +1,27 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-export default function Sidebar({
-  activeTab,
-  setActiveTab,
-  isMobileOpen,
-  onClose,
-}) {
+export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const tabs = [
-    { id: "collaboration", label: "Collaboration Hub", path: "/" },
-    { id: "mentorship", label: "Mentorship Bridge", path: "/" },
-    { id: "skills", label: "Skill Tracker", path: "/" },
+    { id: "collaboration", label: "Collaboration Hub", path: "/collaboration" },
+    { id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" },
+    { id: "skills", label: "Skill Tracker", path: "/skills" },
     { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
-    { id: "health", label: "System Health", path: "/" },
+    { id: "health", label: "System Health", path: "/health" },
   ];
 
   const handleTabClick = (tab) => {
-    // If navigating to a separate route (like portfolio)
-    if (tab.path !== "/") {
-      navigate(tab.path);
-      onClose?.();
-    } else {
-      // If clicking a dashboard tab (path: "/")
-      if (location.pathname !== "/") {
-        // If we are NOT on the dashboard, navigate there and pass the tab ID
-        navigate("/", { state: { activeTab: tab.id } });
-      } else {
-        // If we ARE already on the dashboard, just update the state
-        setActiveTab(tab.id);
-      }
-      onClose?.();
-    }
+    navigate(tab.path);
+    onClose?.();
   };
 
   // Determine active tab based on current route
   const getActiveTab = () => {
-    if (location.pathname === "/portfolio") {
-      return "portfolio";
-    }
-    return activeTab;
+    const currentTab = tabs.find((t) => t.path === location.pathname);
+    return currentTab ? currentTab.id : activeTab;
   };
 
   const content = (

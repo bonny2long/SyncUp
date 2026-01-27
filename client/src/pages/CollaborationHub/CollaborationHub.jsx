@@ -1,18 +1,28 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useUser } from "../../context/UserContext";
+import { useToast } from "../../context/ToastContext";
 import CreateProjectForm from "./CreateProjectForm";
 import { fetchProjects, fetchUpdates } from "../../utils/api";
 import MyWorkPanel from "./MyWorkPanel";
 import DiscoverPanel from "./DiscoverPanel";
 import ActivityPanel from "./ActivityPanel";
+import RequestsPanel from "./RequestsPanel";
 import JoinProjectModal from "./JoinProjectModal";
 import { getErrorMessage } from "../../utils/errorHandler";
 
 export default function CollaborationHub() {
   const { user: currentUser } = useUser();
+  const { addToast } = useToast();
 
   // Tab state
-  const [activeTab, setActiveTab] = useState("mywork");
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("collaborationHubActiveTab") || "mywork";
+  });
+
+  // Persist activeTab to localStorage
+  useEffect(() => {
+    localStorage.setItem("collaborationHubActiveTab", activeTab);
+  }, [activeTab]);
 
   // Data state
   const [allProjects, setAllProjects] = useState([]);
@@ -93,22 +103,28 @@ export default function CollaborationHub() {
     setJoining(true);
     try {
       // Import here to avoid circular dependency
-      const { addProjectMember } = await import("../../utils/api");
+      const { createJoinRequest } = await import("../../utils/api");
 
-      await addProjectMember(projectToJoin.id, currentUser.id);
-
-      // Reload data
-      await loadData();
+      await createJoinRequest(projectToJoin.id, currentUser.id);
 
       // Close modal and clear
       setShowJoinModal(false);
       setProjectToJoin(null);
 
-      console.log("✅ Successfully joined project:", projectToJoin.title);
+      // Show success toast
+      addToast({
+        type: "success",
+        message: `Request sent! The project owner will review it soon. ✅`,
+      });
+
+      console.log("✅ Successfully sent request to join:", projectToJoin.title);
     } catch (err) {
       const { message } = getErrorMessage(err);
-      setError(message);
-      console.error("Error joining project:", err);
+      addToast({
+        type: "error",
+        message: message || "Failed to send request",
+      });
+      console.error("Error sending request:", err);
     } finally {
       setJoining(false);
     }
@@ -194,6 +210,18 @@ export default function CollaborationHub() {
         </button>
 
         <button
+          onClick={() => handleTabChange("requests")}
+          className={`px-4 py-3 font-medium transition-all duration-300 relative ${
+            activeTab === "requests" ?
+              "text-secondary border-b-2 border-secondary"
+            : "text-gray-600 hover:text-neutralDark"
+          }`}
+        >
+          Requests
+          {/* Badge for pending requests */}
+        </button>
+
+        <button
           onClick={() => handleTabChange("activity")}
           className={`px-4 py-3 font-medium transition-all duration-300 ${
             activeTab === "activity" ?
@@ -228,6 +256,8 @@ export default function CollaborationHub() {
               loading={loading}
             />
           )}
+
+          {activeTab === "requests" && <RequestsPanel onRefresh={loadData} />}
 
           {activeTab === "activity" && (
             <div>
@@ -324,13 +354,35 @@ export default function CollaborationHub() {
                     onClick={() => handleJoinClick(selectedProject)}
                     className="w-full mt-4 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition font-medium"
                   >
-                    Join Project
+                    Request to Join
                   </button>
                 </div>
               : <p className="text-gray-500 text-center py-8">
                   Select a project to see details
                 </p>
               }
+            </div>
+          )}
+
+          {activeTab === "requests" && (
+            <div className="bg-white rounded-lg border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-secondary mb-4">
+                How it works
+              </h2>
+              <div className="space-y-4 text-sm text-gray-700">
+                <p>
+                  <strong>Request to Join:</strong> Users can request to join
+                  your projects from the Discover tab.
+                </p>
+                <p>
+                  <strong>You Approve:</strong> Review their profile and approve
+                  or reject each request.
+                </p>
+                <p>
+                  <strong>They Get Notified:</strong> Users are notified when
+                  approved or rejected.
+                </p>
+              </div>
             </div>
           )}
 
