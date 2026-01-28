@@ -359,7 +359,7 @@ export const getProjectSkills = async (req, res) => {
 };
 
 // GET /api/projects/user/:userId
-// Fetch all projects for a user (as owner) with metrics
+// Fetch all projects for a user (as owner or member) with metrics
 export const getUserProjects = async (req, res) => {
   const { userId } = req.params;
 
@@ -376,17 +376,17 @@ export const getUserProjects = async (req, res) => {
         p.status,
         p.metadata,
         u.name as owner_name,
-        COUNT(DISTINCT pm.user_id) as team_size,
+        COUNT(DISTINCT pm_all.user_id) as team_size,
         COUNT(DISTINCT ps.skill_id) as skill_count,
         COUNT(DISTINCT pu.id) as update_count,
         COUNT(DISTINCT ms.id) as mentorship_count
       FROM projects p
+      JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ?
       LEFT JOIN users u ON p.owner_id = u.id
-      LEFT JOIN project_members pm ON p.id = pm.project_id
+      LEFT JOIN project_members pm_all ON p.id = pm_all.project_id
       LEFT JOIN project_skills ps ON p.id = ps.project_id
       LEFT JOIN progress_updates pu ON p.id = pu.project_id AND pu.is_deleted = 0
       LEFT JOIN mentorship_sessions ms ON p.id = ms.project_id AND ms.status = 'completed'
-      WHERE p.owner_id = ?
       GROUP BY p.id, p.title, p.description, p.owner_id, p.start_date, p.end_date, p.status, p.metadata, u.name
       ORDER BY p.start_date DESC
       `,

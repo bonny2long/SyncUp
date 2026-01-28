@@ -359,3 +359,29 @@ export async function rejectJoinRequest(projectId, requestId) {
   if (!res.ok) throw new Error("Failed to reject request");
   return res.json();
 }
+
+// ============================================================
+// MENTORSHIP - SESSIONS
+// ============================================================
+
+export async function fetchInternSessions(internId, status = "all") {
+  const url =
+    status && status !== "all" ?
+      `${API_BASE}/mentorship/sessions/intern/${internId}?status=${status}`
+    : `${API_BASE}/mentorship/sessions/intern/${internId}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch intern sessions");
+  return res.json();
+}
+
+export async function fetchMentorSessions(mentorId, status = "all") {
+  const url =
+    status && status !== "all" ?
+      `${API_BASE}/mentorship/sessions/mentor/${mentorId}?status=${status}`
+    : `${API_BASE}/mentorship/sessions/mentor/${mentorId}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch mentor sessions");
+  return res.json();
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchSkills } from "../../utils/api";
+import { fetchSkills } from "../../../utils/api";
 
 /**
  * Modal for selecting skills when completing a technical mentorship session.

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Zap } from "lucide-react";
-import SkillSelectModal from "./SkillSelectModal";
-import SkillBadge from "../../components/shared/SkillBadge";
+import SkillSelectModal from "../SkillSelectModal";
+import SkillBadge from "../../../components/shared/SkillBadge";
 
 const SESSION_FOCUS_LABELS = {
   project_support: "Project Support",

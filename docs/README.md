@@ -40,12 +40,12 @@ SyncUp is built on the philosophy that professional growth should be a mirror of
 
 ## Tech Stack
 
-| Layer          | Technologies                           |
-| -------------- | -------------------------------------- |
-| **Frontend**   | React 18, Vite, Tailwind CSS, Recharts |
-| **Backend**    | Node.js, Express                       |
-| **Database**   | MySQL (Local), Azure SQL (Production)  |
-| **State/Auth** | React Context + LocalStorage           |
+| Layer          | Technologies                                      |
+| -------------- | ------------------------------------------------- |
+| **Frontend**   | React 19, Vite, Tailwind CSS, Recharts, AG Charts |
+| **Backend**    | Node.js, Express                                  |
+| **Database**   | MySQL (Local), Azure SQL (Production)             |
+| **State/Auth** | React Context + LocalStorage                      |
 
 ---
 

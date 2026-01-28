@@ -49,7 +49,7 @@ export const getUserProfile = async (req, res) => {
       [userId],
     );
 
-    // Get user's projects
+    // Get user's projects (owned or joined)
     const [projects] = await pool.query(
       `
       SELECT 
@@ -59,20 +59,20 @@ export const getUserProfile = async (req, res) => {
         p.status,
         p.start_date,
         p.end_date,
-        COUNT(DISTINCT pm.user_id) as team_size,
+        COUNT(DISTINCT pm_all.user_id) as team_size,
         COUNT(DISTINCT ps.skill_id) as skill_count
       FROM projects p
-      LEFT JOIN project_members pm ON p.id = pm.project_id
+      JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ?
+      LEFT JOIN project_members pm_all ON p.id = pm_all.project_id
       LEFT JOIN project_skills ps ON p.id = ps.project_id
-      WHERE p.owner_id = ?
       GROUP BY p.id, p.title, p.description, p.status, p.start_date, p.end_date
       ORDER BY p.start_date DESC
-      LIMIT 5
+      LIMIT 10
       `,
       [userId],
     );
 
-    // Get activity stats - only from projects they own or are member of
+    // Get activity stats
     let stats = {
       total_skills: 0,
       total_signals: 0,
@@ -90,17 +90,14 @@ export const getUserProfile = async (req, res) => {
           COUNT(DISTINCT uss.skill_id) as total_skills,
           COUNT(DISTINCT uss.id) as total_signals,
           COALESCE(SUM(uss.weight), 0) as total_weight,
-          COUNT(DISTINCT CASE WHEN uss.source_type = 'project' AND p.owner_id = ? THEN uss.id END) as project_count,
-          COUNT(DISTINCT CASE WHEN uss.source_type = 'update' AND pu.user_id = ? THEN uss.id END) as update_count,
-          COUNT(DISTINCT CASE WHEN uss.source_type = 'mentorship' AND (ms.intern_id = ? OR ms.mentor_id = ?) THEN uss.id END) as mentorship_count,
+          (SELECT COUNT(DISTINCT project_id) FROM project_members WHERE user_id = ?) as project_count,
+          COUNT(DISTINCT CASE WHEN uss.source_type = 'update' THEN uss.source_id END) as update_count,
+          COUNT(DISTINCT CASE WHEN uss.source_type = 'mentorship' THEN uss.source_id END) as mentorship_count,
           COALESCE(DATEDIFF(CURDATE(), MIN(DATE(uss.created_at))), 0) as days_active
         FROM user_skill_signals uss
-        LEFT JOIN projects p ON uss.source_type = 'project' AND uss.source_id = p.id
-        LEFT JOIN progress_updates pu ON uss.source_type = 'update' AND uss.source_id = pu.id
-        LEFT JOIN mentorship_sessions ms ON uss.source_type = 'mentorship' AND uss.source_id = ms.id
         WHERE uss.user_id = ?
         `,
-        [userId, userId, userId, userId, userId],
+        [userId, userId],
       );
       stats = statsResult[0] || stats;
     }

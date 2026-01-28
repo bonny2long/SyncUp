@@ -9,8 +9,11 @@ Backend API for the SyncUp platform, powered by Node.js and Express with a MySQL
 - **Node.js v20+** - JavaScript runtime
 - **Express 5** - Web application framework
 - **MySQL2** - MySQL client with Promise support
+- **MSSQL** - Microsoft SQL Server client (Azure SQL support)
 - **dotenv** - Environment variable management
 - **CORS** - Cross-Origin Resource Sharing
+- **axios** - Promise based HTTP client
+- **faker** - Generate massive amounts of fake data
 - **Nodemon** - Development auto-restart utility
 
 ## API Endpoints
@@ -107,6 +110,8 @@ server/
    DB_USER=your_username
    DB_PASSWORD=your_password
    DB_NAME=syncup_local
+   # For Azure SQL (MSSQL)
+   # DB_SERVER=your_server.database.windows.net
    PORT=5000
    ```
 

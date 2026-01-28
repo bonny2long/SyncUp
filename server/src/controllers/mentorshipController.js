@@ -381,3 +381,79 @@ export const getSessionSkills = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch session skills" });
   }
 };
+
+// GET /api/mentorship/sessions/intern/:internId
+export const getInternSessions = async (req, res) => {
+  const { internId } = req.params;
+  const { status } = req.query;
+
+  try {
+    let whereClause = "WHERE s.intern_id = ?";
+    const params = [internId];
+
+    if (status && status !== "all") {
+      whereClause += " AND s.status = ?";
+      params.push(status);
+    }
+
+    const [sessions] = await pool.query(
+      `SELECT 
+        s.*,
+        m.id AS mentor_id,
+        m.name AS mentor_name,
+        m.email AS mentor_email
+      FROM mentorship_sessions s
+      JOIN users m ON s.mentor_id = m.id
+      ${whereClause}
+      ORDER BY 
+        CASE WHEN s.status = 'pending' THEN 1
+             WHEN s.status = 'accepted' THEN 2
+             ELSE 3 END,
+        s.session_date DESC`,
+      params,
+    );
+
+    res.json(sessions);
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
+};
+
+// GET /api/mentorship/sessions/mentor/:mentorId
+export const getMentorSessions = async (req, res) => {
+  const { mentorId } = req.params;
+  const { status } = req.query;
+
+  try {
+    let whereClause = "WHERE s.mentor_id = ?";
+    const params = [mentorId];
+
+    if (status && status !== "all") {
+      whereClause += " AND s.status = ?";
+      params.push(status);
+    }
+
+    const [sessions] = await pool.query(
+      `SELECT 
+        s.*,
+        i.id AS intern_id,
+        i.name AS intern_name,
+        i.email AS intern_email
+      FROM mentorship_sessions s
+      JOIN users i ON s.intern_id = i.id
+      ${whereClause}
+      ORDER BY 
+        CASE WHEN s.status = 'pending' THEN 1
+             WHEN s.status = 'accepted' THEN 2
+             ELSE 3 END,
+        s.session_date DESC`,
+      params,
+    );
+
+    res.json(sessions);
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
+};

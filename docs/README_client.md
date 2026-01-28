@@ -6,9 +6,11 @@ Frontend application for the SyncUp platform, built with React and Vite, styled 
 
 ## Tech Stack
 
-- **React 18** - UI component library
+- **React 19** - UI component library
 - **Vite 7** - Build tool and development server
 - **Tailwind CSS v4** - Utility-first CSS framework
+- **AG Charts** - High-performance charting library
+- **Lucide React** - Beautiful & consistent icons
 - **PostCSS** - CSS processing
 - **Autoprefixer** - Vendor prefix automation
 
@@ -46,7 +48,8 @@ client/
 │   │   ├── SkillTracker/ # Skill analytics dashboard
 │   │   ├── Dashboard.jsx # Main overview
 │   │   ├── Login.jsx    # Authentication page
-│   │   └── ProjectPortfolio.jsx # User project showcase
+│   │   ├── ProjectPortfolio.jsx # User project showcase
+│   │   └── UserProfile.jsx # User profile management
 │   ├── utils/           # API utilities and helpers
 │   ├── App.jsx          # Root application component
 │   ├── main.jsx         # Application entry point

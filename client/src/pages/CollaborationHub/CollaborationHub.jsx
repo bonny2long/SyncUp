@@ -72,10 +72,7 @@ export default function CollaborationHub() {
 
   // Column 1: YOUR PROJECTS (owned + joined)
   const userProjects = allProjects.filter(
-    (p) =>
-      p.owner_id === currentUser?.id || // You own it
-      p.is_member === 1 || // You're a member
-      p.is_member === true,
+    (p) => p.is_member === 1 || p.is_member === true,
   );
 
   // Column 2: DISCOVER PROJECTS (projects you're NOT on + active only)

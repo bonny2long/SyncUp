@@ -1,35 +1,34 @@
-import React, { useState } from "react";
-import MentorList from "./MentorList";
-import SessionList from "./SessionList";
-import SessionRequestForm from "./SessionRequestForm";
+import React from "react";
 import { useUser } from "../../context/UserContext";
+import InternView from "./InternView/InternView";
+import MentorView from "./MentorView/MentorView";
 
 export default function MentorshipBridge() {
-  const [selectedMentor, setSelectedMentor] = useState(null); // { id, name } | null
   const { user } = useUser();
 
+  // Role-based routing
+  if (user?.role === "intern") {
+    return <InternView />;
+  }
+
+  if (user?.role === "mentor") {
+    return <MentorView />;
+  }
+
+  // Fallback for users without role
   return (
-    <section className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr] gap-6">
-      {/* Sessions */}
-      <div>
-        <h2 className="text-lg font-semibold text-primary mb-3">My Sessions</h2>
-
-        <SessionRequestForm selectedMentor={selectedMentor} />
-
-        <SessionList
-          selectedMentorId={selectedMentor?.id || null}
-          currentUser={user}
-        />
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Role Not Set</h2>
+        <p className="text-gray-600 mb-4">
+          Your account role needs to be configured to access mentorship
+          features.
+        </p>
+        <p className="text-sm text-gray-500">
+          Please contact an administrator to set your role as either "intern" or
+          "mentor".
+        </p>
       </div>
-
-      {/* Mentors */}
-      <div>
-        <h2 className="text-lg font-semibold text-primary mb-3">Mentors</h2>
-        <MentorList
-          selectedMentor={selectedMentor}
-          setSelectedMentor={setSelectedMentor}
-        />
-      </div>
-    </section>
+    </div>
   );
 }
