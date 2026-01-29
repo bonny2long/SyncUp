@@ -13,6 +13,7 @@ import {
   getSessionSkills,
   getInternSessions,
   getMentorSessions,
+  getMentorAvailability,
 } from "../controllers/mentorshipController.js";
 
 const router = express.Router();
@@ -54,5 +55,8 @@ router.get("/sessions/intern/:internId", getInternSessions);
 
 // GET mentor sessions
 router.get("/sessions/mentor/:mentorId", getMentorSessions);
+
+// GET mentor availability
+router.get("/mentors/:id/availability", getMentorAvailability);
 
 export default router;

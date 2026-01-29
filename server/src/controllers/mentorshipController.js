@@ -457,3 +457,23 @@ export const getMentorSessions = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch sessions" });
   }
 };
+
+// GET /api/mentorship/mentors/:id/availability
+export const getMentorAvailability = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [slots] = await pool.query(
+      `SELECT available_date, available_time 
+       FROM mentor_availability 
+       WHERE mentor_id = ? 
+       ORDER BY available_date ASC, available_time ASC`,
+      [id],
+    );
+
+    res.json(slots);
+  } catch (err) {
+    console.error("Error fetching mentor availability:", err);
+    res.status(500).json({ error: "Failed to fetch availability" });
+  }
+};

@@ -7,42 +7,15 @@ export default function MentorCard({
   onViewProfile,
   onRequestSession,
 }) {
-  const formatAvailability = (dateStr, timeStr) => {
-    if (!dateStr && !timeStr) return "N/A";
-
-    let readableDate = "";
-    if (dateStr) {
-      const dateObj =
-        dateStr.includes("T") ?
-          new Date(dateStr)
-        : new Date(`${dateStr}T00:00:00`);
-      readableDate =
-        Number.isNaN(dateObj.getTime()) ? dateStr : (
-          dateObj.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
-        );
-    }
-
-    let readableTime = "";
-    if (timeStr) {
-      const [h = "00", m = "00"] = timeStr.split(":");
-      const dateForTime = new Date();
-      dateForTime.setHours(Number(h), Number(m), 0, 0);
-      readableTime = dateForTime.toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-      });
-    }
-
-    return `${readableDate} ${readableTime}`.trim();
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "TBA";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
   };
-
-  const contextLabel =
-    tab === "available" ?
-      formatAvailability(mentor.available_date, mentor.available_time)
-    : mentor.projects || "Project mentor";
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition group">
@@ -59,21 +32,31 @@ export default function MentorCard({
         </span>
       </div>
 
-      {/* Availability/Projects Info */}
-      <div className="mb-4 p-2 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-2 text-sm text-gray-700">
-          {tab === "available" ?
-            <>
+      {/* Stats Section */}
+      <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-2">
+        {tab === "available" ?
+          <>
+            <div className="flex items-center gap-2 text-sm text-gray-700">
               <Calendar className="w-4 h-4 text-primary" />
               <span className="font-medium">Next Available:</span>
-            </>
-          : <>
-              <Users className="w-4 h-4 text-secondary" />
-              <span className="font-medium">Projects:</span>
-            </>
-          }
-          <span className="text-gray-600">{contextLabel || "N/A"}</span>
-        </div>
+              <span className="text-gray-600">
+                {formatDate(mentor.nextAvailable?.date)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="w-4 h-4 text-secondary" />
+              <span className="font-semibold text-secondary">
+                {mentor.availabilityCount}{" "}
+                {mentor.availabilityCount === 1 ? "slot" : "slots"} available
+              </span>
+            </div>
+          </>
+        : <div className="flex items-center gap-2 text-sm text-gray-700">
+            <Users className="w-4 h-4 text-secondary" />
+            <span className="font-medium">Projects:</span>
+            <span className="text-gray-600">{mentor.projects || "N/A"}</span>
+          </div>
+        }
       </div>
 
       {/* Actions */}
@@ -88,7 +71,7 @@ export default function MentorCard({
           onClick={() => onRequestSession(mentor)}
           className="flex-1 px-3 py-2 text-sm rounded-lg bg-primary text-white hover:bg-secondary transition font-medium"
         >
-          Request Session
+          Book Session
         </button>
       </div>
     </div>

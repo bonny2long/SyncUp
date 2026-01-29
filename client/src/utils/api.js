@@ -385,3 +385,12 @@ export async function fetchMentorSessions(mentorId, status = "all") {
   if (!res.ok) throw new Error("Failed to fetch mentor sessions");
   return res.json();
 }
+
+// Get all availability slots for a specific mentor
+export async function fetchMentorAvailability(mentorId) {
+  const res = await fetch(
+    `${API_BASE}/mentorship/mentors/${mentorId}/availability`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch mentor availability");
+  return res.json();
+}

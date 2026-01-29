@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { X } from "lucide-react";
-import { createSession } from "../../../utils/api";
+import React, { useState, useEffect } from "react";
+import { X, Calendar, Clock } from "lucide-react";
+import { createSession, fetchMentorAvailability } from "../../../utils/api";
+import { formatDateTime } from "../../../utils/date";
 import { useUser } from "../../../context/UserContext";
 import { useToast } from "../../../context/ToastContext";
 
@@ -16,12 +17,36 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
   const { user } = useUser();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [availabilitySlots, setAvailabilitySlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(true);
+
   const [formData, setFormData] = useState({
     session_focus: "",
     topic: "",
     details: "",
     session_date: "",
   });
+
+  // Fetch mentor's availability when modal opens
+  useEffect(() => {
+    async function fetchAvailability() {
+      try {
+        setLoadingSlots(true);
+        const slots = await fetchMentorAvailability(mentor.id);
+        setAvailabilitySlots(slots);
+      } catch (err) {
+        console.error("Failed to load availability:", err);
+        addToast({
+          type: "error",
+          message: "Failed to load available times",
+        });
+      } finally {
+        setLoadingSlots(false);
+      }
+    }
+
+    fetchAvailability();
+  }, [mentor.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,25 +93,93 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-gray-100 relative"
+        className="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-gray-100 relative max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="border-b border-gray-200 p-6 pb-4">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 pb-4 rounded-t-2xl">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
           >
             <X className="w-5 h-5 text-gray-600" />
           </button>
-          <h2 className="text-2xl font-bold text-primary">Request Session</h2>
+          <h2 className="text-2xl font-bold text-primary">Book Session</h2>
           <p className="text-sm text-gray-600 mt-1">
             with <span className="font-medium">{mentor.name}</span>
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Available Time Slots */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              <Calendar className="w-4 h-4 inline mr-1" />
+              Choose Your Preferred Time <span className="text-red-500">*</span>
+            </label>
+
+            {loadingSlots ?
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-gray-500">
+                  Loading available times...
+                </p>
+              </div>
+            : availabilitySlots.length === 0 ?
+              <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-500">
+                  No available times for this mentor
+                </p>
+              </div>
+            : <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                {availabilitySlots.map((slot, index) => {
+                  const slotValue = `${slot.available_date}T${slot.available_time}`;
+                  const isSelected = formData.session_date === slotValue;
+
+                  return (
+                    <label
+                      key={index}
+                      className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition ${
+                        isSelected ?
+                          "border-primary bg-primary/5"
+                        : "border-gray-200 hover:border-primary/40 hover:bg-gray-50"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="session_date"
+                        value={slotValue}
+                        checked={isSelected}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            session_date: e.target.value,
+                          })
+                        }
+                        className="w-4 h-4 accent-primary"
+                      />
+                      <div className="flex-1">
+                        <p
+                          className={`font-medium ${isSelected ? "text-primary" : "text-gray-900"}`}
+                        >
+                          {formatDateTime(
+                            slot.available_date,
+                            slot.available_time,
+                          )}
+                        </p>
+                      </div>
+                      {isSelected && (
+                        <div className="text-primary text-sm font-medium">
+                          ✓ Selected
+                        </div>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            }
+          </div>
+
           {/* Session Focus */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -142,24 +235,8 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
             />
           </div>
 
-          {/* Date/Time */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Preferred Date & Time <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="datetime-local"
-              value={formData.session_date}
-              onChange={(e) =>
-                setFormData({ ...formData, session_date: e.target.value })
-              }
-              className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
-              required
-            />
-          </div>
-
           {/* Actions */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
@@ -169,14 +246,24 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={
+                loading ||
+                !formData.session_date ||
+                !formData.session_focus ||
+                !formData.topic
+              }
               className={`flex-1 px-4 py-3 rounded-lg text-white font-medium transition ${
-                loading ?
+                (
+                  loading ||
+                  !formData.session_date ||
+                  !formData.session_focus ||
+                  !formData.topic
+                ) ?
                   "bg-primary/40 cursor-not-allowed"
                 : "bg-primary hover:bg-secondary"
               }`}
             >
-              {loading ? "Sending..." : "Send Request"}
+              {loading ? "Sending Request..." : "Send Request"}
             </button>
           </div>
         </form>

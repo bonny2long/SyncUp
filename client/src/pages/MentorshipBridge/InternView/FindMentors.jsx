@@ -62,7 +62,34 @@ export default function FindMentors({ onSessionRequested }) {
     );
   }
 
-  const filtered = mentors.filter((mentor) => {
+  // Deduplicate mentors and aggregate their availability
+  const uniqueMentors = mentors.reduce((acc, mentor) => {
+    const existing = acc.find((m) => m.id === mentor.id);
+
+    if (!existing) {
+      // First time seeing this mentor
+      acc.push({
+        id: mentor.id,
+        name: mentor.name,
+        email: mentor.email,
+        role: mentor.role,
+        projects: mentor.projects, // For project mentors tab
+        availabilityCount: 1,
+        nextAvailable: {
+          date: mentor.available_date,
+          time: mentor.available_time,
+        },
+      });
+    } else {
+      // Mentor already exists, increment count
+      existing.availabilityCount++;
+    }
+
+    return acc;
+  }, []);
+
+  // Apply search filter to unique mentors
+  const filtered = uniqueMentors.filter((mentor) => {
     const term = search.toLowerCase();
     return (
       mentor.name?.toLowerCase().includes(term) ||

@@ -1,12 +1,12 @@
 import React from "react";
 import { X, Mail, Briefcase, CalendarClock } from "lucide-react";
+import { formatDateTimeCompact } from "../../../utils/date";
 
 export default function MentorProfileModal({ mentor, onClose }) {
   if (!mentor) return null;
 
-  const availability = Array.isArray(mentor.availability)
-    ? mentor.availability.slice(0, 5)
-    : [];
+  const availability =
+    Array.isArray(mentor.availability) ? mentor.availability.slice(0, 5) : [];
 
   return (
     <div
@@ -54,7 +54,9 @@ export default function MentorProfileModal({ mentor, onClose }) {
 
           <div className="grid grid-cols-2 gap-3 text-sm text-gray-700 mb-4">
             <div className="p-3 rounded-xl bg-neutral-light border border-gray-100">
-              <p className="text-[11px] uppercase text-gray-500 mb-1">Sessions</p>
+              <p className="text-[11px] uppercase text-gray-500 mb-1">
+                Sessions
+              </p>
               <div className="flex flex-wrap gap-2 text-[11px] text-gray-600">
                 <span className="font-semibold text-secondary">
                   Total: {mentor.stats?.total_sessions || 0}
@@ -66,8 +68,10 @@ export default function MentorProfileModal({ mentor, onClose }) {
             </div>
 
             <div className="p-3 rounded-xl bg-neutral-light border border-gray-100">
-              <p className="text-[11px] uppercase text-gray-500 mb-1">Availability</p>
-              {availability.length ? (
+              <p className="text-[11px] uppercase text-gray-500 mb-1">
+                Availability
+              </p>
+              {availability.length ?
                 <div className="flex flex-col gap-1 text-[12px] text-gray-700">
                   {availability.map((slot, idx) => (
                     <div
@@ -75,15 +79,17 @@ export default function MentorProfileModal({ mentor, onClose }) {
                       className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-white border border-gray-100"
                     >
                       <CalendarClock size={14} className="text-primary" />
-                      <span>{slot.available_date || "Date TBA"}</span>
-                      <span className="text-gray-500">•</span>
-                      <span>{slot.available_time || "Time TBA"}</span>
+                      <span className="font-medium">
+                        {formatDateTimeCompact(
+                          slot.available_date,
+                          slot.available_time,
+                        )}
+                      </span>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <p className="text-xs text-gray-400">No availability listed.</p>
-              )}
+              : <p className="text-xs text-gray-400">No availability listed.</p>
+              }
             </div>
           </div>
 
