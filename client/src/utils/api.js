@@ -36,11 +36,14 @@ export async function removeProjectMember(projectId, userId) {
   return res.json();
 }
 
-export async function updateProjectStatus(id, status) {
+export async function updateProjectStatus(id, status, userId = null) {
+  const body = { status };
+  if (userId) body.user_id = userId;
+
   const res = await fetch(`${API_BASE}/projects/${id}/status`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error("Failed to update project status");
   return res.json();

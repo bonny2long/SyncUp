@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import ConfirmModal from "../shared/ConfirmModal";
 import {
   updateProjectStatus,
   addProjectMember,
@@ -16,12 +17,16 @@ export default function ProjectDetailModal({
   onClose,
   isOpen = true, // For ProjectPortfolio compatibility
   fetchPortfolioDetails = false, // If true, fetch additional details
+  onProjectUpdate, // NEW: Callback when project changes
 }) {
   const [localProject, setLocalProject] = useState(project);
   const [loading, setLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [error, setError] = useState("");
   const [portfolioDetails, setPortfolioDetails] = useState(null);
+
+  // Confirmation state
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
   // Safely normalize metadata
   const rawSkillIdeas = project?.metadata?.skill_ideas ?? [];
@@ -73,16 +78,35 @@ export default function ProjectDetailModal({
   if (!isOpen) return null;
 
   const handleStatusChange = async (next) => {
+    // Intercept completion for confirmation
+    if (next === "completed") {
+      setShowCompleteConfirm(true);
+      return;
+    }
+
+    // Otherwise proceed normally
+    await performStatusUpdate(next);
+  };
+
+  const performStatusUpdate = async (next) => {
     setStatusLoading(true);
     setError("");
     try {
       setLocalProject((p) => ({ ...p, status: next }));
-      await updateProjectStatus(project.id, next);
+
+      // Pass currentUser.id so backend knows who triggered it (for notifications)
+      await updateProjectStatus(project.id, next, currentUser?.id);
+
+      // Notify parent to refresh list (seamless update)
+      if (onProjectUpdate) {
+        onProjectUpdate();
+      }
     } catch (err) {
       setError("Could not update status.");
       setLocalProject(project);
     } finally {
       setStatusLoading(false);
+      setShowCompleteConfirm(false);
     }
   };
 
@@ -302,6 +326,18 @@ export default function ProjectDetailModal({
 
         {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
       </div>
+      {/* CONFIRMATION DIALOG */}
+      <ConfirmModal
+        isOpen={showCompleteConfirm}
+        onClose={() => setShowCompleteConfirm(false)}
+        onConfirm={() => performStatusUpdate("completed")}
+        title="Mark as Complete?"
+        message="This will move the project to your Portfolio and notify all team members. Are you sure you're done?"
+        confirmText="Yes, Complete Project"
+        confirmColor="green"
+        icon="success"
+        loading={statusLoading}
+      />
     </div>
   );
 }

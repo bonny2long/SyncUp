@@ -68,6 +68,32 @@ export default function NotificationDropdown({
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <h3 className="font-semibold text-gray-900">Notifications</h3>
         <div className="flex items-center gap-2">
+          {/* Refresh Button */}
+          <button
+            onClick={onRefresh}
+            className="p-1 rounded hover:bg-gray-100 text-gray-500"
+            title="Refresh"
+            disabled={loading}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`lucide lucide-refresh-cw ${loading ? "animate-spin" : ""}`}
+            >
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+              <path d="M21 3v5h-5" />
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+              <path d="M3 21v-5h5" />
+            </svg>
+          </button>
+
           {notifications.some((n) => !n.is_read) && (
             <button
               onClick={handleMarkAllAsRead}
@@ -136,6 +162,8 @@ function NotificationItem({ notification, onClick, onDelete }) {
         return "🎓";
       case "project_update":
         return "📝";
+      case "project_completed":
+        return "🏆";
       default:
         return "🔔";
     }

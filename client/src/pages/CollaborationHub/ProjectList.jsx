@@ -7,6 +7,7 @@ import {
 
 import MemberModal from "./MemberModal";
 import ProjectDetailModal from "../../components/modals/ProjectDetailModal";
+import ConfirmModal from "../../components/shared/ConfirmModal";
 import { useUser } from "../../context/UserContext";
 
 export default function ProjectList({
@@ -15,6 +16,7 @@ export default function ProjectList({
   updatesData = [],
   projects: passedProjects = [], // ← NEW: Accept projects as prop
   loading: passedLoading = false, // ← NEW: Accept loading state as prop
+  onRefresh, // NEW: Accept refresh callback
 }) {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState("");
@@ -64,7 +66,19 @@ export default function ProjectList({
   };
 
   // Update status
-  const handleStatusChange = async (id, nextStatus) => {
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [confirmStatus, setConfirmStatus] = useState(null); // { id, status }
+
+  // Status Change Logic
+  const initiateStatusChange = (id, nextStatus) => {
+    if (nextStatus === "completed") {
+      setConfirmStatus({ id, status: nextStatus });
+    } else {
+      executeStatusChange(id, nextStatus);
+    }
+  };
+
+  const executeStatusChange = async (id, nextStatus) => {
     setError("");
     const previous = projects;
 
@@ -72,11 +86,17 @@ export default function ProjectList({
       prev.map((p) => (p.id === id ? { ...p, status: nextStatus } : p)),
     );
 
+    setStatusLoading(true);
     try {
-      await updateProjectStatus(id, nextStatus);
-    } catch {
+      await updateProjectStatus(id, nextStatus, currentUser?.id);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error(err);
       setError("Could not update project status.");
       setProjects(previous);
+    } finally {
+      setStatusLoading(false);
+      setConfirmStatus(null);
     }
   };
 
@@ -85,7 +105,7 @@ export default function ProjectList({
     try {
       if (!currentUser?.id) return;
       // Update from passed-in projects (parent will handle reload)
-      setProjects(passedProjects);
+      if (onRefresh) onRefresh();
     } catch {
       setError("Failed to refresh projects.");
     }
@@ -188,6 +208,22 @@ export default function ProjectList({
         />
       )}
 
+      {/* CONFIRM MODAL */}
+      <ConfirmModal
+        isOpen={!!confirmStatus}
+        onClose={() => setConfirmStatus(null)}
+        onConfirm={() =>
+          confirmStatus &&
+          executeStatusChange(confirmStatus.id, confirmStatus.status)
+        }
+        title="Mark as Complete?"
+        message="This will move the project to your Portfolio and notify all team members. Are you sure?"
+        confirmText="Complete Project"
+        confirmColor="green"
+        icon="success"
+        loading={statusLoading}
+      />
+
       {/* PROJECT MODAL */}
       {modalProject && (
         <ProjectDetailModal
@@ -195,6 +231,7 @@ export default function ProjectList({
           currentUser={currentUser}
           updates={updatesData.filter((u) => u.project_id === modalProject.id)}
           onClose={() => setModalProject(null)}
+          onProjectUpdate={onRefresh}
         />
       )}
 
@@ -244,7 +281,7 @@ export default function ProjectList({
                     value={project.status}
                     onChange={(e) => {
                       e.stopPropagation();
-                      handleStatusChange(project.id, e.target.value);
+                      initiateStatusChange(project.id, e.target.value);
                     }}
                     className="text-[11px] border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none"
                   >

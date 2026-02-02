@@ -2,6 +2,7 @@ import pool from "../config/db.js";
 import {
   notifyJoinRequestApproved,
   notifyJoinRequestRejected,
+  notifyProjectCompleted,
 } from "../services/notificationService.js";
 
 // GET /api/projects
@@ -327,20 +328,74 @@ export const updateProjectStatus = async (req, res) => {
     return res.status(400).json({ error: "Invalid status value" });
   }
 
+  // Join with user_id to avoid notifying the triggerer?
+  // For now, we'll notify everyone else in the project.
+  // We need to fetch the project members first if status is 'completed'.
+
+  const connection = await pool.getConnection();
+
   try {
-    const [result] = await pool.query(
+    await connection.beginTransaction();
+
+    const [result] = await connection.query(
       `UPDATE projects SET status = ? WHERE id = ?`,
       [status, id],
     );
 
     if (result.affectedRows === 0) {
+      await connection.rollback();
       return res.status(404).json({ error: "Project not found" });
     }
 
+    // If status changed to completed, notify team members
+    if (status === "completed") {
+      // 1. Get project details and members
+      const [projectRows] = await connection.query(
+        `SELECT title, owner_id FROM projects WHERE id = ?`,
+        [id],
+      );
+
+      if (projectRows.length > 0) {
+        const { title } = projectRows[0];
+
+        // 2. Get all members
+        const [members] = await connection.query(
+          `SELECT user_id FROM project_members WHERE project_id = ?`,
+          [id],
+        );
+
+        // 3. Filter out the current user (if provided in body)
+        // We expect req.body.user_id to be sent from frontend
+        const currentUserId =
+          req.body.user_id ? parseInt(req.body.user_id) : null;
+
+        const recipients = members
+          .map((m) => m.user_id)
+          .filter((uid) => uid !== currentUserId);
+
+        if (recipients.length > 0) {
+          try {
+            await notifyProjectCompleted(recipients, title, id, connection);
+          } catch (notifErr) {
+            console.error(
+              "Failed to send project completion notifications:",
+              notifErr,
+            );
+            // We do NOT rollback here because the status update itself was successful.
+            // Just log the error so we can debug it (e.g. invalid user IDs).
+          }
+        }
+      }
+    }
+
+    await connection.commit();
     res.json({ message: "Status updated" });
   } catch (err) {
+    await connection.rollback();
     console.error("Error updating project status:", err);
     res.status(500).json({ error: "Server error updating status" });
+  } finally {
+    connection.release();
   }
 };
 

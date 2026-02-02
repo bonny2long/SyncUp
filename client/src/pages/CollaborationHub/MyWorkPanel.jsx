@@ -8,6 +8,7 @@ const MyWorkPanel = React.memo(function MyWorkPanel({
   updatesData,
   loading,
   isMentor = false, // NEW PROP
+  onRefresh, // NEW PROP
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -49,6 +50,7 @@ const MyWorkPanel = React.memo(function MyWorkPanel({
           setSelectedProject={setSelectedProject}
           projects={projects}
           updatesData={updatesData}
+          onRefresh={onRefresh}
         />
       }
     </div>

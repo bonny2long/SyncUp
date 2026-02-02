@@ -1,15 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { ChartError } from "../components/shared/ErrorBoundary";
-import ProjectCard from "../components/ProjectPortfolio/ProjectCard";
+import ProjectCard from "../components/shared/ProjectCard"; // CHANGED: Use shared component
 import ProjectDetailModal from "../components/modals/ProjectDetailModal";
 import Navbar from "../components/layout/Navbar";
 import Sidebar from "../components/layout/Sidebar";
-import { getErrorMessage } from "../utils/errorHandler";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+import { useProjects } from "../hooks/useProjects"; // NEW: Use shared hook
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Projects" },
@@ -30,9 +28,13 @@ export default function ProjectPortfolio() {
   const { user } = useUser();
   const { addToast } = useToast();
 
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // USE SHARED HOOK instead of fetching manually
+  const {
+    myProjects: projects,
+    loading,
+    error,
+    refresh,
+  } = useProjects(user?.id);
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
@@ -40,33 +42,12 @@ export default function ProjectPortfolio() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const loadProjects = async () => {
-    if (!user?.id) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch(`${API_BASE}/projects/user/${user.id}`);
-      if (!res.ok) throw new Error("Failed to fetch projects");
-      const data = await res.json();
-      setProjects(data);
-    } catch (err) {
-      const { message } = getErrorMessage(err);
-      setError(message);
-      console.error("Failed to load projects:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadProjects();
-  }, [user?.id]);
-
+  // Filter by status
   const filteredProjects = projects.filter((p) =>
     statusFilter === "all" ? true : p.status === statusFilter,
   );
 
+  // Sort projects
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     switch (sortBy) {
       case "skills":
@@ -120,8 +101,7 @@ export default function ProjectPortfolio() {
                   Project Portfolio
                 </h1>
                 <p className="text-gray-600">
-                  Showcase your work, track skill growth, and celebrate your
-                  progress
+                  Showcase your completed work and achievements
                 </p>
               </div>
 
@@ -146,15 +126,9 @@ export default function ProjectPortfolio() {
                   </p>
                 </div>
                 <div className="bg-white p-4 rounded-lg border border-gray-100">
-                  <p className="text-sm text-gray-600">Total Skills</p>
+                  <p className="text-sm text-gray-600">Unique Skills</p>
                   <p className="text-2xl font-bold text-secondary">
-                    {
-                      new Set(
-                        projects.flatMap((p) =>
-                          Array(p.skill_count).fill(p.id),
-                        ),
-                      ).size
-                    }
+                    {projects.reduce((sum, p) => sum + (p.skill_count || 0), 0)}
                   </p>
                 </div>
               </div>
@@ -167,9 +141,8 @@ export default function ProjectPortfolio() {
                   ))}
                 </div>
               : error ?
-                // Error state
                 <div className="max-w-7xl mx-auto">
-                  <ChartError onRetry={loadProjects} error={error} />
+                  <ChartError onRetry={refresh} error={error} />
                 </div>
               : <>
                   {/* Filters & Sort */}
@@ -216,7 +189,7 @@ export default function ProjectPortfolio() {
                         No projects yet
                       </p>
                       <p className="text-gray-400 text-sm">
-                        Create your first project to get started
+                        Create your first project in CollaborationHub
                       </p>
                     </div>
                   : /* Projects Grid */
@@ -225,6 +198,7 @@ export default function ProjectPortfolio() {
                         <ProjectCard
                           key={project.id}
                           project={project}
+                          variant="portfolio"
                           onClick={() => handleProjectClick(project)}
                         />
                       ))}
@@ -244,6 +218,7 @@ export default function ProjectPortfolio() {
           project={selectedProject}
           onClose={handleCloseModal}
           fetchPortfolioDetails={true}
+          onProjectUpdate={refresh}
         />
       )}
     </div>

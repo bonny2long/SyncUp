@@ -171,3 +171,38 @@ export const notifyProjectUpdate = async (
     throw err;
   }
 };
+// Project Completed
+export const notifyProjectCompleted = async (
+  userIds,
+  projectTitle,
+  projectId,
+  connection = null,
+) => {
+  const db = connection || pool;
+
+  if (!Array.isArray(userIds) || userIds.length === 0) return;
+
+  try {
+    const values = userIds.map((userId) => [
+      userId,
+      "project_completed",
+      "Project Completed! 🏆",
+      `The project "${projectTitle}" has been marked as completed. Congratulations on the great work!`,
+      `/portfolio`,
+      projectId,
+      "project",
+    ]);
+
+    await db.query(
+      `INSERT INTO notifications 
+        (user_id, type, title, message, link, related_id, related_type)
+       VALUES ?`,
+      [values],
+    );
+
+    console.log(`📬 ${userIds.length} project completed notifications created`);
+  } catch (err) {
+    console.error("Error creating project completed notifications:", err);
+    throw err;
+  }
+};
