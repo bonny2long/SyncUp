@@ -1,4 +1,8 @@
 import pool from "../config/db.js";
+import {
+  notifyJoinRequestApproved,
+  notifyJoinRequestRejected,
+} from "../services/notificationService.js";
 
 // GET /api/projects
 export const getProjects = async (req, res) => {
@@ -13,6 +17,8 @@ export const getProjects = async (req, res) => {
         p.title,
         p.description,
         p.status,
+        p.owner_id,
+        p.visibility,
         MAX(p.metadata) AS metadata,
         ${
           userId ?
@@ -21,6 +27,8 @@ export const getProjects = async (req, res) => {
         }
         -- how many members are on this project
         COUNT(DISTINCT pm.user_id) AS team_count,
+        -- how many skills are on this project
+        COUNT(DISTINCT ps.skill_id) AS skill_count,
         -- how many updates exist
         COUNT(DISTINCT u.id) AS update_count,
         -- most recent update timestamp
@@ -39,8 +47,9 @@ export const getProjects = async (req, res) => {
       FROM projects p
       LEFT JOIN project_members pm ON pm.project_id = p.id
       LEFT JOIN users usr ON pm.user_id = usr.id
+      LEFT JOIN project_skills ps ON ps.project_id = p.id
       LEFT JOIN progress_updates u ON u.project_id = p.id
-      GROUP BY p.id, p.title, p.description, p.status, p.metadata
+      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.metadata
       ORDER BY p.id ASC;
     `,
       userId ? [userId] : params,
@@ -716,6 +725,25 @@ export const approveJoinRequest = async (req, res) => {
 
     await connection.commit();
 
+    // 🔔 Send notification to user
+    try {
+      const [projectDetails] = await pool.query(
+        `SELECT title FROM projects WHERE id = ?`,
+        [projectId],
+      );
+
+      if (projectDetails.length > 0) {
+        await notifyJoinRequestApproved(
+          userId,
+          projectDetails[0].title,
+          projectId,
+        );
+      }
+    } catch (notifErr) {
+      console.error("Failed to send notification:", notifErr);
+      // Don't fail the request if notification fails
+    }
+
     res.json({
       id: requestId,
       status: "approved",
@@ -745,11 +773,33 @@ export const rejectJoinRequest = async (req, res) => {
       return res.status(404).json({ error: "Request not found" });
     }
 
+    // Get user_id and project title for notification
+    const [requestDetails] = await pool.query(
+      `SELECT pjr.user_id, p.title
+       FROM project_join_requests pjr
+       JOIN projects p ON pjr.project_id = p.id
+       WHERE pjr.id = ?`,
+      [requestId],
+    );
+
     res.json({
       id: requestId,
       status: "rejected",
       message: "Join request rejected",
     });
+
+    // 🔔 Send notification (after response)
+    if (requestDetails.length > 0) {
+      try {
+        await notifyJoinRequestRejected(
+          requestDetails[0].user_id,
+          requestDetails[0].title,
+          parseInt(projectId),
+        );
+      } catch (notifErr) {
+        console.error("Failed to send notification:", notifErr);
+      }
+    }
   } catch (err) {
     console.error("Error rejecting join request:", err);
     res.status(500).json({ error: "Failed to reject request" });

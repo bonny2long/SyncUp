@@ -394,3 +394,48 @@ export async function fetchMentorAvailability(mentorId) {
   if (!res.ok) throw new Error("Failed to fetch mentor availability");
   return res.json();
 }
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+// Get user notifications
+export async function fetchNotifications(userId, limit = 50) {
+  const res = await fetch(`${API_BASE}/notifications/${userId}?limit=${limit}`);
+  if (!res.ok) throw new Error("Failed to fetch notifications");
+  return res.json();
+}
+
+// Get unread count
+export async function fetchUnreadCount(userId) {
+  const res = await fetch(`${API_BASE}/notifications/${userId}/unread-count`);
+  if (!res.ok) throw new Error("Failed to fetch unread count");
+  return res.json();
+}
+
+// Mark notification as read
+export async function markNotificationAsRead(notificationId) {
+  const res = await fetch(`${API_BASE}/notifications/${notificationId}/read`, {
+    method: "PUT",
+  });
+  if (!res.ok) throw new Error("Failed to mark as read");
+  return res.json();
+}
+
+// Mark all as read
+export async function markAllNotificationsAsRead(userId) {
+  const res = await fetch(`${API_BASE}/notifications/${userId}/read-all`, {
+    method: "PUT",
+  });
+  if (!res.ok) throw new Error("Failed to mark all as read");
+  return res.json();
+}
+
+// Delete notification
+export async function deleteNotification(notificationId) {
+  const res = await fetch(`${API_BASE}/notifications/${notificationId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete notification");
+  return res.json();
+}

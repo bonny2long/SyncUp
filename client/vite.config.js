@@ -12,4 +12,23 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Enable source maps for debugging in production (optional)
+    sourcemap: false,
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // Manual chunk splitting for better caching
+        manualChunks: {
+          // Vendor chunks
+          "react-vendor": ["react", "react-dom"],
+          router: ["react-router-dom"],
+          charts: ["ag-charts-react", "ag-charts-community"],
+          // UI components
+          icons: ["lucide-react"],
+        },
+      },
+    },
+  },
 });

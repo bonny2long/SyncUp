@@ -1,6 +1,7 @@
 // server/src/controllers/progressController.js
 import pool from "../config/db.js";
 import { emitSkillSignals } from "../services/skillSignalService.js";
+import { notifyProjectUpdate } from "../services/notificationService.js";
 
 // Cache check for optional soft-delete column
 let hasSoftDeleteColumn;
@@ -175,6 +176,29 @@ export const createProgressUpdate = async (req, res) => {
     );
 
     await connection.commit();
+
+    // 🔔 Notify team members
+    try {
+      // Get all team members excluding the author
+      const [members] = await pool.query(
+        `SELECT user_id FROM project_members WHERE project_id = ? AND user_id != ?`,
+        [project_id, user_id],
+      );
+
+      const recipientIds = members.map((m) => m.user_id);
+
+      if (recipientIds.length > 0 && rows.length > 0) {
+        const { project_title, user_name } = rows[0];
+        await notifyProjectUpdate(
+          recipientIds,
+          project_title,
+          user_name,
+          project_id,
+        );
+      }
+    } catch (notifErr) {
+      console.error("Failed to send update notifications:", notifErr);
+    }
 
     res.status(201).json(rows[0]);
   } catch (err) {

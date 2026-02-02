@@ -9,6 +9,7 @@ import progressRoutes from "./routes/progressRoutes.js";
 import mentorshipRoutes from "./routes/mentorshipRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import skillsRoutes from "./routes/skillsRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -23,6 +24,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/projects", projectsRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/skills", skillsRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Basic route for testing
 app.get("/", (req, res) => {
@@ -67,4 +69,6 @@ testConnection();
 // connectDB();
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`SyncUp is live, Server is on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`SyncUp is live, Server is on port ${PORT}`),
+);

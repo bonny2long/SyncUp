@@ -1,22 +1,35 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, lazy, Suspense } from "react";
 import { useUser } from "../../context/UserContext";
 import { useToast } from "../../context/ToastContext";
-import CreateProjectForm from "./CreateProjectForm";
 import { fetchProjects, fetchUpdates } from "../../utils/api";
-import MyWorkPanel from "./MyWorkPanel";
-import DiscoverPanel from "./DiscoverPanel";
-import ActivityPanel from "./ActivityPanel";
-import RequestsPanel from "./RequestsPanel";
-import JoinProjectModal from "./JoinProjectModal";
 import { getErrorMessage } from "../../utils/errorHandler";
+
+// Lazy load heavy components
+const CreateProjectForm = lazy(() => import("./CreateProjectForm"));
+const MyWorkPanel = lazy(() => import("./MyWorkPanel"));
+const DiscoverPanel = lazy(() => import("./DiscoverPanel"));
+const ActivityPanel = lazy(() => import("./ActivityPanel"));
+const RequestsPanel = lazy(() => import("./RequestsPanel"));
+const JoinProjectModal = lazy(() => import("./JoinProjectModal"));
 
 export default function CollaborationHub() {
   const { user: currentUser } = useUser();
   const { addToast } = useToast();
 
-  // Tab state
+  // Role checks
+  const isIntern = currentUser?.role === "intern";
+  const isMentor = currentUser?.role === "mentor";
+
+  // Tab state (role-based defaults)
   const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem("collaborationHubActiveTab") || "mywork";
+    const saved = localStorage.getItem("collaborationHubActiveTab");
+
+    // Role-specific default tabs
+    if (!saved) {
+      return isMentor ? "browse" : "mywork";
+    }
+
+    return saved;
   });
 
   // Persist activeTab to localStorage
@@ -70,22 +83,26 @@ export default function CollaborationHub() {
 
   // ========== DATA FILTERING ==========
 
-  // Column 1: YOUR PROJECTS (owned + joined)
+  // YOUR PROJECTS (owned + joined)
   const userProjects = allProjects.filter(
     (p) => p.is_member === 1 || p.is_member === true,
   );
 
-  // Column 2: DISCOVER PROJECTS (projects you're NOT on + active only)
+  // DISCOVER PROJECTS (projects you're NOT on + active/planned)
   const discoverProjects = allProjects.filter(
     (p) =>
       p.owner_id !== currentUser?.id && // You don't own it
       p.is_member !== 1 && // You're not a member
       p.is_member !== true &&
-      p.status === "active", // Only active projects
+      (p.status === "active" || p.status === "planned"), // Active or planned projects
   );
 
-  // Column 3: YOUR UPDATES (current user only)
+  // YOUR UPDATES (current user only)
   const userUpdates = allUpdates.filter((u) => u.user_id === currentUser?.id);
+
+  // Check if mentor owns any projects (for conditional Requests tab)
+  const mentorOwnsProjects =
+    isMentor && userProjects.some((p) => p.owner_id === currentUser?.id);
 
   // ========== HANDLERS ==========
 
@@ -99,16 +116,13 @@ export default function CollaborationHub() {
 
     setJoining(true);
     try {
-      // Import here to avoid circular dependency
       const { createJoinRequest } = await import("../../utils/api");
 
       await createJoinRequest(projectToJoin.id, currentUser.id);
 
-      // Close modal and clear
       setShowJoinModal(false);
       setProjectToJoin(null);
 
-      // Show success toast
       addToast({
         type: "success",
         message: `Request sent! The project owner will review it soon. ✅`,
@@ -129,39 +143,86 @@ export default function CollaborationHub() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // Reset selection when changing tabs
     setSelectedProject(null);
   };
 
-  // ========== STATS ==========
+  // ========== STATS (Role-Based) ==========
 
-  const statsCards = [
-    {
-      label: "Your Projects",
-      value: userProjects.length,
-      color: "text-primary",
-    },
-    {
-      label: "Available to Join",
-      value: discoverProjects.length,
-      color: "text-accent",
-    },
-    {
-      label: "Your Updates",
-      value: userUpdates.length,
-      color: "text-secondary",
-    },
-    {
-      label: "Active",
-      value: userProjects.filter((p) => p.status === "active").length,
-      color: "text-primary",
-    },
-  ];
+  const statsCards =
+    isMentor ?
+      // MENTOR STATS
+      [
+        {
+          label: "Projects You're On",
+          value: userProjects.length,
+          color: "text-primary",
+        },
+        {
+          label: "Available Projects",
+          value: discoverProjects.length,
+          color: "text-accent",
+        },
+        {
+          label: "Your Contributions",
+          value: userUpdates.length,
+          color: "text-secondary",
+        },
+        {
+          label: "Teams Helped",
+          value: userProjects.filter((p) => p.owner_id !== currentUser?.id)
+            .length,
+          color: "text-green-600",
+        },
+      ]
+      // INTERN STATS
+    : [
+        {
+          label: "Your Projects",
+          value: userProjects.length,
+          color: "text-primary",
+        },
+        {
+          label: "Available to Join",
+          value: discoverProjects.length,
+          color: "text-accent",
+        },
+        {
+          label: "Your Updates",
+          value: userUpdates.length,
+          color: "text-secondary",
+        },
+        {
+          label: "Active",
+          value: userProjects.filter((p) => p.status === "active").length,
+          color: "text-primary",
+        },
+      ];
 
   return (
     <div className="flex flex-col gap-6">
-      {/* CREATE PROJECT FORM */}
-      <CreateProjectForm onCreated={loadData} />
+      {/* CREATE PROJECT FORM (Interns Only) */}
+      {isIntern && (
+        <Suspense
+          fallback={
+            <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />
+          }
+        >
+          <CreateProjectForm onCreated={loadData} />
+        </Suspense>
+      )}
+
+      {/* MENTOR GUIDANCE BANNER (Mentors Only) */}
+      {isMentor && (
+        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-6 rounded-xl border border-primary/20">
+          <h3 className="text-lg font-bold text-primary mb-2">
+            Share Your Expertise
+          </h3>
+          <p className="text-sm text-gray-700">
+            Browse active projects and join teams as a senior contributor. Your
+            guidance can help early-career developers level up!
+          </p>
+        </div>
+      )}
 
       {/* STATS CARDS */}
       <div className="grid grid-cols-4 gap-4">
@@ -182,42 +243,49 @@ export default function CollaborationHub() {
         </div>
       )}
 
-      {/* TAB NAVIGATION */}
+      {/* TAB NAVIGATION (Role-Based) */}
       <div className="flex gap-4 border-b border-gray-200">
+        {/* Tab 1: My Work (Intern) / Browse Projects (Mentor) */}
         <button
-          onClick={() => handleTabChange("mywork")}
+          onClick={() => handleTabChange(isMentor ? "browse" : "mywork")}
           className={`px-4 py-3 font-medium transition-all duration-300 ${
-            activeTab === "mywork" ?
+            activeTab === (isMentor ? "browse" : "mywork") ?
               "text-primary border-b-2 border-primary"
             : "text-gray-600 hover:text-neutralDark"
           }`}
         >
-          My Work ({userProjects.length})
+          {isMentor ? "Browse Projects" : "My Work"} (
+          {isMentor ? discoverProjects.length : userProjects.length})
         </button>
 
+        {/* Tab 2: Discover (Intern) / My Projects (Mentor) */}
         <button
-          onClick={() => handleTabChange("discover")}
+          onClick={() => handleTabChange(isMentor ? "myprojects" : "discover")}
           className={`px-4 py-3 font-medium transition-all duration-300 ${
-            activeTab === "discover" ?
+            activeTab === (isMentor ? "myprojects" : "discover") ?
               "text-accent border-b-2 border-accent"
             : "text-gray-600 hover:text-neutralDark"
           }`}
         >
-          Discover ({discoverProjects.length})
+          {isMentor ? "My Projects" : "Discover"} (
+          {isMentor ? userProjects.length : discoverProjects.length})
         </button>
 
-        <button
-          onClick={() => handleTabChange("requests")}
-          className={`px-4 py-3 font-medium transition-all duration-300 relative ${
-            activeTab === "requests" ?
-              "text-secondary border-b-2 border-secondary"
-            : "text-gray-600 hover:text-neutralDark"
-          }`}
-        >
-          Requests
-          {/* Badge for pending requests */}
-        </button>
+        {/* Tab 3: Requests (Conditional for Mentors) */}
+        {(isIntern || mentorOwnsProjects) && (
+          <button
+            onClick={() => handleTabChange("requests")}
+            className={`px-4 py-3 font-medium transition-all duration-300 relative ${
+              activeTab === "requests" ?
+                "text-secondary border-b-2 border-secondary"
+              : "text-gray-600 hover:text-neutralDark"
+            }`}
+          >
+            Requests
+          </button>
+        )}
 
+        {/* Tab 4: Activity (Both) */}
         <button
           onClick={() => handleTabChange("activity")}
           className={`px-4 py-3 font-medium transition-all duration-300 ${
@@ -226,7 +294,7 @@ export default function CollaborationHub() {
             : "text-gray-600 hover:text-neutralDark"
           }`}
         >
-          Activity ({userUpdates.length})
+          {isMentor ? "Contributions" : "Activity"} ({userUpdates.length})
         </button>
       </div>
 
@@ -234,37 +302,97 @@ export default function CollaborationHub() {
       <div className="grid grid-cols-2 gap-6 min-h-[600px]">
         {/* LEFT COLUMN */}
         <div>
-          {activeTab === "mywork" && (
-            <MyWorkPanel
-              projects={userProjects}
-              selectedProject={selectedProject}
-              setSelectedProject={setSelectedProject}
-              updatesData={allUpdates}
-              loading={loading}
-            />
+          {/* MENTOR: Browse Projects First */}
+          {isMentor && activeTab === "browse" && (
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <DiscoverPanel
+                projects={discoverProjects}
+                selectedProject={selectedProject}
+                setSelectedProject={setSelectedProject}
+                onJoinClick={handleJoinClick}
+                loading={loading}
+              />
+            </Suspense>
           )}
 
-          {activeTab === "discover" && (
-            <DiscoverPanel
-              projects={discoverProjects}
-              selectedProject={selectedProject}
-              setSelectedProject={setSelectedProject}
-              onJoinClick={handleJoinClick}
-              loading={loading}
-            />
+          {/* MENTOR: My Projects */}
+          {isMentor && activeTab === "myprojects" && (
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <MyWorkPanel
+                projects={userProjects}
+                selectedProject={selectedProject}
+                setSelectedProject={setSelectedProject}
+                updatesData={allUpdates}
+                loading={loading}
+                isMentor={true}
+              />
+            </Suspense>
           )}
 
-          {activeTab === "requests" && <RequestsPanel onRefresh={loadData} />}
+          {/* INTERN: My Work First */}
+          {isIntern && activeTab === "mywork" && (
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <MyWorkPanel
+                projects={userProjects}
+                selectedProject={selectedProject}
+                setSelectedProject={setSelectedProject}
+                updatesData={allUpdates}
+                loading={loading}
+                isMentor={false}
+              />
+            </Suspense>
+          )}
 
+          {/* INTERN: Discover */}
+          {isIntern && activeTab === "discover" && (
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <DiscoverPanel
+                projects={discoverProjects}
+                selectedProject={selectedProject}
+                setSelectedProject={setSelectedProject}
+                onJoinClick={handleJoinClick}
+                loading={loading}
+              />
+            </Suspense>
+          )}
+
+          {/* Requests (Both Roles, Conditional) */}
+          {activeTab === "requests" && (
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <RequestsPanel onRefresh={loadData} />
+            </Suspense>
+          )}
+
+          {/* Activity (Both Roles) */}
           {activeTab === "activity" && (
             <div>
               <h2 className="text-lg font-bold text-secondary mb-3">
-                Your Updates
+                {isMentor ? "Your Contributions" : "Your Updates"}
               </h2>
               <p className="text-sm text-gray-600">
                 {selectedProject ?
                   `Filtered to: ${selectedProject.title}`
-                : "All your updates"}
+                : `All your ${isMentor ? "contributions" : "updates"}`}
               </p>
               {selectedProject && (
                 <button
@@ -280,16 +408,113 @@ export default function CollaborationHub() {
 
         {/* RIGHT COLUMN */}
         <div>
-          {activeTab === "mywork" && (
-            <ActivityPanel
-              selectedProject={selectedProject}
-              allUpdates={allUpdates}
-              currentUser={currentUser}
-              projectId={selectedProject?.id}
-            />
+          {/* MENTOR: Browse - Show Preview */}
+          {isMentor && activeTab === "browse" && (
+            <div className="bg-white rounded-lg border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-neutralDark mb-4">
+                Project Preview
+              </h2>
+              {selectedProject ?
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-bold text-neutralDark">
+                      {selectedProject.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {selectedProject.description}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Team Size</p>
+                      <p className="text-lg font-bold text-primary">
+                        {selectedProject.team_count ?? 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Skills</p>
+                      <p className="text-lg font-bold text-accent">
+                        {selectedProject.skill_count ?? 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedProject.team_member_details &&
+                    selectedProject.team_member_details.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          Team Members
+                        </p>
+                        <div className="space-y-1">
+                          {selectedProject.team_member_details
+                            .slice(0, 5)
+                            .map((member) => (
+                              <div
+                                key={member.id}
+                                className="text-xs text-gray-600"
+                              >
+                                {member.name}
+                              </div>
+                            ))}
+                          {selectedProject.team_member_details.length > 5 && (
+                            <div className="text-xs text-gray-500">
+                              +{selectedProject.team_member_details.length - 5}{" "}
+                              more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  <button
+                    onClick={() => handleJoinClick(selectedProject)}
+                    className="w-full mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
+                  >
+                    Request to Join as Mentor
+                  </button>
+                </div>
+              : <p className="text-gray-500 text-center py-8">
+                  Select a project to see details
+                </p>
+              }
+            </div>
           )}
 
-          {activeTab === "discover" && (
+          {/* MENTOR: My Projects - Show Activity */}
+          {isMentor && activeTab === "myprojects" && (
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <ActivityPanel
+                selectedProject={selectedProject}
+                allUpdates={allUpdates}
+                currentUser={currentUser}
+                projectId={selectedProject?.id}
+              />
+            </Suspense>
+          )}
+
+          {/* INTERN: My Work - Show Activity */}
+          {isIntern && activeTab === "mywork" && (
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <ActivityPanel
+                selectedProject={selectedProject}
+                allUpdates={allUpdates}
+                currentUser={currentUser}
+                projectId={selectedProject?.id}
+              />
+            </Suspense>
+          )}
+
+          {/* INTERN: Discover - Show Preview */}
+          {isIntern && activeTab === "discover" && (
             <div className="bg-white rounded-lg border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-neutralDark mb-4">
                 Project Preview
@@ -361,6 +586,7 @@ export default function CollaborationHub() {
             </div>
           )}
 
+          {/* Requests - Info Panel */}
           {activeTab === "requests" && (
             <div className="bg-white rounded-lg border border-gray-100 p-6">
               <h2 className="text-lg font-bold text-secondary mb-4">
@@ -383,28 +609,37 @@ export default function CollaborationHub() {
             </div>
           )}
 
+          {/* Activity - Show Feed */}
           {activeTab === "activity" && (
-            <ActivityPanel
-              selectedProject={selectedProject}
-              allUpdates={allUpdates}
-              currentUser={currentUser}
-              projectId={selectedProject?.id}
-            />
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <ActivityPanel
+                selectedProject={selectedProject}
+                allUpdates={allUpdates}
+                currentUser={currentUser}
+                projectId={selectedProject?.id}
+              />
+            </Suspense>
           )}
         </div>
       </div>
 
       {/* JOIN PROJECT MODAL */}
       {showJoinModal && (
-        <JoinProjectModal
-          project={projectToJoin}
-          onConfirm={handleJoinConfirm}
-          onCancel={() => {
-            setShowJoinModal(false);
-            setProjectToJoin(null);
-          }}
-          loading={joining}
-        />
+        <Suspense fallback={null}>
+          <JoinProjectModal
+            project={projectToJoin}
+            onConfirm={handleJoinConfirm}
+            onCancel={() => {
+              setShowJoinModal(false);
+              setProjectToJoin(null);
+            }}
+            loading={joining}
+          />
+        </Suspense>
       )}
     </div>
   );

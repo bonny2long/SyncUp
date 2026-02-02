@@ -4,7 +4,7 @@ import { useToast } from "../context/ToastContext";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { ChartError } from "../components/shared/ErrorBoundary";
 import ProjectCard from "../components/ProjectPortfolio/ProjectCard";
-import ProjectDetailModal from "../components/ProjectPortfolio/ProjectDetailModal";
+import ProjectDetailModal from "../components/modals/ProjectDetailModal";
 import Navbar from "../components/layout/Navbar";
 import Sidebar from "../components/layout/Sidebar";
 import { getErrorMessage } from "../utils/errorHandler";
@@ -243,6 +243,7 @@ export default function ProjectPortfolio() {
           isOpen={showDetailModal}
           project={selectedProject}
           onClose={handleCloseModal}
+          fetchPortfolioDetails={true}
         />
       )}
     </div>

@@ -1,5 +1,10 @@
 import pool from "../config/db.js";
 import { emitSkillSignals } from "../services/skillSignalService.js";
+import {
+  notifySessionAccepted,
+  notifySessionDeclined,
+  notifySessionCompleted,
+} from "../services/notificationService.js";
 
 const formatDateForMySQL = (isoDate) => {
   if (!isoDate) return null;
@@ -256,6 +261,54 @@ export const updateSessionStatus = async (req, res) => {
     }
 
     await connection.commit();
+
+    // 🔔 Send notifications based on status change
+    try {
+      // Get mentor name for notifications
+      const [mentorDetails] = await pool.query(
+        `SELECT name FROM users WHERE id = ?`,
+        [session.mentor_id],
+      );
+
+      const mentorName = mentorDetails[0]?.name || "Mentor";
+
+      // Get topic
+      const [sessionDetails] = await pool.query(
+        `SELECT topic FROM mentorship_sessions WHERE id = ?`,
+        [id],
+      );
+
+      const topic = sessionDetails[0]?.topic || "Session";
+
+      if (session.status !== status) {
+        // Status changed
+        if (status === "accepted") {
+          await notifySessionAccepted(
+            session.intern_id,
+            mentorName,
+            topic,
+            session.id,
+          );
+        } else if (status === "declined") {
+          await notifySessionDeclined(
+            session.intern_id,
+            mentorName,
+            topic,
+            session.id,
+          );
+        } else if (status === "completed") {
+          await notifySessionCompleted(
+            session.intern_id,
+            mentorName,
+            topic,
+            session.id,
+          );
+        }
+      }
+    } catch (notifErr) {
+      console.error("Failed to send notification:", notifErr);
+    }
+
     res.json({ message: "Session updated successfully" });
   } catch (err) {
     await connection.rollback();

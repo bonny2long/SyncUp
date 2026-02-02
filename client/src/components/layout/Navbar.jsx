@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, Menu, X, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
+import NotificationBell from "../NotificationBell";
 
 export default function Navbar({ activeTab, onToggleSidebar }) {
   const { user: ctxUser, logout } = useUser();
@@ -102,15 +103,8 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
       {/* Notification + Menu */}
       <div className="flex items-center gap-4 relative" ref={menuRef}>
         {/* Notifications */}
-        <button
-          title="Notifications"
-          onClick={toggleNotification}
-          className={`relative p-2 rounded-full transition-all duration-300 hover:bg-neutralLight
-            ${activeButton === "notification" ? "ring-2 ring-accent" : ""}`}
-        >
-          <Bell className="w-5 h-5 text-neutralDark" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
-        </button>
+        {/* Notifications */}
+        <NotificationBell />
 
         {/* Hamburger Menu */}
         <button

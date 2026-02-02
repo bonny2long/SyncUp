@@ -5,28 +5,34 @@ import {
   addProjectMember,
   removeProjectMember,
 } from "../../utils/api";
+import styles from "./ProjectDetailModal.module.css";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 export default function ProjectDetailModal({
   project,
   currentUser,
-  updates = [],
+  updates = [], // For CollaborationHub
   onClose,
+  isOpen = true, // For ProjectPortfolio compatibility
+  fetchPortfolioDetails = false, // If true, fetch additional details
 }) {
   const [localProject, setLocalProject] = useState(project);
   const [loading, setLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [error, setError] = useState("");
-  const rawSkillIdeas = project?.metadata?.skill_ideas ?? [];
+  const [portfolioDetails, setPortfolioDetails] = useState(null);
 
   // Safely normalize metadata
+  const rawSkillIdeas = project?.metadata?.skill_ideas ?? [];
   let skillIdeas = [];
 
   if (project?.metadata) {
     try {
       const metadata =
-        typeof project.metadata === "string"
-          ? JSON.parse(project.metadata)
-          : project.metadata;
+        typeof project.metadata === "string" ?
+          JSON.parse(project.metadata)
+        : project.metadata;
 
       if (Array.isArray(metadata?.skill_ideas)) {
         skillIdeas = metadata.skill_ideas;
@@ -39,6 +45,32 @@ export default function ProjectDetailModal({
   useEffect(() => {
     setLocalProject(project);
   }, [project]);
+
+  // Fetch portfolio details if needed (for ProjectPortfolio view)
+  useEffect(() => {
+    if (!isOpen || !project || !fetchPortfolioDetails) return;
+
+    async function loadDetails() {
+      try {
+        setLoading(true);
+        const res = await fetch(
+          `${API_BASE}/projects/${project.id}/portfolio-details`,
+        );
+        if (!res.ok) throw new Error("Failed to fetch details");
+        const data = await res.json();
+        setPortfolioDetails(data);
+      } catch (err) {
+        console.error("Failed to load project details:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDetails();
+  }, [isOpen, project?.id, fetchPortfolioDetails]);
+
+  // Don't render if isOpen is false (for ProjectPortfolio compatibility)
+  if (!isOpen) return null;
 
   const handleStatusChange = async (next) => {
     setStatusLoading(true);
@@ -81,8 +113,9 @@ export default function ProjectDetailModal({
           ...p,
           is_member: 1,
           team_count: p.team_count + 1,
-          team_members: p.team_members
-            ? p.team_members + ", " + currentUser.name
+          team_members:
+            p.team_members ?
+              p.team_members + ", " + currentUser.name
             : currentUser.name,
         }));
       }
@@ -94,18 +127,15 @@ export default function ProjectDetailModal({
   };
 
   const statusOptions = ["planned", "active", "completed", "archived"];
-  console.log(project.metadata); // undefined
+
+  // Determine which updates to show
+  const displayUpdates = portfolioDetails?.updates || updates;
+  const displayTeam = portfolioDetails?.team || [];
 
   return (
-    <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className={styles.modalOverlay} onClick={onClose}>
       {/* Card */}
-      <div
-        className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-xl animate-enterModal relative"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
         {/* Close button */}
         <button
           onClick={onClose}
@@ -128,60 +158,96 @@ export default function ProjectDetailModal({
           </div>
         )}
 
-        {/* Status + Join Row */}
-        <div className="flex items-center gap-3 mb-4">
-          <select
-            value={localProject.status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            disabled={statusLoading}
-            className="border border-gray-200 rounded-lg px-3 py-1 text-sm"
-          >
-            {statusOptions.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+        {/* Status + Join Row (only show if currentUser is available) */}
+        {currentUser && (
+          <div className="flex items-center gap-3 mb-4">
+            <select
+              value={localProject.status}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              disabled={statusLoading}
+              className="border border-gray-200 rounded-lg px-3 py-1 text-sm"
+            >
+              {statusOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
 
-          <button
-            onClick={handleMembership}
-            disabled={loading}
-            className={`text-sm px-3 py-1 rounded-lg border transition ${
-              localProject.is_member
-                ? "border-red-300 text-red-600 hover:bg-red-50"
+            <button
+              onClick={handleMembership}
+              disabled={loading}
+              className={`text-sm px-3 py-1 rounded-lg border transition ${
+                localProject.is_member ?
+                  "border-red-300 text-red-600 hover:bg-red-50"
                 : "border-primary text-primary hover:bg-primary/10"
-            }`}
-          >
-            {localProject.is_member ? "Leave Project" : "Join Project"}
-          </button>
-        </div>
+              }`}
+            >
+              {localProject.is_member ? "Leave Project" : "Join Project"}
+            </button>
+          </div>
+        )}
 
-        {/* Members */}
+        {/* Team Members */}
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-primary mb-1">
             Team Members
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {localProject.team_members
-              ?.split(", ")
-              .filter(Boolean)
-              .map((name) => (
-                <span
-                  key={name}
-                  className="text-[11px] px-2 py-1 bg-neutral-light border border-gray-200 rounded-full"
+
+          {/* Show detailed team if from portfolio */}
+          {displayTeam.length > 0 ?
+            <div className="grid grid-cols-2 gap-3">
+              {displayTeam.map((member) => (
+                <div
+                  key={member.id}
+                  className="p-3 bg-gray-50 rounded-lg border border-gray-200"
                 >
-                  {name}
+                  <p className="font-medium text-gray-900">{member.name}</p>
+                  <p className="text-xs text-gray-600">{member.role}</p>
+                </div>
+              ))}
+            </div>
+          : <div className="flex flex-wrap gap-2">
+              {localProject.team_members
+                ?.split(", ")
+                .filter(Boolean)
+                .map((name) => (
+                  <span
+                    key={name}
+                    className="text-[11px] px-2 py-1 bg-neutral-light border border-gray-200 rounded-full"
+                  >
+                    {name}
+                  </span>
+                ))}
+
+              {(!localProject.team_members ||
+                localProject.team_members.trim() === "") && (
+                <span className="text-xs text-gray-400">
+                  No team members yet.
+                </span>
+              )}
+            </div>
+          }
+        </div>
+
+        {/* Portfolio Skills (if available) */}
+        {portfolioDetails?.skills && portfolioDetails.skills.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-primary mb-3">
+              Skills Practiced ({portfolioDetails.skills.length})
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {portfolioDetails.skills.map((skill) => (
+                <span
+                  key={skill.id}
+                  className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                >
+                  {skill.skill_name}
                 </span>
               ))}
-
-            {(!localProject.team_members ||
-              localProject.team_members.trim() === "") && (
-              <span className="text-xs text-gray-400">
-                No team members yet.
-              </span>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Recent Updates */}
         <div>
@@ -189,13 +255,12 @@ export default function ProjectDetailModal({
             Recent Updates
           </h3>
 
-          {updates.length === 0 ? (
+          {displayUpdates.length === 0 ?
             <p className="text-xs text-gray-500">
               No updates for this project.
             </p>
-          ) : (
-            <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
-              {updates.slice(0, 10).map((u) => (
+          : <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+              {displayUpdates.slice(0, 10).map((u) => (
                 <div
                   key={u.id}
                   className="p-3 border border-gray-100 rounded-xl bg-neutral-light"
@@ -210,22 +275,33 @@ export default function ProjectDetailModal({
                 </div>
               ))}
             </div>
-          )}
+          }
         </div>
+
+        {/* Mentorship Sessions (if available from portfolio) */}
+        {portfolioDetails?.sessions && portfolioDetails.sessions.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-primary mb-3">
+              Mentorship Sessions ({portfolioDetails.sessions.length})
+            </h3>
+            <div className="space-y-2">
+              {portfolioDetails.sessions.map((session) => (
+                <div
+                  key={session.id}
+                  className="p-3 bg-blue-50 rounded-lg border border-blue-200"
+                >
+                  <p className="font-medium text-blue-900">{session.topic}</p>
+                  <p className="text-xs text-blue-700">
+                    {new Date(session.session_date).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
       </div>
-
-      {/* Animation Keyframes */}
-      <style>{`
-        .animate-enterModal {
-          animation: modalSlideIn 0.25s ease-out;
-        }
-        @keyframes modalSlideIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
