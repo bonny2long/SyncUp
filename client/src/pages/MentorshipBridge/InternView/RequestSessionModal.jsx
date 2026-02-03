@@ -133,7 +133,9 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
               </div>
             : <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
                 {availabilitySlots.map((slot, index) => {
-                  const slotValue = `${slot.available_date}T${slot.available_time}`;
+                  // Extract just the date part and combine with the time
+                  const datePart = slot.available_date.split('T')[0];
+                  const slotValue = `${datePart}T${slot.available_time}`;
                   const isSelected = formData.session_date === slotValue;
 
                   return (

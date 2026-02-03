@@ -8,7 +8,9 @@ import {
 
 const formatDateForMySQL = (isoDate) => {
   if (!isoDate) return null;
-  return new Date(isoDate).toISOString().slice(0, 19).replace("T", " ");
+  const date = new Date(isoDate);
+  if (isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 19).replace("T", " ");
 };
 
 // Fetch all mentors
@@ -171,7 +173,7 @@ export const createSession = async (req, res) => {
     project_id,
   } = req.body;
 
-  if (!intern_id || !mentor_id || !topic || !session_date) {
+  if (!intern_id || !mentor_id || !topic || !session_date || !session_focus) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -188,7 +190,7 @@ export const createSession = async (req, res) => {
         topic,
         details,
         formatDateForMySQL(session_date),
-        session_focus || null,
+        session_focus,
         project_id || null,
       ],
     );
