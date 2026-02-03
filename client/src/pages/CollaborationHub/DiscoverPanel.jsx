@@ -6,6 +6,7 @@ export default function DiscoverPanel({
   selectedProject,
   setSelectedProject,
   onJoinClick,
+  onViewProject,
   loading,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,6 +71,7 @@ export default function DiscoverPanel({
           selectedProject={selectedProject}
           setSelectedProject={setSelectedProject}
           onJoinClick={onJoinClick}
+          onViewProject={onViewProject}
         />
       }
     </div>

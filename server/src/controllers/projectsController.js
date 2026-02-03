@@ -315,81 +315,133 @@ export const removeProjectMember = async (req, res) => {
   }
 };
 
-// Update project status
+// Update project status with security checks
 export const updateProjectStatus = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, user_id } = req.body;
   const allowed = ["planned", "active", "completed", "archived"];
 
+  // Validation
   if (!status) {
     return res.status(400).json({ error: "status is required" });
   }
   if (!allowed.includes(status)) {
     return res.status(400).json({ error: "Invalid status value" });
   }
-
-  // Join with user_id to avoid notifying the triggerer?
-  // For now, we'll notify everyone else in the project.
-  // We need to fetch the project members first if status is 'completed'.
+  if (!user_id) {
+    return res.status(400).json({ error: "user_id is required" });
+  }
 
   const connection = await pool.getConnection();
 
   try {
     await connection.beginTransaction();
 
-    const [result] = await connection.query(
-      `UPDATE projects SET status = ? WHERE id = ?`,
-      [status, id],
+    // 1. GET PROJECT DETAILS (owner_id, current_status, title)
+    const [projectRows] = await connection.query(
+      `SELECT owner_id, status as current_status, title 
+       FROM projects 
+       WHERE id = ?`,
+      [id]
     );
 
-    if (result.affectedRows === 0) {
+    if (projectRows.length === 0) {
       await connection.rollback();
       return res.status(404).json({ error: "Project not found" });
     }
 
-    // If status changed to completed, notify team members
-    if (status === "completed") {
-      // 1. Get project details and members
-      const [projectRows] = await connection.query(
-        `SELECT title, owner_id FROM projects WHERE id = ?`,
-        [id],
-      );
+    const { owner_id, current_status, title } = projectRows[0];
 
-      if (projectRows.length > 0) {
-        const { title } = projectRows[0];
+    // 2. CHECK OWNERSHIP - Only owner can change status
+    if (owner_id !== parseInt(user_id)) {
+      await connection.rollback();
+      return res.status(403).json({ 
+        error: "Only project owners can change project status" 
+      });
+    }
 
-        // 2. Get all members
+    // 3. GET USER ROLE (to prevent mentors from completing)
+    const [userRows] = await connection.query(
+      `SELECT role FROM users WHERE id = ?`,
+      [user_id]
+    );
+
+    if (userRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const userRole = userRows[0].role;
+
+    // 4. PREVENT MENTORS FROM COMPLETING PROJECTS
+    if (status === 'completed' && userRole === 'mentor') {
+      await connection.rollback();
+      return res.status(403).json({ 
+        error: "Mentors cannot mark projects as complete. Only intern project owners can complete projects." 
+      });
+    }
+
+    // 5. PREVENT BACKWARDS STATUS MOVEMENT
+    const statusOrder = ['planned', 'active', 'completed', 'archived'];
+    const currentIndex = statusOrder.indexOf(current_status);
+    const newIndex = statusOrder.indexOf(status);
+
+    if (newIndex < currentIndex) {
+      await connection.rollback();
+      return res.status(400).json({ 
+        error: `Cannot move project backwards from ${current_status} to ${status}` 
+      });
+    }
+
+    // 6. PREVENT SKIPPING STATUSES (must go in order)
+    if (newIndex > currentIndex + 1) {
+      await connection.rollback();
+      return res.status(400).json({ 
+        error: `Cannot skip statuses. Current: ${current_status}, Requested: ${status}` 
+      });
+    }
+
+    // 7. UPDATE STATUS (all checks passed)
+    const [result] = await connection.query(
+      `UPDATE projects SET status = ? WHERE id = ?`,
+      [status, id]
+    );
+
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return res.status(500).json({ error: "Failed to update status" });
+    }
+
+    // 8. SEND NOTIFICATIONS IF COMPLETED
+    if (status === 'completed') {
+      try {
+        // Get all team members except the current user
         const [members] = await connection.query(
           `SELECT user_id FROM project_members WHERE project_id = ?`,
-          [id],
+          [id]
         );
-
-        // 3. Filter out the current user (if provided in body)
-        // We expect req.body.user_id to be sent from frontend
-        const currentUserId =
-          req.body.user_id ? parseInt(req.body.user_id) : null;
 
         const recipients = members
           .map((m) => m.user_id)
-          .filter((uid) => uid !== currentUserId);
+          .filter((uid) => uid !== parseInt(user_id));
 
         if (recipients.length > 0) {
-          try {
-            await notifyProjectCompleted(recipients, title, id, connection);
-          } catch (notifErr) {
-            console.error(
-              "Failed to send project completion notifications:",
-              notifErr,
-            );
-            // We do NOT rollback here because the status update itself was successful.
-            // Just log the error so we can debug it (e.g. invalid user IDs).
-          }
+          await notifyProjectCompleted(recipients, title, id, connection);
         }
+      } catch (notifErr) {
+        console.error("Failed to send project completion notifications:", notifErr);
+        // Don't rollback - status update was successful
       }
     }
 
     await connection.commit();
-    res.json({ message: "Status updated" });
+    
+    res.json({ 
+      message: "Status updated successfully",
+      status: status,
+      project_id: parseInt(id)
+    });
+
   } catch (err) {
     await connection.rollback();
     console.error("Error updating project status:", err);

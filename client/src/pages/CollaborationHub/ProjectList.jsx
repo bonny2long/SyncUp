@@ -277,19 +277,81 @@ export default function ProjectList({
                     {project.status}
                   </span>
 
-                  <select
-                    value={project.status}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      initiateStatusChange(project.id, e.target.value);
-                    }}
-                    className="text-[11px] border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none"
-                  >
-                    <option value="planned">Planned</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="archived">Archived</option>
-                  </select>
+                  {/* Smart Status Dropdown - Only show valid next actions */}
+                  {(() => {
+                    const isOwner = project.owner_id === currentUser?.id;
+                    const isMentor = currentUser?.role === 'mentor';
+                    
+                    // Helper function to get valid next actions
+                    const getValidActions = () => {
+                      if (!isOwner) return []; // Only owners can change status
+                      
+                      switch (project.status) {
+                        case 'planned':
+                          return [
+                            { value: 'planned', label: 'Planned', disabled: true },
+                            { value: 'active', label: '▶️ Start Project' }
+                          ];
+                        
+                        case 'active':
+                          // Mentors can't complete projects
+                          if (isMentor) {
+                            return [
+                              { value: 'active', label: 'Active', disabled: true }
+                            ];
+                          }
+                          return [
+                            { value: 'active', label: 'Active', disabled: true },
+                            { value: 'completed', label: '✓ Mark Complete' }
+                          ];
+                        
+                        case 'completed':
+                          return [
+                            { value: 'completed', label: 'Completed', disabled: true },
+                            { value: 'archived', label: '📦 Archive' }
+                          ];
+                        
+                        case 'archived':
+                          return [
+                            { value: 'archived', label: 'Archived', disabled: true }
+                          ];
+                        
+                        default:
+                          return [];
+                      }
+                    };
+
+                    const validActions = getValidActions();
+
+                    // If no valid actions (not owner or archived), don't show dropdown
+                    if (validActions.length <= 1) {
+                      return null;
+                    }
+
+                    return (
+                      <select
+                        value={project.status}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          if (e.target.value !== project.status) {
+                            initiateStatusChange(project.id, e.target.value);
+                          }
+                        }}
+                        className="text-[11px] border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none hover:border-primary transition"
+                        onClick={(e) => e.stopPropagation()} // Prevent card selection
+                      >
+                        {validActions.map(action => (
+                          <option 
+                            key={action.value} 
+                            value={action.value}
+                            disabled={action.disabled}
+                          >
+                            {action.label}
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  })()}
 
                   <button
                     type="button"

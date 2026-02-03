@@ -185,30 +185,100 @@ export default function ProjectDetailModal({
         {/* Status + Join Row (only show if currentUser is available) */}
         {currentUser && (
           <div className="flex items-center gap-3 mb-4">
-            <select
-              value={localProject.status}
-              onChange={(e) => handleStatusChange(e.target.value)}
-              disabled={statusLoading}
-              className="border border-gray-200 rounded-lg px-3 py-1 text-sm"
-            >
-              {statusOptions.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+            {/* Smart Status Dropdown - Only show valid actions */}
+            {(() => {
+              const isOwner = localProject.owner_id === currentUser?.id;
+              const isMentor = currentUser?.role === 'mentor';
+              
+              const getValidActions = () => {
+                if (!isOwner) return []; // Only owners can change status
+                
+                switch (localProject.status) {
+                  case 'planned':
+                    return [
+                      { value: 'planned', label: 'Planned', disabled: true },
+                      { value: 'active', label: '▶️ Start Project' }
+                    ];
+                  
+                  case 'active':
+                    if (isMentor) {
+                      return [
+                        { value: 'active', label: 'Active', disabled: true }
+                      ];
+                    }
+                    return [
+                      { value: 'active', label: 'Active', disabled: true },
+                      { value: 'completed', label: '✓ Mark Complete' }
+                    ];
+                  
+                  case 'completed':
+                    return [
+                      { value: 'completed', label: 'Completed', disabled: true },
+                      { value: 'archived', label: '📦 Archive' }
+                    ];
+                  
+                  case 'archived':
+                    return [
+                      { value: 'archived', label: 'Archived', disabled: true }
+                    ];
+                  
+                  default:
+                    return [];
+                }
+              };
 
-            <button
-              onClick={handleMembership}
-              disabled={loading}
-              className={`text-sm px-3 py-1 rounded-lg border transition ${
-                localProject.is_member ?
-                  "border-red-300 text-red-600 hover:bg-red-50"
-                : "border-primary text-primary hover:bg-primary/10"
-              }`}
-            >
-              {localProject.is_member ? "Leave Project" : "Join Project"}
-            </button>
+              const validActions = getValidActions();
+
+              // If no valid actions, don't show dropdown
+              if (validActions.length <= 1) {
+                return (
+                  <span className="text-sm px-3 py-1 rounded-lg bg-gray-100 text-gray-700 capitalize">
+                    {localProject.status}
+                  </span>
+                );
+              }
+
+              return (
+                <select
+                  value={localProject.status}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  disabled={statusLoading}
+                  className="border border-gray-200 rounded-lg px-3 py-1 text-sm hover:border-primary transition"
+                >
+                  {validActions.map(action => (
+                    <option 
+                      key={action.value} 
+                      value={action.value}
+                      disabled={action.disabled}
+                    >
+                      {action.label}
+                    </option>
+                  ))}
+                </select>
+              );
+            })()}
+
+            {/* Only show Join/Leave button for seeking projects, not public projects */}
+            {localProject.visibility === 'seeking' && (
+              <button
+                onClick={handleMembership}
+                disabled={loading}
+                className={`text-sm px-3 py-1 rounded-lg border transition ${
+                  localProject.is_member ?
+                    "border-red-300 text-red-600 hover:bg-red-50"
+                  : "border-primary text-primary hover:bg-primary/10"
+                }`}
+              >
+                {localProject.is_member ? "Leave Project" : "Join Project"}
+              </button>
+            )}
+
+            {/* Show view-only badge for public projects */}
+            {localProject.visibility === 'public' && (
+              <span className="text-sm px-3 py-1 rounded-lg bg-blue-100 text-blue-700">
+                🌐 View Only
+              </span>
+            )}
           </div>
         )}
 

@@ -12,6 +12,7 @@ const DiscoverPanel = lazy(() => import("./DiscoverPanel"));
 const ActivityPanel = lazy(() => import("./ActivityPanel"));
 const RequestsPanel = lazy(() => import("./RequestsPanel"));
 const JoinProjectModal = lazy(() => import("./JoinProjectModal"));
+const ProjectDetailModal = lazy(() => import("../../components/modals/ProjectDetailModal"));
 
 export default function CollaborationHub() {
   const { user: currentUser } = useUser();
@@ -51,6 +52,7 @@ export default function CollaborationHub() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [projectToJoin, setProjectToJoin] = useState(null);
   const [joining, setJoining] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Persist tab choice
   useEffect(() => {
@@ -92,6 +94,11 @@ export default function CollaborationHub() {
   const handleJoinClick = (project) => {
     setProjectToJoin(project);
     setShowJoinModal(true);
+  };
+
+  const handleViewProject = (project) => {
+    setSelectedProject(project);
+    setShowDetailModal(true);
   };
 
   const handleJoinConfirm = async () => {
@@ -269,6 +276,7 @@ export default function CollaborationHub() {
                 selectedProject={selectedProject}
                 setSelectedProject={setSelectedProject}
                 onJoinClick={handleJoinClick}
+                onViewProject={handleViewProject}
                 loading={loading}
               />
             </Suspense>
@@ -357,7 +365,7 @@ export default function CollaborationHub() {
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* MODALS */}
       {showJoinModal && (
         <Suspense fallback={null}>
           <JoinProjectModal
@@ -365,6 +373,18 @@ export default function CollaborationHub() {
             onConfirm={handleJoinConfirm}
             onCancel={() => setShowJoinModal(false)}
             loading={joining}
+          />
+        </Suspense>
+      )}
+
+      {showDetailModal && selectedProject && (
+        <Suspense fallback={null}>
+          <ProjectDetailModal
+            project={selectedProject}
+            currentUser={currentUser}
+            updates={allUpdates.filter((u) => u.project_id === selectedProject.id)}
+            onClose={() => setShowDetailModal(false)}
+            onProjectUpdate={loadData}
           />
         </Suspense>
       )}

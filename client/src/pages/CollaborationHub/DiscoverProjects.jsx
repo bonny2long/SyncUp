@@ -5,6 +5,7 @@ export default function DiscoverProjects({
   selectedProject,
   setSelectedProject,
   onJoinClick,
+  onViewProject,
 }) {
   return (
     <div className="space-y-3 max-h-[650px] overflow-y-auto pr-2">
@@ -38,18 +39,39 @@ export default function DiscoverProjects({
               <div className="flex gap-3">
                 <span>👥 {project.team_count ?? 0}</span>
                 <span>🎯 {project.skill_count ?? 0}</span>
+                <span className={`px-2 py-1 rounded-full font-medium ${
+                  project.visibility === 'public' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'bg-purple-100 text-purple-700'
+                }`}>
+                  {project.visibility === 'public' ? '🌐 Public' : '👥 Seeking'}
+                </span>
               </div>
             </div>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onJoinClick(project);
-              }}
-              className="w-full px-3 py-2 bg-secondary text-white text-xs rounded-lg hover:bg-secondary/90 transition font-medium"
-            >
-              Join Project
-            </button>
+            {/* Show different buttons based on visibility */}
+            {project.visibility === 'seeking' ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onJoinClick(project);
+                }}
+                className="w-full px-3 py-2 bg-secondary text-white text-xs rounded-lg hover:bg-secondary/90 transition font-medium"
+              >
+                Join Project
+              </button>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Open the detail modal for viewing
+                  onViewProject(project);
+                }}
+                className="w-full px-3 py-2 bg-gray-100 text-gray-700 text-xs rounded-lg hover:bg-gray-200 transition font-medium"
+              >
+                View Project
+              </button>
+            )}
           </div>
         );
       })}
