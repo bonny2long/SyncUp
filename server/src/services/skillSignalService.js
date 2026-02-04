@@ -27,7 +27,7 @@ export async function emitSkillSignals({
   }
 
   // ─────────────────────────────────────────────
-  // 1️ Guardrails by source type
+  // 1. Guardrails by source type
   // ─────────────────────────────────────────────
 
   // Mentorship rules (CRITICAL)
@@ -49,12 +49,12 @@ export async function emitSkillSignals({
   }
 
   // ─────────────────────────────────────────────
-  // 2️ Deduplicate skill IDs (safety)
+  // 2. Deduplicate skill IDs (safety)
   // ─────────────────────────────────────────────
   const uniqueSkillIds = [...new Set(skillIds)];
 
   // ─────────────────────────────────────────────
-  // 3️ Insert signals (append-only)
+  // 3. Insert signals (append-only)
   // ─────────────────────────────────────────────
   const values = uniqueSkillIds.map((skillId) => [
     userId,

@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  CheckCheck, 
-  Trash2, 
-  X, 
+import {
+  CheckCheck,
+  Trash2,
+  X,
   RefreshCw,
   CheckCircle,
   XCircle,
@@ -12,7 +12,7 @@ import {
   Award,
   FileText,
   Trophy,
-  Bell
+  Bell,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import {
@@ -88,8 +88,8 @@ export default function NotificationDropdown({
             title="Refresh"
             disabled={loading}
           >
-            <RefreshCw 
-              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} 
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
             />
           </button>
 
@@ -138,6 +138,17 @@ export default function NotificationDropdown({
   );
 }
 
+const stripEmojis = (text) => {
+  if (!text) return "";
+  // Regular expression to match emojis (more comprehensive)
+  return text
+    .replace(
+      /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F191}-\u{1F251}\u{1F004}\u{1F0CF}\u{1F170}-\u{1F171}\u{1F17E}-\u{1F17F}\u{1F18E}\u{3030}\u{2B50}\u{2B55}\u{2934}-\u{2935}\u{2B05}-\u{2B07}\u{2B1B}-\u{2B1C}\u{3297}\u{3299}\u{303D}\u{00A9}\u{00AE}\u{2122}\u{23F3}\u{24C2}\u{23E9}-\u{23EF}\u{25B6}\u{23F8}-\u{23FA}]/gu,
+      "",
+    )
+    .trim();
+};
+
 function NotificationItem({ notification, onClick, onDelete }) {
   const formatTime = (dateStr) => {
     try {
@@ -150,22 +161,30 @@ function NotificationItem({ notification, onClick, onDelete }) {
   const getIcon = (type) => {
     const iconClass = "w-5 h-5";
     const iconColor = "text-gray-700";
-    
+
     switch (type) {
       case "join_request_approved":
-        return <CheckCircle className={`${iconClass} ${iconColor} text-green-600`} />;
+        return (
+          <CheckCircle className={`${iconClass} ${iconColor} text-green-600`} />
+        );
       case "join_request_rejected":
         return <XCircle className={`${iconClass} ${iconColor} text-red-600`} />;
       case "session_accepted":
         return <Check className={`${iconClass} ${iconColor} text-green-600`} />;
       case "session_declined":
-        return <Pause className={`${iconClass} ${iconColor} text-orange-600`} />;
+        return (
+          <Pause className={`${iconClass} ${iconColor} text-orange-600`} />
+        );
       case "session_completed":
         return <Award className={`${iconClass} ${iconColor} text-blue-600`} />;
       case "project_update":
-        return <FileText className={`${iconClass} ${iconColor} text-gray-600`} />;
+        return (
+          <FileText className={`${iconClass} ${iconColor} text-gray-600`} />
+        );
       case "project_completed":
-        return <Trophy className={`${iconClass} ${iconColor} text-yellow-600`} />;
+        return (
+          <Trophy className={`${iconClass} ${iconColor} text-yellow-600`} />
+        );
       default:
         return <Bell className={`${iconClass} ${iconColor} text-gray-600`} />;
     }
@@ -181,9 +200,7 @@ function NotificationItem({ notification, onClick, onDelete }) {
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-0.5">
-          {getIcon(notification.type)}
-        </div>
+        <div className="flex-shrink-0 mt-0.5">{getIcon(notification.type)}</div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
@@ -194,7 +211,7 @@ function NotificationItem({ notification, onClick, onDelete }) {
                 )
               }`}
             >
-              {notification.title}
+              {stripEmojis(notification.title)}
             </h4>
 
             <button
@@ -206,7 +223,9 @@ function NotificationItem({ notification, onClick, onDelete }) {
             </button>
           </div>
 
-          <p className="text-xs text-gray-600 mb-2">{notification.message}</p>
+          <p className="text-xs text-gray-600 mb-2">
+            {stripEmojis(notification.message)}
+          </p>
 
           <p className="text-xs text-gray-400">
             {formatTime(notification.created_at)}

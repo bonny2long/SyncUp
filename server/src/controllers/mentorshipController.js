@@ -201,7 +201,7 @@ export const createSession = async (req, res) => {
   }
 
   try {
-    // 🛡️ SECURITY: Double-check that this slot actually exists for this mentor in mentor_availability
+    // SECURITY: Double-check that this slot actually exists for this mentor in mentor_availability
     const formattedDate = formatDateForMySQL(session_date);
     const [datePart, timePart] = formattedDate.split(" ");
 
@@ -263,7 +263,7 @@ export const updateSessionStatus = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // 1️ Get current session
+    // 1. Get current session
     const [sessions] = await connection.query(
       `
       SELECT id, intern_id, mentor_id, status, session_focus, project_id
@@ -279,7 +279,7 @@ export const updateSessionStatus = async (req, res) => {
 
     const session = sessions[0];
 
-    // 2️ Update status
+    // 2. Update status
     await connection.query(
       `
       UPDATE mentorship_sessions
@@ -289,7 +289,7 @@ export const updateSessionStatus = async (req, res) => {
       [status, id],
     );
 
-    // 3️ Generate skill signals ONLY when transitioning to completed
+    // 3. Generate skill signals ONLY when transitioning to completed
     if (session.status !== "completed" && status === "completed") {
       await emitSkillSignals({
         userId: session.intern_id,
@@ -308,7 +308,7 @@ export const updateSessionStatus = async (req, res) => {
 
     await connection.commit();
 
-    // 🔔 Send notifications based on status change
+    // Send notifications based on status change
     try {
       // Get mentor name for notifications
       const [mentorDetails] = await pool.query(

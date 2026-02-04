@@ -288,7 +288,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
                         </div>
                         {isSelected && (
                           <div className="text-primary text-sm font-medium">
-                            ✓ Selected
+                            Selected
                           </div>
                         )}
                       </label>

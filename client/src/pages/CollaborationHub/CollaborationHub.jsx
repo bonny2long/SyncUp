@@ -8,11 +8,13 @@ import { useProjects } from "../../hooks/useProjects"; // Custom hook integrated
 // Lazy load components
 const CreateProjectForm = lazy(() => import("./CreateProjectForm"));
 const MyWorkPanel = lazy(() => import("./MyWorkPanel"));
-const DiscoverPanel = lazy(() => import("./DiscoverPanel"));
+const DiscoverProjects = lazy(() => import("./DiscoverProjects"));
 const ActivityPanel = lazy(() => import("./ActivityPanel"));
 const RequestsPanel = lazy(() => import("./RequestsPanel"));
 const JoinProjectModal = lazy(() => import("./JoinProjectModal"));
-const ProjectDetailModal = lazy(() => import("../../components/modals/ProjectDetailModal"));
+const ProjectDetailModal = lazy(
+  () => import("../../components/modals/ProjectDetailModal"),
+);
 
 export default function CollaborationHub() {
   const { user: currentUser } = useUser();
@@ -271,7 +273,7 @@ export default function CollaborationHub() {
                 <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
               }
             >
-              <DiscoverPanel
+              <DiscoverProjects
                 projects={discoverProjects}
                 selectedProject={selectedProject}
                 setSelectedProject={setSelectedProject}
@@ -382,7 +384,9 @@ export default function CollaborationHub() {
           <ProjectDetailModal
             project={selectedProject}
             currentUser={currentUser}
-            updates={allUpdates.filter((u) => u.project_id === selectedProject.id)}
+            updates={allUpdates.filter(
+              (u) => u.project_id === selectedProject.id,
+            )}
             onClose={() => setShowDetailModal(false)}
             onProjectUpdate={loadData}
           />

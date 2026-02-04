@@ -91,7 +91,7 @@ export const createProgressUpdate = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // 1️ Insert progress update (existing behavior)
+    // 1. Insert progress update (existing behavior)
     const softDelete = await ensureSoftDeleteSupport();
 
     const [result] = await connection.query(
@@ -155,7 +155,7 @@ export const createProgressUpdate = async (req, res) => {
       });
     }
 
-    // 4️ Return full update row (existing behavior)
+    // 4. Return full update row (existing behavior)
     const [rows] = await connection.query(
       `
       SELECT 
@@ -177,7 +177,7 @@ export const createProgressUpdate = async (req, res) => {
 
     await connection.commit();
 
-    // 🔔 Notify team members
+    // Notify team members
     try {
       // Get all team members excluding the author
       const [members] = await pool.query(

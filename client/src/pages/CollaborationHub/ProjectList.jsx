@@ -26,7 +26,7 @@ export default function ProjectList({
   const [showMembersFor, setShowMembersFor] = useState(null);
   const [modalProject, setModalProject] = useState(null);
 
-  // ✅ Use passed-in projects instead of fetching
+  // Use passed-in projects instead of fetching
   useEffect(() => {
     if (passedProjects && passedProjects.length > 0) {
       setProjects(passedProjects);
@@ -280,42 +280,62 @@ export default function ProjectList({
                   {/* Smart Status Dropdown - Only show valid next actions */}
                   {(() => {
                     const isOwner = project.owner_id === currentUser?.id;
-                    const isMentor = currentUser?.role === 'mentor';
-                    
+                    const isMentor = currentUser?.role === "mentor";
+
                     // Helper function to get valid next actions
                     const getValidActions = () => {
                       if (!isOwner) return []; // Only owners can change status
-                      
+
                       switch (project.status) {
-                        case 'planned':
+                        case "planned":
                           return [
-                            { value: 'planned', label: 'Planned', disabled: true },
-                            { value: 'active', label: '▶️ Start Project' }
+                            {
+                              value: "planned",
+                              label: "Planned",
+                              disabled: true,
+                            },
+                            { value: "active", label: "Start Project" },
                           ];
-                        
-                        case 'active':
+
+                        case "active":
                           // Mentors can't complete projects
                           if (isMentor) {
                             return [
-                              { value: 'active', label: 'Active', disabled: true }
+                              {
+                                value: "active",
+                                label: "Active",
+                                disabled: true,
+                              },
                             ];
                           }
                           return [
-                            { value: 'active', label: 'Active', disabled: true },
-                            { value: 'completed', label: '✓ Mark Complete' }
+                            {
+                              value: "active",
+                              label: "Active",
+                              disabled: true,
+                            },
+                            { value: "completed", label: "Mark Complete" },
                           ];
-                        
-                        case 'completed':
+
+                        case "completed":
                           return [
-                            { value: 'completed', label: 'Completed', disabled: true },
-                            { value: 'archived', label: '📦 Archive' }
+                            {
+                              value: "completed",
+                              label: "Completed",
+                              disabled: true,
+                            },
+                            { value: "archived", label: "Archive" },
                           ];
-                        
-                        case 'archived':
+
+                        case "archived":
                           return [
-                            { value: 'archived', label: 'Archived', disabled: true }
+                            {
+                              value: "archived",
+                              label: "Archived",
+                              disabled: true,
+                            },
                           ];
-                        
+
                         default:
                           return [];
                       }
@@ -340,9 +360,9 @@ export default function ProjectList({
                         className="text-[11px] border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none hover:border-primary transition"
                         onClick={(e) => e.stopPropagation()} // Prevent card selection
                       >
-                        {validActions.map(action => (
-                          <option 
-                            key={action.value} 
+                        {validActions.map((action) => (
+                          <option
+                            key={action.value}
                             value={action.value}
                             disabled={action.disabled}
                           >

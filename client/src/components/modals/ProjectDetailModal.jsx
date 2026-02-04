@@ -188,40 +188,44 @@ export default function ProjectDetailModal({
             {/* Smart Status Dropdown - Only show valid actions */}
             {(() => {
               const isOwner = localProject.owner_id === currentUser?.id;
-              const isMentor = currentUser?.role === 'mentor';
-              
+              const isMentor = currentUser?.role === "mentor";
+
               const getValidActions = () => {
                 if (!isOwner) return []; // Only owners can change status
-                
+
                 switch (localProject.status) {
-                  case 'planned':
+                  case "planned":
                     return [
-                      { value: 'planned', label: 'Planned', disabled: true },
-                      { value: 'active', label: '▶️ Start Project' }
+                      { value: "planned", label: "Planned", disabled: true },
+                      { value: "active", label: "Start Project" },
                     ];
-                  
-                  case 'active':
+
+                  case "active":
                     if (isMentor) {
                       return [
-                        { value: 'active', label: 'Active', disabled: true }
+                        { value: "active", label: "Active", disabled: true },
                       ];
                     }
                     return [
-                      { value: 'active', label: 'Active', disabled: true },
-                      { value: 'completed', label: '✓ Mark Complete' }
+                      { value: "active", label: "Active", disabled: true },
+                      { value: "completed", label: "Mark Complete" },
                     ];
-                  
-                  case 'completed':
+
+                  case "completed":
                     return [
-                      { value: 'completed', label: 'Completed', disabled: true },
-                      { value: 'archived', label: '📦 Archive' }
+                      {
+                        value: "completed",
+                        label: "Completed",
+                        disabled: true,
+                      },
+                      { value: "archived", label: "Archive" },
                     ];
-                  
-                  case 'archived':
+
+                  case "archived":
                     return [
-                      { value: 'archived', label: 'Archived', disabled: true }
+                      { value: "archived", label: "Archived", disabled: true },
                     ];
-                  
+
                   default:
                     return [];
                 }
@@ -245,9 +249,9 @@ export default function ProjectDetailModal({
                   disabled={statusLoading}
                   className="border border-gray-200 rounded-lg px-3 py-1 text-sm hover:border-primary transition"
                 >
-                  {validActions.map(action => (
-                    <option 
-                      key={action.value} 
+                  {validActions.map((action) => (
+                    <option
+                      key={action.value}
                       value={action.value}
                       disabled={action.disabled}
                     >
@@ -259,7 +263,7 @@ export default function ProjectDetailModal({
             })()}
 
             {/* Only show Join/Leave button for seeking projects, not public projects */}
-            {localProject.visibility === 'seeking' && (
+            {localProject.visibility === "seeking" && (
               <button
                 onClick={handleMembership}
                 disabled={loading}
@@ -274,7 +278,7 @@ export default function ProjectDetailModal({
             )}
 
             {/* Show view-only badge for public projects */}
-            {localProject.visibility === 'public' && (
+            {localProject.visibility === "public" && (
               <span className="text-sm px-3 py-1 rounded-lg bg-blue-100 text-blue-700">
                 Public - View Only
               </span>

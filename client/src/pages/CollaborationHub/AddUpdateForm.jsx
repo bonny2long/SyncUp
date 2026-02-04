@@ -124,7 +124,7 @@ export default function AddUpdateForm({
         />
         {skills.length > 0 && (
           <p className="text-xs text-primary font-medium mt-1">
-            ✓ {skills.length} skill{skills.length !== 1 ? "s" : ""} selected
+            {skills.length} skill{skills.length !== 1 ? "s" : ""} selected
           </p>
         )}
       </div>

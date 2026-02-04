@@ -25,7 +25,7 @@ export const createNotification = async ({
       [userId, type, title, message, link, relatedId, relatedType],
     );
 
-    console.log(`📬 Notification created for user ${userId}: ${type}`);
+    console.log(`Notification created for user ${userId}: ${type}`);
     return result.insertId;
   } catch (err) {
     console.error("Error creating notification:", err);
@@ -47,7 +47,7 @@ export const notifyJoinRequestApproved = async (
   return createNotification({
     userId,
     type: "join_request_approved",
-    title: "Join Request Approved! 🎉",
+    title: "Join Request Approved!",
     message: `Your request to join "${projectTitle}" has been approved. Welcome to the team!`,
     link: `/collaboration`,
     relatedId: projectId,
@@ -86,7 +86,7 @@ export const notifySessionAccepted = async (
   return createNotification({
     userId: internId,
     type: "session_accepted",
-    title: "Session Accepted! ✅",
+    title: "Session Accepted!",
     message: `${mentorName} accepted your session request: "${topic}". Check your schedule!`,
     link: `/mentorship`,
     relatedId: sessionId,
@@ -126,7 +126,7 @@ export const notifySessionCompleted = async (
   return createNotification({
     userId: internId,
     type: "session_completed",
-    title: "Session Completed! 🎓",
+    title: "Session Completed!",
     message: `Your session with ${mentorName} on "${topic}" has been marked complete. Great work!`,
     link: `/mentorship`,
     relatedId: sessionId,
@@ -165,7 +165,7 @@ export const notifyProjectUpdate = async (
       [values],
     );
 
-    console.log(`📬 ${userIds.length} project update notifications created`);
+    console.log(`${userIds.length} project update notifications created`);
   } catch (err) {
     console.error("Error creating project update notifications:", err);
     throw err;
@@ -186,7 +186,7 @@ export const notifyProjectCompleted = async (
     const values = userIds.map((userId) => [
       userId,
       "project_completed",
-      "Project Completed! 🏆",
+      "Project Completed!",
       `The project "${projectTitle}" has been marked as completed. Congratulations on the great work!`,
       `/portfolio`,
       projectId,
@@ -200,7 +200,7 @@ export const notifyProjectCompleted = async (
       [values],
     );
 
-    console.log(`📬 ${userIds.length} project completed notifications created`);
+    console.log(`${userIds.length} project completed notifications created`);
   } catch (err) {
     console.error("Error creating project completed notifications:", err);
     throw err;

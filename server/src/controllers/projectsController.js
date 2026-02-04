@@ -343,7 +343,7 @@ export const updateProjectStatus = async (req, res) => {
       `SELECT owner_id, status as current_status, title 
        FROM projects 
        WHERE id = ?`,
-      [id]
+      [id],
     );
 
     if (projectRows.length === 0) {
@@ -356,15 +356,15 @@ export const updateProjectStatus = async (req, res) => {
     // 2. CHECK OWNERSHIP - Only owner can change status
     if (owner_id !== parseInt(user_id)) {
       await connection.rollback();
-      return res.status(403).json({ 
-        error: "Only project owners can change project status" 
+      return res.status(403).json({
+        error: "Only project owners can change project status",
       });
     }
 
     // 3. GET USER ROLE (to prevent mentors from completing)
     const [userRows] = await connection.query(
       `SELECT role FROM users WHERE id = ?`,
-      [user_id]
+      [user_id],
     );
 
     if (userRows.length === 0) {
@@ -375,37 +375,38 @@ export const updateProjectStatus = async (req, res) => {
     const userRole = userRows[0].role;
 
     // 4. PREVENT MENTORS FROM COMPLETING PROJECTS
-    if (status === 'completed' && userRole === 'mentor') {
+    if (status === "completed" && userRole === "mentor") {
       await connection.rollback();
-      return res.status(403).json({ 
-        error: "Mentors cannot mark projects as complete. Only intern project owners can complete projects." 
+      return res.status(403).json({
+        error:
+          "Mentors cannot mark projects as complete. Only intern project owners can complete projects.",
       });
     }
 
     // 5. PREVENT BACKWARDS STATUS MOVEMENT
-    const statusOrder = ['planned', 'active', 'completed', 'archived'];
+    const statusOrder = ["planned", "active", "completed", "archived"];
     const currentIndex = statusOrder.indexOf(current_status);
     const newIndex = statusOrder.indexOf(status);
 
     if (newIndex < currentIndex) {
       await connection.rollback();
-      return res.status(400).json({ 
-        error: `Cannot move project backwards from ${current_status} to ${status}` 
+      return res.status(400).json({
+        error: `Cannot move project backwards from ${current_status} to ${status}`,
       });
     }
 
     // 6. PREVENT SKIPPING STATUSES (must go in order)
     if (newIndex > currentIndex + 1) {
       await connection.rollback();
-      return res.status(400).json({ 
-        error: `Cannot skip statuses. Current: ${current_status}, Requested: ${status}` 
+      return res.status(400).json({
+        error: `Cannot skip statuses. Current: ${current_status}, Requested: ${status}`,
       });
     }
 
     // 7. UPDATE STATUS (all checks passed)
     const [result] = await connection.query(
       `UPDATE projects SET status = ? WHERE id = ?`,
-      [status, id]
+      [status, id],
     );
 
     if (result.affectedRows === 0) {
@@ -414,12 +415,12 @@ export const updateProjectStatus = async (req, res) => {
     }
 
     // 8. SEND NOTIFICATIONS IF COMPLETED
-    if (status === 'completed') {
+    if (status === "completed") {
       try {
         // Get all team members except the current user
         const [members] = await connection.query(
           `SELECT user_id FROM project_members WHERE project_id = ?`,
-          [id]
+          [id],
         );
 
         const recipients = members
@@ -430,19 +431,21 @@ export const updateProjectStatus = async (req, res) => {
           await notifyProjectCompleted(recipients, title, id, connection);
         }
       } catch (notifErr) {
-        console.error("Failed to send project completion notifications:", notifErr);
+        console.error(
+          "Failed to send project completion notifications:",
+          notifErr,
+        );
         // Don't rollback - status update was successful
       }
     }
 
     await connection.commit();
-    
-    res.json({ 
+
+    res.json({
       message: "Status updated successfully",
       status: status,
-      project_id: parseInt(id)
+      project_id: parseInt(id),
     });
-
   } catch (err) {
     await connection.rollback();
     console.error("Error updating project status:", err);
@@ -494,7 +497,7 @@ export const getAllProjectSkills = async (req, res) => {
       ORDER BY project_count DESC, s.skill_name ASC
       LIMIT 50
     `);
-    
+
     res.json(skills);
   } catch (err) {
     console.error("Error fetching project skills:", err);
@@ -860,7 +863,7 @@ export const approveJoinRequest = async (req, res) => {
 
     await connection.commit();
 
-    // 🔔 Send notification to user
+    // Send notification to user
     try {
       const [projectDetails] = await pool.query(
         `SELECT title FROM projects WHERE id = ?`,
@@ -923,7 +926,7 @@ export const rejectJoinRequest = async (req, res) => {
       message: "Join request rejected",
     });
 
-    // 🔔 Send notification (after response)
+    // Send notification (after response)
     if (requestDetails.length > 0) {
       try {
         await notifyJoinRequestRejected(
