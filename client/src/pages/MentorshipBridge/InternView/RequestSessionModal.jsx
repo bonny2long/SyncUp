@@ -174,7 +174,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
       addToast({
         type: "success",
-        message: `Session requested with ${mentor.name}! 🎉`,
+        message: `Session requested with ${mentor.name}!`,
       });
 
       // Clear selection before closing to prevent useEffect from firing a warning

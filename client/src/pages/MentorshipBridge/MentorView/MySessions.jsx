@@ -40,10 +40,9 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
       });
       addToast({
         type: "success",
-        message:
-          skillIds.length > 0 ?
-            `Session completed! Intern earned 3x skill signals 🎉`
-          : "Session completed! ✅",
+        message: skillIds.length > 0 ?
+          "Session completed! Intern earned 3x skill signals"
+        : "Session completed!",
       });
       onRefresh();
     } catch (err) {

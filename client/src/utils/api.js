@@ -276,6 +276,15 @@ export async function getSkillSummary(userId) {
 }
 
 // ----------------------------------------------------
+// PROJECT SKILLS
+// ----------------------------------------------------
+export const fetchProjectSkills = async () => {
+  const response = await fetch(`${API_BASE}/projects/skills`);
+  if (!response.ok) throw new Error("Failed to fetch project skills");
+  return response.json();
+};
+
+// ----------------------------------------------------
 // CREATE PROJECT
 // ----------------------------------------------------
 export async function createProject(data) {

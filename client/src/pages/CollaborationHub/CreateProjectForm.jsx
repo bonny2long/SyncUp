@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createProject } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
+import { UserPlus, Globe, X } from "lucide-react";
 
 export default function CreateProjectForm({ onCreated }) {
   const { user } = useUser();
@@ -140,8 +141,9 @@ export default function CreateProjectForm({ onCreated }) {
                 className="mt-0.5"
               />
               <div>
-                <p className="text-sm font-semibold text-neutralDark">
-                  👥 Seeking Members
+                <p className="text-sm font-semibold text-neutralDark flex items-center gap-2">
+                  <UserPlus className="w-4 h-4" />
+                  Seeking Members
                 </p>
                 <p className="text-xs text-gray-600 mt-1">
                   Accept join requests from interested collaborators.
@@ -192,9 +194,9 @@ export default function CreateProjectForm({ onCreated }) {
                 <button
                   type="button"
                   onClick={() => removeSkill(skill)}
-                  className="text-primary/60 hover:text-primary ml-1 font-bold"
+                  className="text-primary/60 hover:text-primary ml-1"
                 >
-                  ×
+                  <X className="w-3 h-3" />
                 </button>
               </span>
             ))}

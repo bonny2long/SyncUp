@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Trash2, Edit2 } from "lucide-react";
+import { Trash2, Edit2, MoreVertical } from "lucide-react";
 import SkillBadge from "../../components/shared/SkillBadge";
 
 export default function UpdateCard({
@@ -94,7 +94,7 @@ export default function UpdateCard({
             className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-600 hover:text-gray-900"
             title="More actions"
           >
-            ⋮
+            <MoreVertical className="w-4 h-4" />
           </button>
           {menuOpen && (
             <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">

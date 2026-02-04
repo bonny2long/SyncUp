@@ -18,7 +18,7 @@ export default function IncomingRequests({
   const handleAccept = async (sessionId) => {
     try {
       await updateSessionStatus(sessionId, { status: "accepted" });
-      addToast({ type: "success", message: "Session accepted! ✅" });
+      addToast({ type: "success", message: "Session accepted!" });
       onRefresh();
     } catch (err) {
       addToast({ type: "error", message: "Failed to accept session" });

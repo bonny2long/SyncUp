@@ -7,6 +7,7 @@ import {
   Users,
   Code,
   MessageSquare,
+  Rocket,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
@@ -250,7 +251,10 @@ export default function UserProfile() {
                     </span>
                   </div>
                   <div className="flex gap-4 mt-3 text-xs text-gray-600">
-                    <span>👥 {project.team_size} members</span>
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      <span>{project.team_size} members</span>
+                    </div>
                     <span> {project.skill_count} skills</span>
                   </div>
                 </div>
@@ -304,9 +308,10 @@ export default function UserProfile() {
         {/* Empty States */}
         {skills.length === 0 && projects.length === 0 && (
           <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
-            <p className="text-neutralDark text-lg">
-              No activity yet. Time to start building! 🚀
-            </p>
+            <div className="flex items-center justify-center gap-2 text-neutralDark text-lg">
+              <Rocket className="w-5 h-5" />
+              <span>No activity yet. Time to start building!</span>
+            </div>
           </div>
         )}
       </div>

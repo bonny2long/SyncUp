@@ -276,7 +276,7 @@ export default function ProjectDetailModal({
             {/* Show view-only badge for public projects */}
             {localProject.visibility === 'public' && (
               <span className="text-sm px-3 py-1 rounded-lg bg-blue-100 text-blue-700">
-                🌐 View Only
+                Public - View Only
               </span>
             )}
           </div>

@@ -201,6 +201,27 @@ export const createSession = async (req, res) => {
   }
 
   try {
+    // 🛡️ SECURITY: Double-check that this slot actually exists for this mentor in mentor_availability
+    const formattedDate = formatDateForMySQL(session_date);
+    const [datePart, timePart] = formattedDate.split(" ");
+
+    const [validSlot] = await pool.query(
+      `SELECT 1 FROM mentor_availability 
+       WHERE mentor_id = ? 
+       AND DATE(available_date) = ? 
+       AND available_time = ?`,
+      [mentor_id, datePart, timePart],
+    );
+
+    if (validSlot.length === 0) {
+      console.warn(
+        `[Mentorship] Blocked invalid booking: Mentor ${mentor_id}, Date ${datePart}, Time ${timePart}`,
+      );
+      return res.status(400).json({
+        error: "The selected time slot is no longer available for this mentor.",
+      });
+    }
+
     const [result] = await pool.query(
       `
       INSERT INTO mentorship_sessions 
@@ -212,7 +233,7 @@ export const createSession = async (req, res) => {
         mentor_id,
         topic,
         details,
-        formatDateForMySQL(session_date),
+        formattedDate,
         session_focus,
         project_id || null,
       ],

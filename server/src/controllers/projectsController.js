@@ -36,6 +36,7 @@ export const getProjects = async (req, res) => {
         MAX(u.created_at) AS last_update,
         -- comma-separated member names for UI
         GROUP_CONCAT(DISTINCT usr.name ORDER BY usr.name SEPARATOR ', ') AS team_members,
+        GROUP_CONCAT(DISTINCT ps.skill_id) AS skill_ids,
         JSON_ARRAYAGG(
           JSON_OBJECT(
             'id', usr.id,
@@ -471,6 +472,33 @@ export const getProjectSkills = async (req, res) => {
   } catch (err) {
     console.error("Error fetching project skills:", err);
     res.status(500).json({ error: "Failed to fetch project skills" });
+  }
+};
+
+// GET /api/projects/skills
+// Get all skills being used in active/planned projects
+export const getAllProjectSkills = async (req, res) => {
+  try {
+    const [skills] = await pool.query(`
+      SELECT 
+        s.id,
+        s.skill_name,
+        s.category,
+        COUNT(DISTINCT ps.project_id) as project_count
+      FROM skills s
+      JOIN project_skills ps ON s.id = ps.skill_id
+      JOIN projects p ON ps.project_id = p.id
+      WHERE p.status IN ('active', 'planned')
+      GROUP BY s.id, s.skill_name, s.category
+      HAVING project_count > 0
+      ORDER BY project_count DESC, s.skill_name ASC
+      LIMIT 50
+    `);
+    
+    res.json(skills);
+  } catch (err) {
+    console.error("Error fetching project skills:", err);
+    res.status(500).json({ error: "Failed to fetch skills" });
   }
 };
 

@@ -111,7 +111,7 @@ export default function CollaborationHub() {
       setProjectToJoin(null);
       addToast({
         type: "success",
-        message: `Request sent! The project owner will review it soon. ✅`,
+        message: `Request sent! The project owner will review it soon.`,
       });
     } catch (err) {
       const { message } = getErrorMessage(err);

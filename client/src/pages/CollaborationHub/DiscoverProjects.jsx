@@ -1,4 +1,5 @@
 import React from "react";
+import { Users, Target, Globe, UserPlus } from "lucide-react";
 
 export default function DiscoverProjects({
   projects,
@@ -36,15 +37,31 @@ export default function DiscoverProjects({
             </p>
 
             <div className="flex justify-between items-center mb-3 text-xs text-gray-600">
-              <div className="flex gap-3">
-                <span>👥 {project.team_count ?? 0}</span>
-                <span>🎯 {project.skill_count ?? 0}</span>
-                <span className={`px-2 py-1 rounded-full font-medium ${
+              <div className="flex gap-3 items-center">
+                <div className="flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  <span>{project.team_count ?? 0}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Target className="w-3 h-3" />
+                  <span>{project.skill_count ?? 0}</span>
+                </div>
+                <span className={`px-2 py-1 rounded-full font-medium flex items-center gap-1 ${
                   project.visibility === 'public' 
                     ? 'bg-blue-100 text-blue-700' 
                     : 'bg-purple-100 text-purple-700'
                 }`}>
-                  {project.visibility === 'public' ? '🌐 Public' : '👥 Seeking'}
+                  {project.visibility === 'public' ? (
+                    <>
+                      <Globe className="w-3 h-3" />
+                      Public
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-3 h-3" />
+                      Seeking
+                    </>
+                  )}
                 </span>
               </div>
             </div>

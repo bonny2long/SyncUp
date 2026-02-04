@@ -1,6 +1,19 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCheck, Trash2, X } from "lucide-react";
+import { 
+  CheckCheck, 
+  Trash2, 
+  X, 
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Check,
+  Pause,
+  Award,
+  FileText,
+  Trophy,
+  Bell
+} from "lucide-react";
 import { useUser } from "../context/UserContext";
 import {
   markNotificationAsRead,
@@ -75,23 +88,9 @@ export default function NotificationDropdown({
             title="Refresh"
             disabled={loading}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`lucide lucide-refresh-cw ${loading ? "animate-spin" : ""}`}
-            >
-              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-              <path d="M21 3v5h-5" />
-              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-              <path d="M3 21v-5h5" />
-            </svg>
+            <RefreshCw 
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} 
+            />
           </button>
 
           {notifications.some((n) => !n.is_read) && (
@@ -149,23 +148,26 @@ function NotificationItem({ notification, onClick, onDelete }) {
   };
 
   const getIcon = (type) => {
+    const iconClass = "w-5 h-5";
+    const iconColor = "text-gray-700";
+    
     switch (type) {
       case "join_request_approved":
-        return "🎉";
+        return <CheckCircle className={`${iconClass} ${iconColor} text-green-600`} />;
       case "join_request_rejected":
-        return "❌";
+        return <XCircle className={`${iconClass} ${iconColor} text-red-600`} />;
       case "session_accepted":
-        return "✅";
+        return <Check className={`${iconClass} ${iconColor} text-green-600`} />;
       case "session_declined":
-        return "⏸️";
+        return <Pause className={`${iconClass} ${iconColor} text-orange-600`} />;
       case "session_completed":
-        return "🎓";
+        return <Award className={`${iconClass} ${iconColor} text-blue-600`} />;
       case "project_update":
-        return "📝";
+        return <FileText className={`${iconClass} ${iconColor} text-gray-600`} />;
       case "project_completed":
-        return "🏆";
+        return <Trophy className={`${iconClass} ${iconColor} text-yellow-600`} />;
       default:
-        return "🔔";
+        return <Bell className={`${iconClass} ${iconColor} text-gray-600`} />;
     }
   };
 
@@ -179,7 +181,7 @@ function NotificationItem({ notification, onClick, onDelete }) {
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className="text-2xl flex-shrink-0">
+        <div className="flex-shrink-0 mt-0.5">
           {getIcon(notification.type)}
         </div>
 

@@ -13,7 +13,7 @@ export default function RequestCard({ request, onResolved }) {
     try {
       await approveJoinRequest(request.project_id, request.id);
 
-      addToast(`${request.name} has been approved! ✅`, "success", 3000);
+      addToast(`${request.name} has been approved!`, "success", 3000);
 
       onResolved(request.id);
     } catch (err) {

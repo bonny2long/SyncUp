@@ -24,12 +24,15 @@ export default function FindMentors({ onSessionRequested }) {
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setMentors([]); // Reset mentors when tab changes to avoid mixing data
       setError("");
       try {
         const data =
           tab === "available" ?
             await fetchAvailableMentors()
           : await fetchProjectMentors();
+
+        console.log(`Loaded ${data.length} mentors/slots for tab ${tab}`);
         setMentors(data);
       } catch (err) {
         setError("Failed to load mentors");
@@ -63,26 +66,45 @@ export default function FindMentors({ onSessionRequested }) {
   }
 
   // Deduplicate mentors and aggregate their availability
-  const uniqueMentors = mentors.reduce((acc, mentor) => {
-    const existing = acc.find((m) => m.id === mentor.id);
+  const uniqueMentors = mentors.reduce((acc, mentorRow) => {
+    // Ensure we have a valid ID
+    if (!mentorRow.id) return acc;
+
+    const existing = acc.find((m) => m.id === mentorRow.id);
 
     if (!existing) {
-      // First time seeing this mentor
+      // First time seeing this mentor - create a FRESH object
       acc.push({
-        id: mentor.id,
-        name: mentor.name,
-        email: mentor.email,
-        role: mentor.role,
-        projects: mentor.projects, // For project mentors tab
-        availabilityCount: 1,
-        nextAvailable: {
-          date: mentor.available_date,
-          time: mentor.available_time,
-        },
+        id: mentorRow.id,
+        name: mentorRow.name,
+        email: mentorRow.email,
+        role: mentorRow.role,
+        projects: mentorRow.projects || "", // Project tab specific
+        availabilityCount: mentorRow.available_date ? 1 : 0,
+        nextAvailable:
+          mentorRow.available_date ?
+            {
+              date: mentorRow.available_date,
+              time: mentorRow.available_time,
+            }
+          : null,
       });
     } else {
-      // Mentor already exists, increment count
-      existing.availabilityCount++;
+      // Mentor already exists
+      if (mentorRow.available_date) {
+        existing.availabilityCount++;
+        // If we don't have a nextAvailable yet (e.g. from project tab), set it
+        if (!existing.nextAvailable) {
+          existing.nextAvailable = {
+            date: mentorRow.available_date,
+            time: mentorRow.available_time,
+          };
+        }
+      }
+      // Merge projects if applicable
+      if (mentorRow.projects && !existing.projects) {
+        existing.projects = mentorRow.projects;
+      }
     }
 
     return acc;

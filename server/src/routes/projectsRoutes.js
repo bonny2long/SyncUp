@@ -7,6 +7,7 @@ import {
   createProject,
   attachProjectSkills,
   getProjectSkills,
+  getAllProjectSkills,
   getUserProjects,
   getProjectPortfolioDetails,
   getProjectMetrics,
@@ -27,6 +28,9 @@ const router = express.Router();
 
 // GET /api/projects
 router.get("/", getProjects);
+
+// GET /api/projects/skills
+router.get("/skills", getAllProjectSkills);
 
 // POST /api/projects
 router.post("/", createProject);
