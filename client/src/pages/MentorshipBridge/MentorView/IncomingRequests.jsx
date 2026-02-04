@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { updateSessionStatus, deleteSession } from "../../../utils/api";
 import { useToast } from "../../../context/ToastContext";
 import { Calendar, Target, User, Mail, Clock } from "lucide-react";
+import ConfirmModal from "../../../components/shared/ConfirmModal";
 
 export default function IncomingRequests({
   sessions,
@@ -10,6 +11,9 @@ export default function IncomingRequests({
   onRefresh,
 }) {
   const { addToast } = useToast();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [sessionToDecline, setSessionToDecline] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const handleAccept = async (sessionId) => {
     try {
@@ -21,15 +25,25 @@ export default function IncomingRequests({
     }
   };
 
-  const handleDecline = async (sessionId) => {
-    if (!window.confirm("Decline this session request?")) return;
+  const handleDecline = (session) => {
+    setSessionToDecline(session);
+    setShowConfirmModal(true);
+  };
 
+  const handleDeclineConfirm = async () => {
+    if (!sessionToDecline) return;
+
+    setActionLoading(true);
     try {
-      await updateSessionStatus(sessionId, { status: "declined" });
-      addToast({ type: "info", message: "Session declined" });
+      await updateSessionStatus(sessionToDecline.id, { status: "declined" });
+      addToast({ type: "info", message: "Session request declined" });
+      setShowConfirmModal(false);
+      setSessionToDecline(null);
       onRefresh();
     } catch (err) {
-      addToast({ type: "error", message: "Failed to decline session" });
+      addToast({ type: "error", message: "Failed to decline session request" });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -87,6 +101,22 @@ export default function IncomingRequests({
           />
         ))}
       </div>
+
+      {/* Confirm Modal for Declining */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setSessionToDecline(null);
+        }}
+        onConfirm={handleDeclineConfirm}
+        title="Decline Session Request?"
+        message={`Are you sure you want to decline the session request from ${sessionToDecline?.intern_name || 'this intern'}? This action cannot be undone.`}
+        confirmText="Decline Request"
+        confirmColor="red"
+        loading={actionLoading}
+        icon="alert"
+      />
     </div>
   );
 }
@@ -194,7 +224,7 @@ function RequestCard({ session, onAccept, onDecline }) {
           Accept Session
         </button>
         <button
-          onClick={() => onDecline(session.id)}
+          onClick={() => onDecline(session)}
           className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
         >
           Decline

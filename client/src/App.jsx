@@ -6,11 +6,12 @@ import { ToastProvider } from "./context/ToastContext";
 import ProjectPortfolio from "./pages/ProjectPortfolio";
 import UserProfile from "./pages/UserProfile";
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, requireIntern = false }) {
   const { user, loading } = useUser();
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
+  if (requireIntern && user.role !== 'intern') return <Navigate to="/collaboration" replace />;
 
   return children;
 }
@@ -39,7 +40,7 @@ export default function App() {
         <Route
           path="/skills"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireIntern={true}>
               <Dashboard />
             </ProtectedRoute>
           }

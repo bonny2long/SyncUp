@@ -1,17 +1,28 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useUser } from "../../context/UserContext";
 
 export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useUser();
 
-  const tabs = [
-    { id: "collaboration", label: "Collaboration Hub", path: "/collaboration" },
-    { id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" },
-    { id: "skills", label: "Skill Tracker", path: "/skills" },
-    { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
-    { id: "health", label: "System Health", path: "/health" },
-  ];
+  // Role-based navigation items
+  const tabs = React.useMemo(() => {
+    const items = [
+      { id: "collaboration", label: "Collaboration Hub", path: "/collaboration" },
+      { id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" },
+      { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
+      { id: "health", label: "System Health", path: "/health" },
+    ];
+
+    // Only show Skill Tracker for interns
+    if (user?.role === 'intern') {
+      items.splice(2, 0, { id: "skills", label: "Skill Tracker", path: "/skills" });
+    }
+
+    return items;
+  }, [user?.role]);
 
   const handleTabClick = (tab) => {
     navigate(tab.path);

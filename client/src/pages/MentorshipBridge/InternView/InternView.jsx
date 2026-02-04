@@ -26,7 +26,16 @@ export default function InternView() {
       setLoading(true);
       setError(null);
       const data = await fetchInternSessions(user.id);
-      setSessions(data);
+      
+      // Debug: Log what the API returned
+      console.log("API returned sessions:", data.length, "sessions for intern", user.id);
+      console.log("Session intern_ids:", data.map(s => ({ id: s.id, intern_id: s.intern_id, topic: s.topic })));
+      
+      // Additional security: Filter to ensure only this intern's sessions
+      const filteredSessions = data.filter(session => session.intern_id === user.id);
+      console.log("Filtered to:", filteredSessions.length, "sessions after filtering");
+      
+      setSessions(filteredSessions);
     } catch (err) {
       console.error("Error loading sessions:", err);
       setError("Failed to load your sessions");

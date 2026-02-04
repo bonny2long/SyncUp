@@ -15,15 +15,39 @@ export function formatDate(dateStr) {
   if (!dateStr) return "Date TBA";
 
   try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return "Invalid date";
+    // If it's a date string like YYYY-MM-DD, extract components directly
+    let year, month, day, weekday;
+    if (typeof dateStr === "string" && dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+      const parts = dateStr.split("-");
+      year = parseInt(parts[0]);
+      month = parseInt(parts[1]) - 1;
+      day = parseInt(parts[2]);
+      const date = new Date(year, month, day);
+      weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+    } else {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "Invalid date";
+      year = date.getFullYear();
+      month = date.getMonth();
+      day = date.getDate();
+      weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+    }
 
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return `${weekday}, ${monthNames[month]} ${day}, ${year}`;
   } catch (err) {
     console.error("Date format error:", err);
     return "Invalid date";
@@ -74,19 +98,75 @@ export function formatDateTimeCompact(dateStr, timeStr) {
   if (!dateStr || !timeStr) return "TBA";
 
   try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return "TBA";
-
-    const datePart = date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-
+    const datePart = formatDate(dateStr).split(", ").slice(1, 2).join(""); // Get "Jan 25" part
     const timePart = formatTime(timeStr);
 
     return `${datePart}, ${timePart}`;
   } catch (err) {
     console.error("DateTime compact format error:", err);
     return "TBA";
+  }
+}
+
+// ✨ NEW: Normalize datetime for comparison (handles various date formats)
+// Returns format: YYYY-MM-DDTHH:mm
+export function normalizeDateTime(dateStr, timeStr) {
+  if (!dateStr || !timeStr) return null;
+
+  try {
+    // Robustly extract YYYY-MM-DD without timezone shifting
+    let datePart;
+    if (typeof dateStr === "string" && dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+      datePart = dateStr.slice(0, 10);
+    } else {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return null;
+      // Use local components to avoid UTC shift
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      datePart = `${year}-${month}-${day}`;
+    }
+
+    // timeStr is usually "HH:mm:ss" or "HH:mm"
+    const timePart = String(timeStr).slice(0, 5);
+
+    return `${datePart}T${timePart}`;
+  } catch (err) {
+    console.error("DateTime normalization error:", err);
+    return null;
+  }
+}
+
+// ✨ NEW: Normalize ISO datetime string for comparison
+// Returns format: YYYY-MM-DDTHH:mm
+export function normalizeIsoDateTime(isoString) {
+  if (!isoString) return null;
+
+  try {
+    // If it's already a string, check if it contains T or space to extract components
+    if (typeof isoString === "string") {
+      const parts = isoString.split(/[T ]/);
+      if (parts.length >= 2) {
+        const datePart = parts[0].slice(0, 10); // YYYY-MM-DD
+        const timePart = parts[1].slice(0, 5); // HH:mm
+        return `${datePart}T${timePart}`;
+      }
+    }
+
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return null;
+
+    // Use local components to avoid UTC shift
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const mins = String(date.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${mins}`;
+  } catch (err) {
+    console.error("ISO DateTime normalization error:", err);
+    return null;
   }
 }

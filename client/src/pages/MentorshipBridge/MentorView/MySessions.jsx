@@ -7,11 +7,17 @@ import {
 import { useToast } from "../../../context/ToastContext";
 import { Calendar, Target, User, Clock } from "lucide-react";
 import SkillSelectModal from "../shared/SkillSelectModal";
+import ConfirmModal from "../../../components/shared/ConfirmModal";
+import RescheduleModal from "../../../components/shared/RescheduleModal";
 
 export default function MySessions({ sessions, loading, error, onRefresh }) {
   const { addToast } = useToast();
   const [showSkillModal, setShowSkillModal] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [sessionToAction, setSessionToAction] = useState(null);
 
   const handleComplete = (sessionId, sessionFocus) => {
     const isTechnical = ["project_support", "technical_guidance"].includes(
@@ -53,28 +59,47 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
     setSelectedSessionId(null);
   };
 
-  const handleReschedule = async (sessionId) => {
-    const newDate = prompt("Enter new date/time (YYYY-MM-DDTHH:MM):");
-    if (!newDate) return;
+  const handleReschedule = (session) => {
+    setSessionToAction(session);
+    setShowRescheduleModal(true);
+  };
 
+  const handleRescheduleConfirm = async (newDateTime) => {
+    if (!sessionToAction) return;
+
+    setActionLoading(true);
     try {
-      await rescheduleSession(sessionId, newDate);
-      addToast({ type: "success", message: "Session rescheduled" });
+      await rescheduleSession(sessionToAction.id, newDateTime);
+      addToast({ type: "success", message: "Session rescheduled successfully" });
+      setShowRescheduleModal(false);
+      setSessionToAction(null);
       onRefresh();
     } catch (err) {
-      addToast({ type: "error", message: "Failed to reschedule" });
+      addToast({ type: "error", message: "Failed to reschedule session" });
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleCancel = async (sessionId) => {
-    if (!window.confirm("Cancel this session?")) return;
+  const handleCancel = (session) => {
+    setSessionToAction(session);
+    setShowConfirmModal(true);
+  };
 
+  const handleCancelConfirm = async () => {
+    if (!sessionToAction) return;
+
+    setActionLoading(true);
     try {
-      await deleteSession(sessionId);
-      addToast({ type: "info", message: "Session cancelled" });
+      await deleteSession(sessionToAction.id);
+      addToast({ type: "info", message: "Session cancelled successfully" });
+      setShowConfirmModal(false);
+      setSessionToAction(null);
       onRefresh();
     } catch (err) {
       addToast({ type: "error", message: "Failed to cancel session" });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -142,6 +167,34 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
           setSelectedSessionId(null);
         }}
         onConfirm={handleCompleteWithSkills}
+      />
+
+      {/* Confirm Modal for Cancellation */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setSessionToAction(null);
+        }}
+        onConfirm={handleCancelConfirm}
+        title="Cancel Session?"
+        message="Are you sure you want to cancel this mentorship session? This action cannot be undone."
+        confirmText="Cancel Session"
+        confirmColor="red"
+        loading={actionLoading}
+        icon="alert"
+      />
+
+      {/* Reschedule Modal */}
+      <RescheduleModal
+        isOpen={showRescheduleModal}
+        onClose={() => {
+          setShowRescheduleModal(false);
+          setSessionToAction(null);
+        }}
+        onConfirm={handleRescheduleConfirm}
+        loading={actionLoading}
+        currentDateTime={sessionToAction?.session_date || ""}
       />
     </div>
   );
@@ -243,13 +296,13 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
           Mark Complete{isTechnical ? " + Skills" : ""}
         </button>
         <button
-          onClick={() => onReschedule(session.id)}
+          onClick={() => onReschedule(session)}
           className="px-4 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition"
         >
           Reschedule
         </button>
         <button
-          onClick={() => onCancel(session.id)}
+          onClick={() => onCancel(session)}
           className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
         >
           Cancel

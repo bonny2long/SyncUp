@@ -6,11 +6,22 @@ import {
   notifySessionCompleted,
 } from "../services/notificationService.js";
 
-const formatDateForMySQL = (isoDate) => {
-  if (!isoDate) return null;
-  const date = new Date(isoDate);
+const formatDateForMySQL = (dateStr) => {
+  if (!dateStr) return null;
+  // If it's an ISO string from frontend (YYYY-MM-DDTHH:mm), just replace T with space
+  if (typeof dateStr === "string" && dateStr.includes("T")) {
+    return dateStr.replace("T", " ").slice(0, 19);
+  }
+  const date = new Date(dateStr);
   if (isNaN(date.getTime())) return null;
-  return date.toISOString().slice(0, 19).replace("T", " ");
+  // Fallback to local string parts to avoid timezone shift
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const mins = String(date.getMinutes()).padStart(2, "0");
+  const secs = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${mins}:${secs}`;
 };
 
 // Fetch all mentors
@@ -40,10 +51,16 @@ export const getMentorDetails = async (req, res) => {
 
     const [availability] = await pool.query(
       `
-      SELECT available_date, available_time
-      FROM mentor_availability
-      WHERE mentor_id = ?
-      ORDER BY available_date ASC, available_time ASC
+      SELECT ma.available_date, ma.available_time
+      FROM mentor_availability ma
+      WHERE ma.mentor_id = ?
+        AND NOT EXISTS (
+          SELECT 1 FROM mentorship_sessions s
+          WHERE s.mentor_id = ma.mentor_id
+            AND s.session_date = CAST(CONCAT(DATE(ma.available_date), ' ', ma.available_time) AS DATETIME)
+            AND s.status IN ('pending', 'accepted', 'completed')
+        )
+      ORDER BY ma.available_date ASC, ma.available_time ASC
       LIMIT 20
       `,
       [id],
@@ -88,6 +105,12 @@ export const getAvailableMentors = async (req, res) => {
       FROM mentor_availability ma
       JOIN users u ON u.id = ma.mentor_id
       WHERE u.role = 'mentor'
+        AND NOT EXISTS (
+          SELECT 1 FROM mentorship_sessions s
+          WHERE s.mentor_id = ma.mentor_id
+            AND s.session_date = CAST(CONCAT(DATE(ma.available_date), ' ', ma.available_time) AS DATETIME)
+            AND s.status IN ('pending', 'accepted', 'completed')
+        )
       ORDER BY ma.available_date ASC, ma.available_time ASC
       `,
     );
@@ -519,10 +542,16 @@ export const getMentorAvailability = async (req, res) => {
 
   try {
     const [slots] = await pool.query(
-      `SELECT available_date, available_time 
-       FROM mentor_availability 
-       WHERE mentor_id = ? 
-       ORDER BY available_date ASC, available_time ASC`,
+      `SELECT ma.available_date, ma.available_time 
+       FROM mentor_availability ma
+       WHERE ma.mentor_id = ? 
+         AND NOT EXISTS (
+           SELECT 1 FROM mentorship_sessions s
+           WHERE s.mentor_id = ma.mentor_id
+             AND s.session_date = CAST(CONCAT(DATE(ma.available_date), ' ', ma.available_time) AS DATETIME)
+             AND s.status IN ('pending', 'accepted', 'completed')
+         )
+       ORDER BY ma.available_date ASC, ma.available_time ASC`,
       [id],
     );
 

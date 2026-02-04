@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { rescheduleSession, deleteSession } from "../../../utils/api";
 import { useToast } from "../../../context/ToastContext";
+import { useUser } from "../../../context/UserContext";
 import { Calendar, Clock, Target, XCircle } from "lucide-react";
+import ConfirmModal from "../../../components/shared/ConfirmModal";
+import RescheduleModal from "../../../components/shared/RescheduleModal";
 
 export default function MyRequests({
   pending,
@@ -12,29 +15,79 @@ export default function MyRequests({
   onRefresh,
 }) {
   const { addToast } = useToast();
+  const { user } = useUser();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [sessionToAction, setSessionToAction] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const handleCancel = async (sessionId) => {
-    if (!window.confirm("Cancel this session request?")) return;
+  const handleCancel = (session) => {
+    // Authorization check: Ensure this intern owns the session
+    if (session.intern_id !== user.id) {
+      addToast({ type: "error", message: "You can only cancel your own requests" });
+      return;
+    }
+    setSessionToAction(session);
+    setShowConfirmModal(true);
+  };
 
+  const handleCancelConfirm = async () => {
+    if (!sessionToAction) return;
+
+    // Double-check authorization
+    if (sessionToAction.intern_id !== user.id) {
+      addToast({ type: "error", message: "Authorization error" });
+      setShowConfirmModal(false);
+      setSessionToAction(null);
+      return;
+    }
+
+    setActionLoading(true);
     try {
-      await deleteSession(sessionId);
-      addToast({ type: "success", message: "Request cancelled" });
+      await deleteSession(sessionToAction.id);
+      addToast({ type: "success", message: "Request cancelled successfully" });
+      setShowConfirmModal(false);
+      setSessionToAction(null);
       onRefresh();
     } catch (err) {
       addToast({ type: "error", message: "Failed to cancel request" });
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleReschedule = async (sessionId) => {
-    const newDate = prompt("Enter new date/time (YYYY-MM-DDTHH:MM):");
-    if (!newDate) return;
+  const handleReschedule = (session) => {
+    // Authorization check: Ensure this intern owns the session
+    if (session.intern_id !== user.id) {
+      addToast({ type: "error", message: "You can only reschedule your own sessions" });
+      return;
+    }
+    setSessionToAction(session);
+    setShowRescheduleModal(true);
+  };
 
+  const handleRescheduleConfirm = async (newDateTime) => {
+    if (!sessionToAction) return;
+
+    // Double-check authorization
+    if (sessionToAction.intern_id !== user.id) {
+      addToast({ type: "error", message: "Authorization error" });
+      setShowRescheduleModal(false);
+      setSessionToAction(null);
+      return;
+    }
+
+    setActionLoading(true);
     try {
-      await rescheduleSession(sessionId, newDate);
-      addToast({ type: "success", message: "Session rescheduled" });
+      await rescheduleSession(sessionToAction.id, newDateTime);
+      addToast({ type: "success", message: "Session rescheduled successfully" });
+      setShowRescheduleModal(false);
+      setSessionToAction(null);
       onRefresh();
     } catch (err) {
-      addToast({ type: "error", message: "Failed to reschedule" });
+      addToast({ type: "error", message: "Failed to reschedule session" });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -133,6 +186,34 @@ export default function MyRequests({
           </div>
         </section>
       )}
+
+      {/* Confirm Modal for Cancellation */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setSessionToAction(null);
+        }}
+        onConfirm={handleCancelConfirm}
+        title="Cancel Session Request?"
+        message={`Are you sure you want to cancel this session request? This action cannot be undone.`}
+        confirmText="Cancel Request"
+        confirmColor="red"
+        loading={actionLoading}
+        icon="alert"
+      />
+
+      {/* Reschedule Modal */}
+      <RescheduleModal
+        isOpen={showRescheduleModal}
+        onClose={() => {
+          setShowRescheduleModal(false);
+          setSessionToAction(null);
+        }}
+        onConfirm={handleRescheduleConfirm}
+        loading={actionLoading}
+        currentDateTime={sessionToAction?.session_date || ""}
+      />
     </div>
   );
 }
@@ -225,7 +306,7 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
       <div className="flex gap-2">
         {type === "pending" && (
           <button
-            onClick={() => onCancel(session.id)}
+            onClick={() => onCancel(session)}
             className="text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
           >
             Cancel Request
@@ -235,13 +316,13 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
         {type === "accepted" && (
           <>
             <button
-              onClick={() => onReschedule(session.id)}
+              onClick={() => onReschedule(session)}
               className="text-sm px-4 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition font-medium"
             >
               Reschedule
             </button>
             <button
-              onClick={() => onCancel(session.id)}
+              onClick={() => onCancel(session)}
               className="text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
             >
               Cancel
