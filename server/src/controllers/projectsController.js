@@ -968,3 +968,5 @@ export const checkJoinRequestStatus = async (req, res) => {
     res.status(500).json({ error: "Failed to check request status" });
   }
 };
+
+

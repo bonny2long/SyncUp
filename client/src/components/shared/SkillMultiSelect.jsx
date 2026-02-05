@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, ChevronDown, Search } from "lucide-react";
 
 // Get category color
 export const getCategoryColor = (category) => {
@@ -40,6 +40,7 @@ export default function SkillMultiSelect({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAllSkills, setShowAllSkills] = useState(false);
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -49,6 +50,7 @@ export default function SkillMultiSelect({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
         setSearchTerm("");
+        setShowAllSkills(false); // Reset to popular view
       }
     }
 
@@ -56,16 +58,38 @@ export default function SkillMultiSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter skills based on search
-  const filteredSkills = allSkills.filter((skill) => {
-    const matchesSearch = skill.skill_name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const notSelected = !selectedSkills.includes(
-      skill.skill_name.toLowerCase(),
-    );
-    return matchesSearch && notSelected;
-  });
+  // Get popular skills (top 15 by usage frequency if available, otherwise first 15 alphabetical)
+  const popularSkills = allSkills
+    .sort((a, b) => {
+      // If both have usage counts, sort by popularity
+      if (a.usage_count !== undefined && b.usage_count !== undefined) {
+        return b.usage_count - a.usage_count;
+      }
+      // If only one has usage count, prioritize it
+      if (a.usage_count !== undefined) return -1;
+      if (b.usage_count !== undefined) return 1;
+      // If neither has usage count, sort alphabetically
+      return a.skill_name.localeCompare(b.skill_name);
+    })
+    .slice(0, 15);
+
+  // Filter skills based on search and show logic
+  const getFilteredSkills = () => {
+    let skillsToFilter = showAllSkills || searchTerm ? allSkills : popularSkills;
+    
+    return skillsToFilter.filter((skill) => {
+      const matchesSearch = skill.skill_name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const notSelected = !selectedSkills.includes(
+        skill.skill_name.toLowerCase(),
+      );
+      return matchesSearch && notSelected;
+    });
+  };
+
+  const filteredSkills = getFilteredSkills();
+  const hasMoreSkills = !showAllSkills && !searchTerm && allSkills.length > popularSkills.length;
 
   // Add skill
   const handleAddSkill = (skillName) => {
@@ -74,8 +98,22 @@ export default function SkillMultiSelect({
       onChange([...selectedSkills, normalizedName]);
     }
     setSearchTerm("");
+    setShowAllSkills(false); // Reset to popular view after adding
     inputRef.current?.focus();
   };
+
+  // Toggle show all skills
+  const handleShowAllSkills = () => {
+    setShowAllSkills(true);
+    setSearchTerm("");
+  };
+
+  // Reset to popular view when search clears
+  useEffect(() => {
+    if (!searchTerm && !showAllSkills) {
+      // Will show popular skills by default
+    }
+  }, [searchTerm, showAllSkills]);
 
   // Remove skill
   const handleRemoveSkill = (skillName) => {
@@ -222,16 +260,40 @@ export default function SkillMultiSelect({
         </div>
       )}
 
-      {/* Dropdown with all skills */}
+      {/* Dropdown with skills */}
       {isOpen && !loading && (
         <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {filteredSkills.length === 0 ?
-            <div className="px-3 py-2 text-sm text-gray-500">
+          {/* Search header */}
+          <div className="px-3 py-2 border-b border-gray-100 sticky top-0 bg-white z-10">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Search className="w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search skills..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 outline-none bg-transparent"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          </div>
+
+          {/* Skills list */}
+          {filteredSkills.length === 0 && !hasMoreSkills ?
+            <div className="px-3 py-8 text-sm text-gray-500 text-center">
               {searchTerm ?
                 `No skills matching "${searchTerm}"`
-              : "No more skills available"}
+              : "No skills available"}
             </div>
           : <div className="py-1">
+              {/* Section header for popular skills */}
+              {!searchTerm && !showAllSkills && (
+                <div className="px-3 py-2 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100">
+                  POPULAR SKILLS
+                </div>
+              )}
+              
+              {/* Skills list */}
               {filteredSkills.map((skill) => {
                 const isFromProject = isSuggestedFromProject(
                   skill.skill_name.toLowerCase(),
@@ -261,6 +323,11 @@ export default function SkillMultiSelect({
                       )}
                     </div>
                     <div className="flex gap-1 items-center">
+                      {!searchTerm && !showAllSkills && allSkills.length > 15 && (
+                        <span className="text-xs text-gray-400">
+                          ⭐ Popular
+                        </span>
+                      )}
                       {isRecent && (
                         <span className="text-xs text-amber-600 font-medium">
                           Recent
@@ -275,6 +342,18 @@ export default function SkillMultiSelect({
                   </button>
                 );
               })}
+
+              {/* Show more skills button */}
+              {hasMoreSkills && (
+                <button
+                  type="button"
+                  onClick={handleShowAllSkills}
+                  className="w-full px-3 py-2 text-left text-sm text-primary hover:bg-primary/5 font-medium flex items-center justify-center gap-2 transition-colors border-t border-gray-100"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                  Show {allSkills.length - popularSkills.length} more skills
+                </button>
+              )}
             </div>
           }
         </div>
@@ -284,6 +363,13 @@ export default function SkillMultiSelect({
       {selectedSkills.length === 0 && !isOpen && (
         <p className="mt-1 text-xs text-gray-500">
           Click to add skills that you worked on in this update
+        </p>
+      )}
+      
+      {/* Popular skills hint */}
+      {selectedSkills.length === 0 && !isOpen && allSkills.length > 15 && (
+        <p className="mt-1 text-xs text-gray-400">
+          Shows top 15 most popular skills • Click to see all
         </p>
       )}
     </div>

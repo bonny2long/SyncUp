@@ -238,7 +238,7 @@ export async function deleteProgressUpdate(id) {
 // SKILLS - TRACKER & DISTRIBUTION
 // ----------------------------------------------------
 export async function fetchSkills() {
-  const res = await fetch(`${API_BASE}/skills`);
+  const res = await fetch(`${API_BASE}/skills?include_usage=true`);
   if (!res.ok) {
     throw new Error("Failed to fetch skills");
   }

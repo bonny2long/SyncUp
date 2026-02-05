@@ -8,7 +8,7 @@ import { useProjects } from "../../hooks/useProjects"; // Custom hook integrated
 // Lazy load components
 const CreateProjectForm = lazy(() => import("./CreateProjectForm"));
 const MyWorkPanel = lazy(() => import("./MyWorkPanel"));
-const DiscoverProjects = lazy(() => import("./DiscoverProjects"));
+const DiscoverPanel = lazy(() => import("./DiscoverPanel"));
 const ActivityPanel = lazy(() => import("./ActivityPanel"));
 const RequestsPanel = lazy(() => import("./RequestsPanel"));
 const JoinProjectModal = lazy(() => import("./JoinProjectModal"));
@@ -273,7 +273,7 @@ export default function CollaborationHub() {
                 <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
               }
             >
-              <DiscoverProjects
+              <DiscoverPanel
                 projects={discoverProjects}
                 selectedProject={selectedProject}
                 setSelectedProject={setSelectedProject}
