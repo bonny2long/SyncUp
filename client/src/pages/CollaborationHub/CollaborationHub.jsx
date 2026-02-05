@@ -15,6 +15,9 @@ const JoinProjectModal = lazy(() => import("./JoinProjectModal"));
 const ProjectDetailModal = lazy(
   () => import("../../components/modals/ProjectDetailModal"),
 );
+const TeamDashboard = lazy(
+  () => import("./TeamDashboard/TeamDashboard"),
+);
 
 export default function CollaborationHub() {
   const { user: currentUser } = useUser();
@@ -55,6 +58,7 @@ export default function CollaborationHub() {
   const [projectToJoin, setProjectToJoin] = useState(null);
   const [joining, setJoining] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [teamAnalyticsProject, setTeamAnalyticsProject] = useState(null);
 
   // Persist tab choice
   useEffect(() => {
@@ -261,6 +265,22 @@ export default function CollaborationHub() {
         >
           {isMentor ? "Contributions" : "Activity"} ({userUpdates.length})
         </button>
+
+        {/* Team Analytics Tab - Only show for mentors who are project members */}
+        {isMentor && userProjects.length > 0 && (
+          <button
+            onClick={() => {
+              handleTabChange("team");
+              // Set first project as default for team analytics
+              if (!teamAnalyticsProject && userProjects.length > 0) {
+                setTeamAnalyticsProject(userProjects[0]);
+              }
+            }}
+            className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "team" ? "text-secondary border-b-2 border-secondary" : "text-gray-600"}`}
+          >
+            Team Analytics
+          </button>
+        )}
       </div>
 
       {/* MAIN CONTENT AREA */}
@@ -362,6 +382,44 @@ export default function CollaborationHub() {
                 currentUser={currentUser}
                 projectId={selectedProject?.id}
               />
+            </Suspense>
+          )}
+
+          {/* Team Analytics Tab */}
+          {activeTab === "team" && (
+            <Suspense
+              fallback={
+                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+              }
+            >
+              <div className="col-span-2">
+                {/* Project Selector for Team Analytics */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Project for Analytics
+                  </label>
+                  <select
+                    value={teamAnalyticsProject?.id || ""}
+                    onChange={(e) => {
+                      const project = userProjects.find(p => p.id === parseInt(e.target.value));
+                      setTeamAnalyticsProject(project);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="">Choose a project...</option>
+                    {userProjects.map(project => (
+                      <option key={project.id} value={project.id}>
+                        {project.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Team Dashboard */}
+                {teamAnalyticsProject && (
+                  <TeamDashboard projectId={teamAnalyticsProject.id} />
+                )}
+              </div>
             </Suspense>
           )}
         </div>

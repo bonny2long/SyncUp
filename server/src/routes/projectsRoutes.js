@@ -18,6 +18,8 @@ import {
   approveJoinRequest,
   rejectJoinRequest,
   checkJoinRequestStatus,
+  // NEW: Team Analytics
+  getTeamMomentum,
 } from "../controllers/projectsController.js";
 
 const router = express.Router();
@@ -86,5 +88,13 @@ router.put("/:projectId/requests/:requestId/approve", approveJoinRequest);
 // PUT /api/projects/:projectId/requests/:requestId/reject
 // Owner rejects request
 router.put("/:projectId/requests/:requestId/reject", rejectJoinRequest);
+
+// ============================================================
+// NEW: TEAM ANALYTICS ROUTES
+// ============================================================
+
+// GET /api/projects/:id/team-momentum
+// Get team analytics and skill momentum for a project
+router.get("/:id/team-momentum", getTeamMomentum);
 
 export default router;

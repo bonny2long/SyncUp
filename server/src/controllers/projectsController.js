@@ -969,4 +969,108 @@ export const checkJoinRequestStatus = async (req, res) => {
   }
 };
 
+// GET /api/projects/:id/team-momentum
+// Get team analytics and skill momentum for a project
+export const getTeamMomentum = async (req, res) => {
+  const { id: projectId } = req.params;
+  const { user_id: userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: "user_id is required" });
+  }
+
+  try {
+    // Verify user is a member of the project
+    const [membership] = await pool.query(
+      `SELECT pm.role FROM project_members pm 
+       WHERE pm.project_id = ? AND pm.user_id = ?`,
+      [projectId, userId]
+    );
+
+    if (membership.length === 0) {
+      return res.status(403).json({ error: "Access denied. User is not a project member." });
+    }
+
+    // Get team skill distribution
+    const [skillDistribution] = await pool.query(
+      `SELECT
+        u.name,
+        u.id as user_id,
+        s.skill_name,
+        s.id as skill_id,
+        COUNT(uss.id) as signal_count,
+        SUM(uss.weight) as total_weight
+      FROM project_members pm
+      JOIN users u ON pm.user_id = u.id
+      LEFT JOIN user_skill_signals uss ON u.id = uss.user_id
+      LEFT JOIN skills s ON uss.skill_id = s.id
+      WHERE pm.project_id = ?
+      GROUP BY u.id, s.id
+      ORDER BY u.name, s.skill_name`,
+      [projectId]
+    );
+
+    // Get team momentum (last 4 weeks)
+    const [momentumData] = await pool.query(
+      `SELECT
+        YEARWEEK(uss.created_at, 1) as week,
+        COUNT(uss.id) as signals,
+        SUM(uss.weight) as total_weight
+      FROM project_members pm
+      JOIN user_skill_signals uss ON pm.user_id = uss.user_id
+      WHERE pm.project_id = ?
+      AND uss.created_at >= DATE_SUB(NOW(), INTERVAL 4 WEEK)
+      GROUP BY YEARWEEK(uss.created_at, 1)
+      ORDER BY week`,
+      [projectId]
+    );
+
+    // Get team overview metrics
+    const [overviewMetrics] = await pool.query(
+      `SELECT
+        COUNT(DISTINCT pm.user_id) as team_size,
+        COUNT(DISTINCT s.id) as skills_tracked,
+        COUNT(DISTINCT uss.id) as total_signals,
+        COUNT(CASE WHEN uss.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK) THEN 1 END) as active_this_week,
+        SUM(uss.weight) as total_weight
+      FROM project_members pm
+      LEFT JOIN user_skill_signals uss ON pm.user_id = uss.user_id
+      LEFT JOIN skills s ON uss.skill_id = s.id
+      WHERE pm.project_id = ?`,
+      [projectId]
+    );
+
+    // Get individual vs team comparison
+    const [individualComparison] = await pool.query(
+      `SELECT
+        u.name,
+        u.id as user_id,
+        COUNT(uss.id) as user_signals,
+        SUM(uss.weight) as user_weight,
+        (SELECT AVG(COUNT(sub_uss.id)) 
+         FROM user_skill_signals sub_uss 
+         WHERE sub_uss.user_id IN (SELECT pm2.user_id FROM project_members pm2 WHERE pm2.project_id = ?)
+         GROUP BY sub_uss.user_id) as avg_team_signals
+      FROM project_members pm
+      JOIN users u ON pm.user_id = u.id
+      LEFT JOIN user_skill_signals uss ON u.id = uss.user_id
+      WHERE pm.project_id = ?
+      GROUP BY u.id, u.name
+      ORDER BY user_weight DESC`,
+      [projectId, projectId]
+    );
+
+    res.json({
+      overview: overviewMetrics[0] || {},
+      skillDistribution,
+      momentum: momentumData,
+      individualComparison,
+      projectId: parseInt(projectId)
+    });
+  } catch (err) {
+    console.error("Error fetching team momentum:", err);
+    res.status(500).json({ error: "Failed to fetch team momentum" });
+  }
+};
+
 
