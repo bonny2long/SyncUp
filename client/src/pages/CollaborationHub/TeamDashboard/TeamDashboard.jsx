@@ -20,15 +20,15 @@ const TeamDashboard = ({ projectId }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch(
-        `/api/projects/${projectId}/team-momentum?user_id=${currentUser.id}`
+        `/api/projects/${projectId}/team-momentum?user_id=${currentUser.id}`,
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setTeamData(data);
     } catch (err) {
@@ -61,7 +61,9 @@ const TeamDashboard = ({ projectId }) => {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <h3 className="text-red-800 font-medium mb-2">Failed to load team analytics</h3>
+        <h3 className="text-red-800 font-medium mb-2">
+          Failed to load team analytics
+        </h3>
         <p className="text-red-600 text-sm">{error}</p>
         <button
           onClick={loadTeamData}
@@ -82,24 +84,33 @@ const TeamDashboard = ({ projectId }) => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Team Overview */}
+    <div className="space-y-8">
+      {/* Team Overview - Top Section */}
       <TeamOverview data={teamData.overview} />
-      
-      {/* Team Skill Distribution */}
-      <TeamSkillChart data={teamData.skillDistribution} />
-      
-      {/* Team Momentum */}
-      <TeamMomentumChart data={teamData.momentum} />
-      
-      {/* Individual vs Team Comparison */}
-      <TeamComparison data={teamData.individualComparison} />
-      
-      {/* AI-Powered Insights */}
-      <TeamInsights 
-        data={teamData} 
-        projectId={projectId}
-      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Team Skill Distribution */}
+        <div className="h-full">
+          <TeamSkillChart data={teamData.skillDistribution} />
+        </div>
+
+        {/* Team Momentum */}
+        <div className="h-full">
+          <TeamMomentumChart data={teamData.momentum} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+        {/* Individual vs Team Comparison */}
+        <div className="h-full">
+          <TeamComparison data={teamData.individualComparison} />
+        </div>
+
+        {/* AI-Powered Insights */}
+        <div className="h-full">
+          <TeamInsights data={teamData} projectId={projectId} />
+        </div>
+      </div>
     </div>
   );
 };

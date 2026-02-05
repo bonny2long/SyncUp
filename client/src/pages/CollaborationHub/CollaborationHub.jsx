@@ -4,6 +4,7 @@ import { useToast } from "../../context/ToastContext";
 import { fetchUpdates } from "../../utils/api";
 import { getErrorMessage } from "../../utils/errorHandler";
 import { useProjects } from "../../hooks/useProjects"; // Custom hook integrated
+import { BarChart3 } from "lucide-react";
 
 // Lazy load components
 const CreateProjectForm = lazy(() => import("./CreateProjectForm"));
@@ -15,9 +16,7 @@ const JoinProjectModal = lazy(() => import("./JoinProjectModal"));
 const ProjectDetailModal = lazy(
   () => import("../../components/modals/ProjectDetailModal"),
 );
-const TeamDashboard = lazy(
-  () => import("./TeamDashboard/TeamDashboard"),
-);
+const TeamDashboard = lazy(() => import("./TeamDashboard/TeamDashboard"));
 
 export default function CollaborationHub() {
   const { user: currentUser } = useUser();
@@ -266,8 +265,8 @@ export default function CollaborationHub() {
           {isMentor ? "Contributions" : "Activity"} ({userUpdates.length})
         </button>
 
-        {/* Team Analytics Tab - Only show for mentors who are project members */}
-        {isMentor && userProjects.length > 0 && (
+        {/* Team Analytics Tab - Show for users with projects */}
+        {userProjects.length > 0 && (
           <button
             onClick={() => {
               handleTabChange("team");
@@ -284,145 +283,165 @@ export default function CollaborationHub() {
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <div className="grid grid-cols-2 gap-6 min-h-[600px]">
-        {/* LEFT COLUMN: Panels */}
-        <div>
-          {activeTab === (isMentor ? "browse" : "discover") && (
+      <div className="min-h-[600px]">
+        {activeTab === "team" ?
+          <div className="w-full">
             <Suspense
               fallback={
                 <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
               }
             >
-              <DiscoverPanel
-                projects={discoverProjects}
-                selectedProject={selectedProject}
-                setSelectedProject={setSelectedProject}
-                onJoinClick={handleJoinClick}
-                onViewProject={handleViewProject}
-                loading={loading}
-              />
-            </Suspense>
-          )}
-
-          {(activeTab === "mywork" || activeTab === "myprojects") && (
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-              }
-            >
-              <MyWorkPanel
-                projects={userProjects}
-                selectedProject={selectedProject}
-                setSelectedProject={setSelectedProject}
-                updatesData={allUpdates}
-                loading={loading}
-                isMentor={isMentor}
-                onRefresh={loadData}
-              />
-            </Suspense>
-          )}
-
-          {activeTab === "requests" && (
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-              }
-            >
-              <RequestsPanel onRefresh={loadData} />
-            </Suspense>
-          )}
-
-          {activeTab === "activity" && (
-            <div>
-              <h2 className="text-lg font-bold text-secondary mb-3">
-                {isMentor ? "Your Contributions" : "Your Updates"}
-              </h2>
-              {/* Filter clear button logic remains same... */}
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN: Previews / Activity Feed */}
-        <div>
-          {/* Detailed Project Preview (shared by Discover/Browse) */}
-          {(activeTab === "discover" || activeTab === "browse") && (
-            <div className="bg-white rounded-lg border border-gray-100 p-6">
-              <h2 className="text-lg font-bold text-neutralDark mb-4">
-                Project Preview
-              </h2>
-              {selectedProject ?
-                <div className="space-y-4">
-                  {/* ... Preview content ... */}
-                  <button
-                    onClick={() => handleJoinClick(selectedProject)}
-                    className="w-full mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
-                  >
-                    Request to Join {isMentor && "as Mentor"}
-                  </button>
+              {/* Project Selector for Team Analytics */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    <BarChart3 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 leading-tight">
+                      Team Analytics
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      View team-wide signal distribution and momentum
+                    </p>
+                  </div>
                 </div>
-              : <p className="text-gray-500 text-center py-8">
-                  Select a project to see details
-                </p>
-              }
-            </div>
-          )}
 
-          {/* Activity Feed for MyWork/Activity Tabs */}
-          {(activeTab === "mywork" ||
-            activeTab === "myprojects" ||
-            activeTab === "activity") && (
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-              }
-            >
-              <ActivityPanel
-                selectedProject={selectedProject}
-                allUpdates={allUpdates}
-                currentUser={currentUser}
-                projectId={selectedProject?.id}
-              />
-            </Suspense>
-          )}
-
-          {/* Team Analytics Tab */}
-          {activeTab === "team" && (
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-              }
-            >
-              <div className="col-span-2">
-                {/* Project Selector for Team Analytics */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Project for Analytics
-                  </label>
+                <div className="w-full md:w-auto min-w-[240px]">
                   <select
                     value={teamAnalyticsProject?.id || ""}
                     onChange={(e) => {
-                      const project = userProjects.find(p => p.id === parseInt(e.target.value));
+                      const project = userProjects.find(
+                        (p) => p.id === parseInt(e.target.value),
+                      );
                       setTeamAnalyticsProject(project);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
                   >
                     <option value="">Choose a project...</option>
-                    {userProjects.map(project => (
+                    {userProjects.map((project) => (
                       <option key={project.id} value={project.id}>
                         {project.title}
                       </option>
                     ))}
                   </select>
                 </div>
-
-                {/* Team Dashboard */}
-                {teamAnalyticsProject && (
-                  <TeamDashboard projectId={teamAnalyticsProject.id} />
-                )}
               </div>
+
+              {/* Team Dashboard */}
+              {teamAnalyticsProject ?
+                <TeamDashboard projectId={teamAnalyticsProject.id} />
+              : <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-12 text-center">
+                  <p className="text-gray-500">
+                    Please select a project to view team analytics
+                  </p>
+                </div>
+              }
             </Suspense>
-          )}
-        </div>
+          </div>
+        : <div className="grid grid-cols-2 gap-6 text-left">
+            {/* LEFT COLUMN: Panels */}
+            <div className="text-left">
+              {activeTab === (isMentor ? "browse" : "discover") && (
+                <Suspense
+                  fallback={
+                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                  }
+                >
+                  <DiscoverPanel
+                    projects={discoverProjects}
+                    selectedProject={selectedProject}
+                    setSelectedProject={setSelectedProject}
+                    onJoinClick={handleJoinClick}
+                    onViewProject={handleViewProject}
+                    loading={loading}
+                  />
+                </Suspense>
+              )}
+
+              {(activeTab === "mywork" || activeTab === "myprojects") && (
+                <Suspense
+                  fallback={
+                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                  }
+                >
+                  <MyWorkPanel
+                    projects={userProjects}
+                    selectedProject={selectedProject}
+                    setSelectedProject={setSelectedProject}
+                    updatesData={allUpdates}
+                    loading={loading}
+                    isMentor={isMentor}
+                    onRefresh={loadData}
+                  />
+                </Suspense>
+              )}
+
+              {activeTab === "requests" && (
+                <Suspense
+                  fallback={
+                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                  }
+                >
+                  <RequestsPanel onRefresh={loadData} />
+                </Suspense>
+              )}
+
+              {activeTab === "activity" && (
+                <div>
+                  <h2 className="text-lg font-bold text-secondary mb-3">
+                    {isMentor ? "Your Contributions" : "Your Updates"}
+                  </h2>
+                  {/* Filter clear button logic remains same... */}
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT COLUMN: Previews / Activity Feed */}
+            <div className="text-left">
+              {/* Detailed Project Preview (shared by Discover/Browse) */}
+              {(activeTab === "discover" || activeTab === "browse") && (
+                <div className="bg-white rounded-lg border border-gray-100 p-6">
+                  <h2 className="text-lg font-bold text-neutralDark mb-4">
+                    Project Preview
+                  </h2>
+                  {selectedProject ?
+                    <div className="space-y-4">
+                      {/* ... Preview content ... */}
+                      <button
+                        onClick={() => handleJoinClick(selectedProject)}
+                        className="w-full mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
+                      >
+                        Request to Join {isMentor && "as Mentor"}
+                      </button>
+                    </div>
+                  : <p className="text-gray-500 text-center py-8">
+                      Select a project to see details
+                    </p>
+                  }
+                </div>
+              )}
+
+              {/* Activity Feed for MyWork/Activity Tabs */}
+              {(activeTab === "mywork" ||
+                activeTab === "myprojects" ||
+                activeTab === "activity") && (
+                <Suspense
+                  fallback={
+                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                  }
+                >
+                  <ActivityPanel
+                    selectedProject={selectedProject}
+                    allUpdates={allUpdates}
+                    currentUser={currentUser}
+                    projectId={selectedProject?.id}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+        }
       </div>
 
       {/* MODALS */}
