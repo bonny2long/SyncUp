@@ -1,4 +1,5 @@
 import React from "react";
+import { Target, Users, TrendingUp, BarChart3 } from "lucide-react";
 
 const TeamOverview = ({ data }) => {
   const formatNumber = (num) => {
@@ -15,28 +16,28 @@ const TeamOverview = ({ data }) => {
     {
       label: "Skills Tracked",
       value: formatNumber(data?.skills_tracked),
-      icon: "🎯",
+      icon: <Target className="w-5 h-5" />,
       color: "bg-blue-50 border-blue-200",
       textColor: "text-blue-700"
     },
     {
       label: "Team Size", 
       value: formatNumber(data?.team_size),
-      icon: "👥",
+      icon: <Users className="w-5 h-5" />,
       color: "bg-green-50 border-green-200",
       textColor: "text-green-700"
     },
     {
       label: "Active This Week",
       value: formatNumber(data?.active_this_week),
-      icon: "🔥",
+      icon: <TrendingUp className="w-5 h-5" />,
       color: "bg-orange-50 border-orange-200", 
       textColor: "text-orange-700"
     },
     {
       label: "Total Signals",
       value: formatNumber(data?.total_signals),
-      icon: "📈",
+      icon: <BarChart3 className="w-5 h-5" />,
       color: "bg-purple-50 border-purple-200",
       textColor: "text-purple-700"
     }
@@ -58,7 +59,7 @@ const TeamOverview = ({ data }) => {
                 {metric.value}
               </p>
             </div>
-            <div className="text-2xl">
+            <div className="flex items-center justify-center">
               {metric.icon}
             </div>
           </div>

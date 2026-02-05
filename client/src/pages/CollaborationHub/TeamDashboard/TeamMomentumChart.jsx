@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { TrendingUp, LineChart } from "lucide-react";
 import { AgCharts } from "ag-charts-react";
 
 // Helper function to format week numbers to readable dates
@@ -162,7 +163,9 @@ const TeamMomentumChart = ({ data }) => {
   if (!chartData.length) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <div className="text-gray-400 text-4xl mb-4">📈</div>
+        <div className="flex items-center justify-center text-gray-400 text-4xl mb-4">
+          <LineChart className="w-8 h-8" />
+        </div>
         <h3 className="text-gray-600 font-medium mb-2">No Momentum Data Available</h3>
         <p className="text-gray-500 text-sm">
           Team activity data will appear here once team members start generating signals.

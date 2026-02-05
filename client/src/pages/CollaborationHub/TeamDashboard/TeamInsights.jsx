@@ -1,10 +1,9 @@
 import React, { useMemo } from "react";
+import { Lightbulb, TrendingUp, CheckCircle, AlertTriangle } from "lucide-react";
 
 const TeamInsights = ({ data, projectId }) => {
   const insights = useMemo(() => {
     if (!data) return [];
-
-    const generatedInsights = [];
 
     // Growth Rate Insights
     if (data.momentum && data.momentum.length > 1) {
@@ -17,7 +16,6 @@ const TeamInsights = ({ data, projectId }) => {
       if (growthRate > 30) {
         generatedInsights.push({
           type: 'high_growth',
-          icon: '🚀',
           title: 'Exceptional Growth Detected',
           description: `Team skill signals increased by ${growthRate.toFixed(0)}% this week!`,
           recommendation: 'Keep up the momentum. Consider documenting best practices.',
@@ -26,7 +24,6 @@ const TeamInsights = ({ data, projectId }) => {
       } else if (growthRate > 10) {
         generatedInsights.push({
           type: 'moderate_growth',
-          icon: '📈',
           title: 'Steady Progress',
           description: `Team shows healthy ${growthRate.toFixed(0)}% growth in skill signals.`,
           recommendation: 'Continue current collaboration patterns and skill development.',
@@ -35,7 +32,6 @@ const TeamInsights = ({ data, projectId }) => {
       } else if (growthRate < -10) {
         generatedInsights.push({
           type: 'decline',
-          icon: '📉',
           title: 'Activity Decline',
           description: `Team activity decreased by ${Math.abs(growthRate).toFixed(0)}% this week.`,
           recommendation: 'Check team workload and remove any blockers to progress.',
@@ -65,7 +61,6 @@ const TeamInsights = ({ data, projectId }) => {
       if (topSkill && topSkill[1].weight > 10) {
         generatedInsights.push({
           type: 'skill_strength',
-          icon: '💪',
           title: 'Team Strength Identified',
           description: `Team excels in ${topSkill[0]} with ${topSkill[1].weight} total weight.`,
           recommendation: `Leverage this strength in project planning and mentorship.`,
@@ -73,7 +68,6 @@ const TeamInsights = ({ data, projectId }) => {
         });
       }
 
-      // Check for skill diversity
       const uniqueSkills = Object.keys(skillTotals).length;
       const teamSize = data.overview?.team_size || 1;
       const skillsPerMember = uniqueSkills / teamSize;
@@ -81,7 +75,6 @@ const TeamInsights = ({ data, projectId }) => {
       if (skillsPerMember < 2) {
         generatedInsights.push({
           type: 'low_diversity',
-          icon: '🎯',
           title: 'Expand Skill Coverage',
           description: `Team has low skill diversity with ${uniqueSkills} skills across ${teamSize} members.`,
           recommendation: 'Encourage team members to explore new technologies and share knowledge.',
@@ -93,10 +86,10 @@ const TeamInsights = ({ data, projectId }) => {
     // Team Activity Insights
     if (data.overview) {
       const activeRate = data.overview.active_this_week / data.overview.team_size;
+      
       if (activeRate > 0.8) {
         generatedInsights.push({
           type: 'high_engagement',
-          icon: '🔥',
           title: 'High Team Engagement',
           description: `${Math.round(activeRate * 100)}% of team members were active this week.`,
           recommendation: 'Excellent engagement! Consider recognizing active contributors.',
@@ -105,10 +98,9 @@ const TeamInsights = ({ data, projectId }) => {
       } else if (activeRate < 0.3) {
         generatedInsights.push({
           type: 'low_engagement',
-          icon: '⚠️',
           title: 'Low Team Activity',
           description: `Only ${Math.round(activeRate * 100)}% of team members active this week.`,
-          recommendation: 'Check in with team members and identify any blockers.',
+          recommendation: 'Check in with team members and identify any obstacles to progress.',
           priority: 'high'
         });
       }
@@ -116,15 +108,14 @@ const TeamInsights = ({ data, projectId }) => {
 
     // Individual Performance Insights
     if (data.individualComparison && data.individualComparison.length > 0) {
+      const avgWeight = data.individualComparison.reduce((sum, member) => sum + member.user_weight, 0) / data.individualComparison.length;
       const topPerformer = data.individualComparison[0];
-      const avgWeight = data.individualComparison.reduce((sum, member) => sum + (member.user_weight || 0), 0) / data.individualComparison.length;
-
+      
       if (topPerformer.user_weight > avgWeight * 2) {
         generatedInsights.push({
           type: 'star_performer',
-          icon: '⭐',
           title: 'Rising Star Detected',
-          description: `${topPerformer.name} is performing exceptionally well with ${topPerformer.user_weight} weight.`,
+          description: `${topPerformer.name} is performing exceptionally well with ${topPerformer.user_weight} weight contribution.`,
           recommendation: 'Consider leadership opportunities and knowledge sharing sessions.',
           priority: 'medium'
         });
@@ -134,14 +125,28 @@ const TeamInsights = ({ data, projectId }) => {
     return generatedInsights.slice(0, 5); // Limit to top 5 insights
   }, [data]);
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'border-red-200 bg-red-50';
-      case 'medium': return 'border-yellow-200 bg-yellow-50';
-      case 'low': return 'border-green-200 bg-green-50';
-      default: return 'border-gray-200 bg-gray-50';
-    }
-  };
+const getPriorityColor = (priority) => {
+  switch (priority) {
+    case 'high': return 'border-red-200 bg-red-50';
+    case 'medium': return 'border-yellow-200 bg-yellow-50';
+    case 'low': return 'border-green-200 bg-green-50';
+    default: return 'border-gray-200 bg-gray-50';
+  }
+};
+
+const getIcon = (type) => {
+  switch (type) {
+    case 'high_growth': return <TrendingUp className="w-5 h-5 text-emerald-600" />;
+    case 'moderate_growth': return <TrendingUp className="w-5 h-5 text-blue-600" />;
+    case 'decline': return <AlertTriangle className="w-5 h-5 text-red-600" />;
+    case 'high_engagement': return <CheckCircle className="w-5 h-5 text-green-600" />;
+    case 'low_engagement': return <AlertTriangle className="w-5 h-5 text-orange-600" />;
+    case 'skill_strength': return <Trophy className="w-5 h-5 text-purple-600" />;
+    case 'star_performer': return <CheckCircle className="w-5 h-5 text-yellow-600" />;
+    case 'low_diversity': return <CheckCircle className="w-5 h-5 text-blue-600" />;
+    default: return <Lightbulb className="w-5 h-5 text-gray-600" />;
+  }
+};
 
   const getPriorityBadge = (priority) => {
     switch (priority) {
@@ -155,7 +160,9 @@ const TeamInsights = ({ data, projectId }) => {
   if (!insights.length) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <div className="text-gray-400 text-4xl mb-4">🤖</div>
+        <div className="flex items-center justify-center text-gray-400 text-4xl mb-4">
+          <Lightbulb className="w-8 h-8" />
+        </div>
         <h3 className="text-gray-600 font-medium mb-2">No Insights Available</h3>
         <p className="text-gray-500 text-sm">
           AI-powered insights will appear here once there's enough team activity data.
@@ -180,15 +187,13 @@ const TeamInsights = ({ data, projectId }) => {
             className={`border-l-4 rounded-lg p-4 ${getPriorityColor(insight.priority)} transition-all hover:shadow-md`}
           >
             <div className="flex items-start justify-between">
-              <div className="flex items-start">
-                <div className="text-2xl mr-3">{insight.icon}</div>
-                <div className="flex-1">
-                  <div className="flex items-center mb-2">
-                    <h4 className="font-medium text-gray-900 mr-2">{insight.title}</h4>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityBadge(insight.priority)}`}>
-                      {insight.priority}
-                    </span>
-                  </div>
+        <div className="flex items-start">
+            <Lightbulb className="w-4 h-4 text-orange-500 mr-2" />
+            <h4 className="font-medium text-orange-900">About AI Insights</h4>
+            <p className="text-sm text-orange-700">
+              These insights are generated based on your team's activity patterns, skill growth trends, and performance metrics. They update automatically as your team generates more signals and engages in projects.
+            </p>
+          </div>
                   <p className="text-gray-700 text-sm mb-2">{insight.description}</p>
                   <div className="bg-white bg-opacity-60 rounded p-3">
                     <p className="text-xs font-medium text-gray-600 mb-1">💡 Recommendation:</p>
@@ -203,7 +208,7 @@ const TeamInsights = ({ data, projectId }) => {
 
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-center mb-2">
-          <span className="text-blue-600 mr-2">🤖</span>
+          <Lightbulb className="w-5 h-5 text-blue-600 mr-2" />
           <h4 className="font-medium text-blue-900">About AI Insights</h4>
         </div>
         <p className="text-sm text-blue-700">

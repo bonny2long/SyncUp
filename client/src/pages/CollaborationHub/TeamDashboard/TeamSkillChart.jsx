@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { BarChart3, TrendingUp } from "lucide-react";
 import { AgCharts } from "ag-charts-react";
 
 const SKILL_COLORS = {
@@ -141,7 +142,9 @@ const TeamSkillChart = ({ data }) => {
   if (!chartData.length) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <div className="text-gray-400 text-4xl mb-4">📊</div>
+        <div className="flex items-center justify-center text-gray-400 text-4xl mb-4">
+          <BarChart3 className="w-8 h-8" />
+        </div>
         <h3 className="text-gray-600 font-medium mb-2">No Skill Data Available</h3>
         <p className="text-gray-500 text-sm">
           Team members haven't generated any skill signals yet. Start collaborating on projects to see skill distribution.

@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Trophy, Users, TrendingUp } from "lucide-react";
 
 const TeamComparison = ({ data }) => {
   const comparisonData = useMemo(() => {
@@ -31,7 +32,9 @@ const TeamComparison = ({ data }) => {
   if (!comparisonData.length) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <div className="text-gray-400 text-4xl mb-4">👥</div>
+        <div className="flex items-center justify-center text-gray-400 text-4xl mb-4">
+          <Trophy className="w-8 h-8" />
+        </div>
         <h3 className="text-gray-600 font-medium mb-2">No Team Comparison Data</h3>
         <p className="text-gray-500 text-sm">
           Individual team member performance data will appear here once signals are generated.
@@ -94,14 +97,19 @@ const TeamComparison = ({ data }) => {
                 }`}
               >
                 <td className="py-3 px-4">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium mr-3">
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
+              <div className="flex items-center">
+                <TrendingUp className="w-4 h-4 text-blue-500 mr-2" />
+                <p className="text-gray-600 text-sm">
+                  <strong>{topSkill.skill_name}</strong> leads with {topSkill.weight} weight contribution
+                </p>
+              </div>
                     <div>
                       <p className="font-medium text-gray-900">{member.name}</p>
                       {index === 0 && (
-                        <p className="text-xs text-emerald-600">🏆 Top Performer</p>
+                         <p className="text-xs text-emerald-600 flex items-center">
+                           <Trophy className="w-3 h-3 mr-1" />
+                           Top Performer
+                         </p>
                       )}
                     </div>
                   </div>
@@ -138,9 +146,9 @@ const TeamComparison = ({ data }) => {
             </p>
           </div>
           <div className="flex items-start">
-            <span className="text-green-500 mr-2">📈</span>
-            <p className="text-gray-600">
-              Team average performance: <strong>{Math.round(teamAverage)}</strong> weight per member
+            <BarChart3 className="w-4 h-4 text-blue-500 mr-2" />
+            <p className="text-gray-600 text-sm">
+              <strong>Team average performance:</strong> <strong>{Math.round(teamAverage)}</strong> weight per member
             </p>
           </div>
           <div className="flex items-start">
@@ -150,9 +158,9 @@ const TeamComparison = ({ data }) => {
             </p>
           </div>
           <div className="flex items-start">
-            <span className="text-orange-500 mr-2">⚡</span>
-            <p className="text-gray-600">
-              Total team generates <strong>{totalTeamWeight}</strong> skill weight
+            <TrendingUp className="w-4 h-4 text-green-500 mr-2" />
+            <p className="text-gray-600 text-sm">
+              <strong>{teamSize}</strong> members generate <strong>{totalTeamWeight}</strong> skill weight
             </p>
           </div>
         </div>
