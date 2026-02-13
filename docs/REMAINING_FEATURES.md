@@ -1,60 +1,93 @@
 # Remaining Features - Priority List
 
-> **Last Updated:** 2026-02-12
+> **Last Updated:** 2026-02-13
 
 ---
 
-## Priority Order
+## What's Already Built ✅
 
-### 1. PDF Resume Export (HIGH PRIORITY)
-**What:** Export user's skill journey as a PDF resume to share on LinkedIn
-
-**Why:**
-- Users can showcase their growth
-- Great for interns building portfolios
-- Low effort, high value
-
-**Includes:**
-- Skills with signal counts
-- Projects completed
-- Growth timeline
-- Mentorship sessions
-
----
-
-### 2. Milestones & Badges (HIGH PRIORITY)
-**What:** Award badges for achievements
-
-**Badge Ideas:**
-- Beginner: First skill practiced
-- Specialist: 10 signals in one skill
-- Generalist: 5 different skills
-- Builder: Completed first project
-- Mentor: 3 mentorship sessions
-
-**Why:**
-- Gamification motivates users
-- Visible achievements
-- Low complexity
+| Feature | Status |
+|---------|--------|
+| CollaborationHub | ✅ |
+| MentorshipBridge | ✅ |
+| Skill Tracker | ✅ |
+| Project Portfolio | ✅ |
+| Search & Discovery | ✅ |
+| Activity Feed | ✅ |
+| Team Dashboard (Analytics) | ✅ |
+| Team Chat | ✅ |
+| Badges System | ✅ |
+| Smart Skill Suggestions | ✅ |
+| Input Validation | ✅ |
+| Rate Limiting | ✅ |
+| API Documentation | ✅ |
 
 ---
 
-### 3. Skill Endorsements (MEDIUM PRIORITY)
-**What:** Teammates can endorse each other's skills on projects
+## Remaining Features (Not Done)
 
-**Rules:**
-- Only teammates can endorse
-- One endorsement per person per project
-- Shows credibility
+### HIGH PRIORITY
 
-**Why:**
-- Builds trust in skill claims
-- Community feature
-- Foundation for recommendations
+#### 1. Skill Upvote/Validation System
+**What:** Allow team members to validate each other's skill signals
+
+**Database:**
+```sql
+CREATE TABLE skill_validations (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  signal_id INT NOT NULL,
+  validator_id INT NOT NULL,
+  validation_type ENUM('upvote', 'mentor_endorsement') NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_validation (signal_id, validator_id, validation_type)
+);
+```
+
+**Frontend:**
+- Upvote button on skill signals
+- Validation count display
+
+**Guardrails:**
+- Upvotes DON'T create new signals (preserve integrity)
+- Only project team members can upvote
 
 ---
 
-### 4. Career Readiness Score (MEDIUM PRIORITY)
+#### 2. Mentorship Engagement UI
+**What:** Visual mentor leaderboard and engagement metrics
+
+**Status:** API endpoint exists (`/api/analytics/mentors/engagement`), needs UI component
+
+**Features needed:**
+- Leaderboard display
+- Response rate metrics
+- Impact visualization
+
+---
+
+### MEDIUM PRIORITY
+
+#### 3. Activity Correlation Insights
+**What:** Show patterns across collaboration and mentorship
+
+**Features:**
+- Correlation: "Teams with mentorship grow X% faster"
+- "Most Effective Pairings" - skill combinations
+- "Engagement Loops" - mentorship → project → skill growth
+
+---
+
+#### 4. Team Skill Synergy Views
+**What:** Show complementary skills across team members
+
+**Features:**
+- Skills heatmap: Who has what, gaps, overlaps
+- "Skill Diversity Score" for each team
+- "Recommended Skills" based on team gaps
+
+---
+
+#### 5. Career Readiness Score
 **What:** Score based on skill diversity, depth, consistency
 
 **Shows:**
@@ -62,56 +95,91 @@
 - Gap analysis (missing skills)
 - Comparison to role requirements
 
-**Why:**
-- Guides learning
-- Clear goals
-- Career tool
+**Database:**
+```sql
+CREATE TABLE role_benchmarks (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  role_name VARCHAR(100) NOT NULL,
+  skill_id INT NOT NULL,
+  minimum_signals INT NOT NULL,
+  category ENUM('technical', 'soft', 'leadership') NOT NULL
+);
+
+CREATE TABLE user_role_progress (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  role_id INT NOT NULL,
+  completion_percentage DECIMAL(5,2) DEFAULT 0,
+  last_assessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ---
 
-### 5. Mentorship Matching (MEDIUM PRIORITY)
-**What:** Match mentors/interns by skills, not just availability
+### LOWER PRIORITY
+
+#### 6. AI-Assisted Content Tagging
+**What:** Extract skill mentions from update content
 
 **Features:**
-- Filter mentors by skill (e.g., "Find React mentor")
-- Show mentor's project history
-- Skill alignment score
-
-**Status:** Basic sessions exist, needs skill-based matching
+- Heuristic keyword matching
+- "Did you mean...?" suggestions
+- Visual distinction: AI-suggested vs user-declared
 
 ---
 
-### 6. Team Matching (LOWER PRIORITY)
-**What:** Find team members by skills needed
+#### 7. Personal Growth Recommendations
+**What:** Actionable next steps based on data
 
 **Features:**
-- Browse users by skills
-- "Looking for React developer" filters
-- Request to join teams
-
-**Status:** Project discovery exists, needs user/team matching
+- "Your fastest growing skill" with continue suggestion
+- "Neglected skills" - skills you haven't practiced recently
+- "Team needs" - skills your team is looking for
 
 ---
 
-## What's Already Built ✅
+#### 8. Advanced Momentum Analytics
+**What:** Deeper insights into growth patterns
 
-- CollaborationHub
-- MentorshipBridge  
-- Skill Tracker
-- Project Portfolio
-- Search & Discovery
-- Activity Feed
-- Team Dashboard
-- User Profiles (basic)
-- Input Validation
-- Rate Limiting
-- API Documentation
+**Features:**
+- Seasonal trends: "Your skills grow faster in Q3"
+- Velocity tracking: "React skill momentum: +2.3 signals/week"
+- Prediction: "On track for X skill signals by Dec 2025"
 
 ---
 
-## Not Planned (From Original Doc)
+#### 9. Platform Health Dashboard
+**What:** System-wide engagement metrics
 
-- AI Content Extraction
-- Public Skill Profiles (yet)
-- Peer Upvotes (use endorsements instead)
-- Natural Language Queries
+**Features:**
+- User activity funnels
+- Project completion rates
+- Mentorship effectiveness
+- Skill ecosystem health
+
+---
+
+## Priority Order Recommendation
+
+| Order | Feature | Effort | Impact |
+|-------|---------|--------|--------|
+| 1 | Skill Upvote System | Medium | High |
+| 2 | Mentorship Engagement UI | Low | Medium |
+| 3 | Activity Correlation | Medium | Medium |
+| 4 | Team Skill Synergy | Medium | Medium |
+| 5 | Career Readiness | High | Medium |
+| 6 | Personal Growth Recs | Low | Medium |
+| 7 | AI Content Tagging | Medium | Low |
+| 8 | Advanced Analytics | Medium | Low |
+| 9 | Platform Health | Low | Low |
+
+---
+
+## Quick Wins (Already Have APIs)
+
+1. **Mentorship Engagement UI** - API exists, just needs display component
+2. **Personal Growth Recommendations** - Can use existing skill data
+
+---
+
+*Document maintained as part of SyncUp development*

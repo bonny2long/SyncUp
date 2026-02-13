@@ -11,6 +11,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   const tabs = React.useMemo(() => {
     const items = [
       { id: "collaboration", label: "Collaboration Hub", path: "/collaboration" },
+      { id: "chat", label: "Team Chat", path: "/chat" },
       { id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" },
       { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
       { id: "health", label: "System Health", path: "/health" },

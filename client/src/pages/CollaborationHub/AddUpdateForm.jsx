@@ -51,8 +51,12 @@ export default function AddUpdateForm({
       addToast("User not loaded yet", "error");
       return;
     }
+    if (!selectedProjectId) {
+      addToast("Please select a project first", "error");
+      return;
+    }
 
-    const projectId = selectedProjectId || 1;
+    const projectId = selectedProjectId;
 
     try {
       setLoading(true);

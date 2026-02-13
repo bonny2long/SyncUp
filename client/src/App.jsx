@@ -5,6 +5,7 @@ import { useUser } from "./context/UserContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProjectPortfolio from "./pages/ProjectPortfolio";
 import UserProfile from "./pages/UserProfile";
+import Chat from "./pages/Chat/Chat";
 
 function ProtectedRoute({ children, requireIntern = false }) {
   const { user, loading } = useUser();
@@ -26,6 +27,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <Chat />
             </ProtectedRoute>
           }
         />

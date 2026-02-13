@@ -451,3 +451,102 @@ export async function deleteNotification(notificationId) {
   if (!res.ok) throw new Error("Failed to delete notification");
   return res.json();
 }
+
+// ============================================================
+// CHAT
+// ============================================================
+
+export async function fetchChannels() {
+  const res = await fetch(`${API_BASE}/chat/channels`);
+  if (!res.ok) throw new Error("Failed to fetch channels");
+  return res.json();
+}
+
+export async function createChannel(name, description, userId, isPrivate = false) {
+  const res = await fetch(`${API_BASE}/chat/channels?user_id=${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, description, is_private: isPrivate }),
+  });
+  if (!res.ok) throw new Error("Failed to create channel");
+  return res.json();
+}
+
+export async function joinChannel(channelId, userId) {
+  const res = await fetch(`${API_BASE}/chat/channels/${channelId}/join?user_id=${userId}`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to join channel");
+  return res.json();
+}
+
+export async function fetchChannelMessages(channelId, limit = 50) {
+  const res = await fetch(`${API_BASE}/chat/channels/${channelId}/messages?limit=${limit}`);
+  if (!res.ok) throw new Error("Failed to fetch messages");
+  return res.json();
+}
+
+export async function fetchDMMessages(userId, currentUserId, limit = 50) {
+  const res = await fetch(`${API_BASE}/chat/dm/${userId}?currentUserId=${currentUserId}&limit=${limit}`);
+  if (!res.ok) throw new Error("Failed to fetch DM");
+  return res.json();
+}
+
+export async function sendMessage(content, channelId = null, recipientId = null, userId, fileUrl = null, fileName = null) {
+  const res = await fetch(`${API_BASE}/chat/messages?user_id=${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content,
+      channel_id: channelId,
+      recipient_id: recipientId,
+      file_url: fileUrl,
+      file_name: fileName,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to send message");
+  return res.json();
+}
+
+export async function fetchPresence() {
+  const res = await fetch(`${API_BASE}/chat/presence`);
+  if (!res.ok) throw new Error("Failed to fetch presence");
+  return res.json();
+}
+
+export async function updatePresence(userId, status, channelId = null) {
+  const res = await fetch(`${API_BASE}/chat/presence?user_id=${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, current_channel_id: channelId }),
+  });
+  if (!res.ok) throw new Error("Failed to update presence");
+  return res.json();
+}
+
+export async function fetchDMUsers(userId) {
+  const res = await fetch(`${API_BASE}/chat/dm-users?user_id=${userId}`);
+  if (!res.ok) throw new Error("Failed to fetch DM users");
+  return res.json();
+}
+
+// ============================================================
+// FILE UPLOAD
+// ============================================================
+
+export async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/upload/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to upload file");
+  }
+
+  return res.json();
+}

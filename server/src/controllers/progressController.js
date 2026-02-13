@@ -299,6 +299,27 @@ export const deleteProgressUpdate = async (req, res) => {
 export const getUpdatesByProject = async (req, res) => {
   const { projectId } = req.params;
   try {
+    // Check if is_deleted column exists
+    const [columns] = await pool.query(`
+      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_NAME = 'progress_updates' AND COLUMN_NAME = 'is_deleted'
+    `);
+    const hasSoftDelete = columns.length > 0;
+
+    // Check if progress_update_skills table exists
+    const [skillTable] = await pool.query(`
+      SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
+      WHERE TABLE_NAME = 'progress_update_skills'
+    `);
+    const hasSkillTable = skillTable.length > 0;
+
+    let whereClause = "WHERE p.project_id = ?";
+    const params = [projectId];
+    
+    if (hasSoftDelete) {
+      whereClause += " AND (p.is_deleted IS NULL OR p.is_deleted = 0)";
+    }
+
     const [rows] = await pool.query(
       `SELECT 
         p.id, 
@@ -308,11 +329,40 @@ export const getUpdatesByProject = async (req, res) => {
         u.role AS user_role
       FROM progress_updates p
       JOIN users u ON u.id = p.user_id
-      WHERE p.project_id = ?
+      ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT 20`,
-      [projectId],
+      params,
     );
+
+    // Get skills for each update (if table exists)
+    if (rows.length > 0 && hasSkillTable) {
+      const updateIds = rows.map(r => r.id);
+      const [skillRows] = await pool.query(
+        `SELECT pus.progress_update_id, s.skill_name 
+         FROM progress_update_skills pus
+         JOIN skills s ON pus.skill_id = s.id
+         WHERE pus.progress_update_id IN (?)`,
+        [updateIds],
+      );
+
+      // Group skills by update
+      const skillsByUpdate = skillRows.reduce((acc, row) => {
+        if (!acc[row.progress_update_id]) acc[row.progress_update_id] = [];
+        acc[row.progress_update_id].push(row.skill_name);
+        return acc;
+      }, {});
+
+      // Attach skills to updates
+      rows.forEach(row => {
+        row.tagged_skills = skillsByUpdate[row.id] || [];
+      });
+    } else {
+      rows.forEach(row => {
+        row.tagged_skills = [];
+      });
+    }
+
     res.json(rows);
   } catch (err) {
     console.error("Error loading project updates:", err);

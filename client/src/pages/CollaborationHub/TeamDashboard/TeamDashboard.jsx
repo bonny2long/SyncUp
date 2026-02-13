@@ -7,12 +7,15 @@ import TeamSkillChart from "./TeamSkillChart";
 import TeamMomentumChart from "./TeamMomentumChart";
 import TeamComparison from "./TeamComparison";
 import TeamInsights from "./TeamInsights";
+import TeamActivityFeed from "./TeamActivityFeed";
+import { BarChart2, ChevronDown, ChevronUp } from "lucide-react";
 
 const TeamDashboard = ({ projectId }) => {
   const { user: currentUser } = useUser();
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCharts, setShowCharts] = useState(false);
 
   const loadTeamData = async () => {
     if (!projectId || !currentUser?.id) return;
@@ -47,13 +50,13 @@ const TeamDashboard = ({ projectId }) => {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {[...Array(4)].map((_, i) => (
-            <SkeletonLoader key={i} className="h-24" />
+            <SkeletonLoader key={i} className="h-20" />
           ))}
         </div>
-        <SkeletonLoader className="h-64" />
-        <SkeletonLoader className="h-64" />
+        <SkeletonLoader className="h-48" />
+        <SkeletonLoader className="h-32" />
       </div>
     );
   }
@@ -84,32 +87,66 @@ const TeamDashboard = ({ projectId }) => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Team Overview - Top Section */}
-      <TeamOverview data={teamData.overview} />
+    <div className="space-y-6">
+      {/* Team Overview - Compact Metrics */}
+      <TeamOverview 
+        data={teamData.overview} 
+        teamMembers={teamData.teamMembers || []}
+        activeThisWeek={teamData.activeThisWeek || []}
+        signalBreakdown={teamData.signalBreakdown || []}
+        skillDistribution={teamData.skillDistribution || []}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Team Skill Distribution */}
-        <div className="h-full">
-          <TeamSkillChart data={teamData.skillDistribution} />
-        </div>
+      {/* Team Activity Feed - Always Visible */}
+      <TeamActivityFeed projectId={projectId} />
 
-        {/* Team Momentum */}
-        <div className="h-full">
-          <TeamMomentumChart data={teamData.momentum} />
-        </div>
-      </div>
+      {/* Charts Section - Collapsible */}
+      <div>
+        {/* Toggle Button */}
+        <button
+          onClick={() => setShowCharts(!showCharts)}
+          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-gray-600" />
+            <span className="font-medium text-gray-700">
+              {showCharts ? "Hide Charts" : "View Charts"}
+            </span>
+          </div>
+          {showCharts ?
+            <ChevronUp className="w-4 h-4 text-gray-500" />
+          : <ChevronDown className="w-4 h-4 text-gray-500" />
+          }
+        </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-        {/* Individual vs Team Comparison */}
-        <div className="h-full">
-          <TeamComparison data={teamData.individualComparison} />
-        </div>
+        {/* Charts Content - Collapsible */}
+        {showCharts && (
+          <div className="space-y-6 mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Team Skill Distribution */}
+              <div className="h-full">
+                <TeamSkillChart data={teamData.skillDistribution} />
+              </div>
 
-        {/* AI-Powered Insights */}
-        <div className="h-full">
-          <TeamInsights data={teamData} projectId={projectId} />
-        </div>
+              {/* Team Momentum */}
+              <div className="h-full">
+                <TeamMomentumChart data={teamData.momentum} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              {/* Individual vs Team Comparison */}
+              <div className="h-full">
+                <TeamComparison data={teamData.individualComparison} />
+              </div>
+
+              {/* AI-Powered Insights */}
+              <div className="h-full">
+                <TeamInsights data={teamData} projectId={projectId} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

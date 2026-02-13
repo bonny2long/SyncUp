@@ -11,6 +11,13 @@ import analyticsRoutes from "./routes/analyticsRoutes.js";
 import skillsRoutes from "./routes/skillsRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import badgeRoutes from "./routes/badgeRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { generalLimiter, strictLimiter, createLimiter, searchLimiter } from "./config/rateLimit.js";
 import { swaggerDocs, swaggerSetup } from "./config/swagger.js";
 
@@ -34,6 +41,11 @@ app.use("/api/analytics", searchLimiter);
 app.use("/api/skills", skillsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/badges", badgeRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/upload", uploadRoutes);
+
+// Serve uploaded files statically
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Apply stricter limits to mutation routes
 app.post("/api/projects", createLimiter);

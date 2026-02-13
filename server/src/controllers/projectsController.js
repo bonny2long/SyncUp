@@ -989,7 +989,6 @@ export const getTeamMomentum = async (req, res) => {
 
   try {
     // 1. Overview Metrics
-    // We use COALESCE and nested queries to get a snapshot of the team's activity
     const [overviewRows] = await pool.query(
       `
       SELECT 
@@ -1008,19 +1007,75 @@ export const getTeamMomentum = async (req, res) => {
         ) as active_this_week
       `,
       [
-        projectId,
-        projectId,
-        projectId,
-        projectId,
-        projectId,
-        projectId,
-        projectId,
-        projectId,
+        projectId, projectId, projectId, projectId,
+        projectId, projectId, projectId, projectId,
       ],
     );
 
-    // 2. Skill Distribution
-    // Aggregate all skill signals related to this project across all team members
+    // 2. Team Members with details
+    const [teamMembers] = await pool.query(
+      `
+      SELECT u.id, u.name, u.role, u.email,
+             COALESCE(SUM(uss.weight), 0) as total_signals,
+             COUNT(DISTINCT CASE WHEN uss.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN uss.id END) as recent_signals
+      FROM project_members pm
+      JOIN users u ON pm.user_id = u.id
+      LEFT JOIN user_skill_signals uss ON pm.user_id = uss.user_id 
+          AND ((uss.source_type = 'project' AND uss.source_id = ?)
+             OR (uss.source_type = 'update' AND uss.source_id IN (SELECT id FROM progress_updates WHERE project_id = ?))
+             OR (uss.source_type = 'mentorship' AND uss.source_id IN (SELECT id FROM mentorship_sessions WHERE project_id = ?)))
+      WHERE pm.project_id = ?
+      GROUP BY u.id, u.name, u.role, u.email
+      ORDER BY total_signals DESC
+      `,
+      [projectId, projectId, projectId, projectId],
+    );
+
+    // 3. Active this week - who was active
+    const [activeThisWeek] = await pool.query(
+      `
+      SELECT DISTINCT u.id, u.name, u.role,
+             COUNT(uss.id) as signal_count
+      FROM user_skill_signals uss
+      JOIN users u ON uss.user_id = u.id
+      WHERE uss.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND ((uss.source_type = 'project' AND uss.source_id = ?)
+           OR (uss.source_type = 'update' AND uss.source_id IN (SELECT id FROM progress_updates WHERE project_id = ?))
+           OR (uss.source_type = 'mentorship' AND uss.source_id IN (SELECT id FROM mentorship_sessions WHERE project_id = ?)))
+      GROUP BY u.id, u.name, u.role
+      ORDER BY signal_count DESC
+      `,
+      [projectId, projectId, projectId],
+    );
+
+    // 4. Signal source breakdown
+    const [signalBreakdown] = await pool.query(
+      `
+      SELECT 
+        'project' as source,
+        COUNT(*) as count,
+        COALESCE(SUM(weight), 0) as weight
+      FROM user_skill_signals 
+      WHERE source_type = 'project' AND source_id = ?
+      UNION ALL
+      SELECT 
+        'update' as source,
+        COUNT(*) as count,
+        COALESCE(SUM(weight), 0) as weight
+      FROM user_skill_signals 
+      WHERE source_type = 'update' AND source_id IN (SELECT id FROM progress_updates WHERE project_id = ?)
+      UNION ALL
+      SELECT 
+        'mentorship' as source,
+        COUNT(*) as count,
+        COALESCE(SUM(weight), 0) as weight
+      FROM user_skill_signals 
+      WHERE source_type = 'mentorship' AND source_id IN (SELECT id FROM mentorship_sessions WHERE project_id = ?)
+      `,
+      [projectId, projectId, projectId],
+    );
+
+    // 5. Skill Distribution
     const [skillDistribution] = await pool.query(
       `
       SELECT u.name, uss.user_id, s.skill_name, uss.skill_id, COUNT(uss.id) as signal_count, SUM(uss.weight) as total_weight
@@ -1036,8 +1091,7 @@ export const getTeamMomentum = async (req, res) => {
       [projectId, projectId, projectId],
     );
 
-    // 3. Momentum (Last 14 days)
-    // Daily breakdown of activity to show velocity
+    // 6. Momentum (Last 14 days)
     const [momentum] = await pool.query(
       `
       SELECT DATE(created_at) as date, COUNT(*) as signals, SUM(weight) as total_weight
@@ -1052,8 +1106,7 @@ export const getTeamMomentum = async (req, res) => {
       [projectId, projectId, projectId],
     );
 
-    // 4. Individual Comparison
-    // Shows user performance vs the rest of the team
+    // 7. Individual Comparison
     const [individualComparison] = await pool.query(
       `
       SELECT u.name, pm.user_id, 
@@ -1078,6 +1131,9 @@ export const getTeamMomentum = async (req, res) => {
         total_signals: 0,
         active_this_week: 0,
       },
+      teamMembers,
+      activeThisWeek,
+      signalBreakdown,
       skillDistribution,
       momentum,
       individualComparison,

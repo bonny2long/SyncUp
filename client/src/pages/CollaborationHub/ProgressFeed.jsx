@@ -142,13 +142,21 @@ export default function ProgressFeed({
 
   return (
     <div className="flex flex-col gap-6">
-      <AddUpdateForm
-        onNewUpdate={handleNewUpdate}
-        selectedProjectId={selectedProjectId}
-        allSkills={allSkills}
-        projectSkills={projectSkills}
-        loadingSkills={loadingSkills}
-      />
+      {selectedProjectId ? (
+        <AddUpdateForm
+          onNewUpdate={handleNewUpdate}
+          selectedProjectId={selectedProjectId}
+          allSkills={allSkills}
+          projectSkills={projectSkills}
+          loadingSkills={loadingSkills}
+        />
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+          <p className="text-gray-600 text-sm">
+            Select a project from "My Work" to post an update
+          </p>
+        </div>
+      )}
 
       {selectedProjectId && (
         <div className="p-3 bg-primary/10 text-primary rounded-xl font-medium text-sm flex items-center justify-between">
