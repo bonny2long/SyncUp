@@ -2,6 +2,7 @@
 import pool from "../config/db.js";
 import { emitSkillSignals } from "../services/skillSignalService.js";
 import { notifyProjectUpdate } from "../services/notificationService.js";
+import { checkBadges } from "../services/checkBadges.js";
 
 // Cache check for optional soft-delete column
 let hasSoftDeleteColumn;
@@ -200,7 +201,10 @@ export const createProgressUpdate = async (req, res) => {
       console.error("Failed to send update notifications:", notifErr);
     }
 
-    res.status(201).json(rows[0]);
+    // Check for new badges
+    const newBadges = await checkBadges(user_id);
+
+    res.status(201).json({ ...rows[0], newBadges });
   } catch (err) {
     await connection.rollback();
     console.error("Error inserting update:", err);

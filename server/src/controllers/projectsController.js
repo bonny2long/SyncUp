@@ -4,6 +4,7 @@ import {
   notifyJoinRequestRejected,
   notifyProjectCompleted,
 } from "../services/notificationService.js";
+import { checkBadges } from "../services/checkBadges.js";
 
 // GET /api/projects
 export const getProjects = async (req, res) => {
@@ -280,7 +281,10 @@ export const addProjectMember = async (req, res) => {
 
     await connection.commit();
 
-    res.status(201).json({ message: "User added to project" });
+    // Check for new badges
+    const newBadges = await checkBadges(user_id);
+
+    res.status(201).json({ message: "User added to project", newBadges });
   } catch (err) {
     await connection.rollback();
     console.error("Error adding project member:", err);
@@ -441,10 +445,14 @@ export const updateProjectStatus = async (req, res) => {
 
     await connection.commit();
 
+    // Check for new badges (for project owner)
+    const newBadges = await checkBadges(user_id);
+
     res.json({
       message: "Status updated successfully",
       status: status,
       project_id: parseInt(id),
+      newBadges,
     });
   } catch (err) {
     await connection.rollback();

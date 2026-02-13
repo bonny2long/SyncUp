@@ -10,6 +10,9 @@ import mentorshipRoutes from "./routes/mentorshipRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import skillsRoutes from "./routes/skillsRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import badgeRoutes from "./routes/badgeRoutes.js";
+import { generalLimiter, strictLimiter, createLimiter, searchLimiter } from "./config/rateLimit.js";
+import { swaggerDocs, swaggerSetup } from "./config/swagger.js";
 
 dotenv.config();
 const app = express();
@@ -17,14 +20,29 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use("/api", generalLimiter);
+
+// Swagger documentation
+app.use("/api-docs", swaggerDocs, swaggerSetup);
+
 app.use("/api/health", healthRoute);
 app.use("/api/progress_updates", progressRoutes);
 app.use("/api/mentorship", mentorshipRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/projects", projectsRoutes);
-app.use("/api/analytics", analyticsRoutes);
+app.use("/api/analytics", searchLimiter);
 app.use("/api/skills", skillsRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/badges", badgeRoutes);
+
+// Apply stricter limits to mutation routes
+app.post("/api/projects", createLimiter);
+app.post("/api/projects/:projectId/join-request", strictLimiter);
+app.post("/api/mentorship/sessions", strictLimiter);
+app.post("/api/progress_updates", strictLimiter);
+
+app.put("/api/projects/:id/status", strictLimiter);
+app.put("/api/mentorship/sessions/:id", strictLimiter);
 
 // Basic route for testing
 app.get("/", (req, res) => {
