@@ -331,22 +331,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-180px)]">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Team Chat</h1>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-64"
-          />
-        </div>
-      </div>
-
+    <div className="flex flex-col h-[calc(100vh-200px)]">
       {/* Main Chat Layout */}
       <div className="flex flex-1 gap-4 overflow-hidden">
         {/* Left Sidebar - Channels & DMs */}
@@ -631,12 +616,12 @@ export default function Chat() {
         </div>
 
         {/* Right Sidebar - Members */}
-        <div className="w-56 flex-shrink-0 bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="w-56 flex-shrink-0 bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col">
           <div className="p-3 border-b border-gray-100 flex items-center gap-2">
             <Users className="w-4 h-4 text-gray-500" />
             <span className="font-semibold text-sm">Team Members</span>
           </div>
-          <div className="p-3 overflow-y-auto">
+          <div className="p-3 overflow-y-auto flex-1">
             {/* Groups */}
             {sortedGroupNames.map((groupName) => {
               const isExpanded = expandedGroups[groupName] !== false; // Default to true

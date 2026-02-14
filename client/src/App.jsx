@@ -12,7 +12,8 @@ function ProtectedRoute({ children, requireIntern = false }) {
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (requireIntern && user.role !== 'intern') return <Navigate to="/collaboration" replace />;
+  if (requireIntern && user.role !== "intern")
+    return <Navigate to="/collaboration" replace />;
 
   return children;
 }
@@ -34,7 +35,7 @@ export default function App() {
           path="/chat"
           element={
             <ProtectedRoute>
-              <Chat />
+              <Dashboard />
             </ProtectedRoute>
           }
         />

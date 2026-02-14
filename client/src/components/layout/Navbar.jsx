@@ -59,6 +59,7 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     skills: "Skill Tracker",
     portfolio: "Project Portfolio",
     health: "System Health",
+    chat: "Team Chat",
   };
   const pageTitle = titleMap[activeTab] || "SyncUp";
 
