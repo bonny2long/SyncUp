@@ -462,7 +462,12 @@ export async function fetchChannels() {
   return res.json();
 }
 
-export async function createChannel(name, description, userId, isPrivate = false) {
+export async function createChannel(
+  name,
+  description,
+  userId,
+  isPrivate = false,
+) {
   const res = await fetch(`${API_BASE}/chat/channels?user_id=${userId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -473,26 +478,40 @@ export async function createChannel(name, description, userId, isPrivate = false
 }
 
 export async function joinChannel(channelId, userId) {
-  const res = await fetch(`${API_BASE}/chat/channels/${channelId}/join?user_id=${userId}`, {
-    method: "POST",
-  });
+  const res = await fetch(
+    `${API_BASE}/chat/channels/${channelId}/join?user_id=${userId}`,
+    {
+      method: "POST",
+    },
+  );
   if (!res.ok) throw new Error("Failed to join channel");
   return res.json();
 }
 
 export async function fetchChannelMessages(channelId, limit = 50) {
-  const res = await fetch(`${API_BASE}/chat/channels/${channelId}/messages?limit=${limit}`);
+  const res = await fetch(
+    `${API_BASE}/chat/channels/${channelId}/messages?limit=${limit}`,
+  );
   if (!res.ok) throw new Error("Failed to fetch messages");
   return res.json();
 }
 
 export async function fetchDMMessages(userId, currentUserId, limit = 50) {
-  const res = await fetch(`${API_BASE}/chat/dm/${userId}?currentUserId=${currentUserId}&limit=${limit}`);
+  const res = await fetch(
+    `${API_BASE}/chat/dm/${userId}?currentUserId=${currentUserId}&limit=${limit}`,
+  );
   if (!res.ok) throw new Error("Failed to fetch DM");
   return res.json();
 }
 
-export async function sendMessage(content, channelId = null, recipientId = null, userId, fileUrl = null, fileName = null) {
+export async function sendMessage(
+  content,
+  channelId = null,
+  recipientId = null,
+  userId,
+  fileUrl = null,
+  fileName = null,
+) {
   const res = await fetch(`${API_BASE}/chat/messages?user_id=${userId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -508,8 +527,12 @@ export async function sendMessage(content, channelId = null, recipientId = null,
   return res.json();
 }
 
-export async function fetchPresence() {
-  const res = await fetch(`${API_BASE}/chat/presence`);
+export async function fetchPresence(userId) {
+  const url =
+    userId ?
+      `${API_BASE}/chat/presence?user_id=${userId}`
+    : `${API_BASE}/chat/presence`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch presence");
   return res.json();
 }

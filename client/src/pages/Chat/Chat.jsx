@@ -24,6 +24,8 @@ import {
   Loader2,
   File,
   Image,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
@@ -47,6 +49,7 @@ export default function Chat() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState({});
   const fileInputRef = useRef(null);
 
   // Load initial data
@@ -62,13 +65,23 @@ export default function Chat() {
         if (activeDM) loadDMMessages(activeDM.id);
       }, 5000);
       return () => clearInterval(interval);
+    } else {
+      // Clear state when user logs out
+      setPresence([]);
+      setChannels([]);
+      setDmUsers([]);
+      setMessages([]);
+      setActiveChannel(null);
+      setActiveDM(null);
     }
   }, [user?.id]);
 
   // Update presence when switching channels
   useEffect(() => {
     if (user?.id) {
-      updatePresence(user.id, "online", activeChannel?.id || null).catch(console.error);
+      updatePresence(user.id, "online", activeChannel?.id || null).catch(
+        console.error,
+      );
     }
   }, [activeChannel, user?.id]);
 
@@ -86,7 +99,7 @@ export default function Chat() {
       setLoading(true);
       const [channelsData, presenceData, dmUsersData] = await Promise.all([
         fetchChannels(),
-        fetchPresence(),
+        fetchPresence(user.id),
         fetchDMUsers(user.id),
       ]);
       console.log("DM Users loaded:", dmUsersData);
@@ -108,7 +121,7 @@ export default function Chat() {
 
   const loadPresence = async () => {
     try {
-      const data = await fetchPresence();
+      const data = await fetchPresence(user.id);
       setPresence(data);
     } catch (err) {
       console.error("Error loading presence:", err);
@@ -161,15 +174,15 @@ export default function Chat() {
       channel_id: activeChannel?.id,
       recipient_id: activeDM?.id,
       user_id: user.id,
-      user_name: user.name
+      user_name: user.name,
     });
 
     try {
       setSending(true);
-      
+
       let fileUrl = null;
       let fileName = null;
-      
+
       // Upload file if selected
       if (selectedFile) {
         setUploading(true);
@@ -180,19 +193,22 @@ export default function Chat() {
           console.log("File uploaded:", uploadResult);
         } catch (uploadErr) {
           console.error("File upload failed:", uploadErr);
-          addToast("File upload failed. Sending message without file.", "error");
+          addToast(
+            "File upload failed. Sending message without file.",
+            "error",
+          );
         } finally {
           setUploading(false);
         }
       }
-      
+
       const message = await sendMessage(
         newMessage || (fileUrl ? "Sent a file" : ""),
         activeChannel?.id || null,
         activeDM?.id || null,
         user.id,
         fileUrl,
-        fileName
+        fileName,
       );
       console.log("Message sent:", message);
       setMessages([...messages, message]);
@@ -209,7 +225,12 @@ export default function Chat() {
 
   const getInitials = (name) => {
     if (!name) return "?";
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const getStatusColor = (status) => {
@@ -237,15 +258,69 @@ export default function Chat() {
   };
 
   const filteredChannels = channels.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const filteredDMUsers = dmUsers.filter((u) =>
-    u.name.toLowerCase().includes(searchQuery.toLowerCase())
+    u.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const onlineUsers = presence.filter((u) => u.status === "online");
   const offlineUsers = presence.filter((u) => u.status !== "online");
+
+  // Group users by project
+  const getGroupedUsers = () => {
+    const groups = {};
+    const otherUsers = [];
+
+    presence.forEach((u) => {
+      // Create a display copy of the user
+      const userDisplay = { ...u };
+
+      if (u.project_names) {
+        const projects = u.project_names.split(",");
+        projects.forEach((p) => {
+          if (!groups[p]) groups[p] = [];
+
+          // Check if user is already in this group to avoid duplicates if backend returns dupes (safeguard)
+          if (!groups[p].find((existing) => existing.id === u.id)) {
+            groups[p].push(userDisplay);
+          }
+        });
+      } else {
+        otherUsers.push(userDisplay);
+      }
+    });
+
+    // Sort groups alphabetically
+    const sortedGroupNames = Object.keys(groups).sort();
+
+    // Sort users within groups (online first, then name)
+    sortedGroupNames.forEach((name) => {
+      groups[name].sort((a, b) => {
+        if (a.status === "online" && b.status !== "online") return -1;
+        if (a.status !== "online" && b.status === "online") return 1;
+        return a.name.localeCompare(b.name);
+      });
+    });
+
+    otherUsers.sort((a, b) => {
+      if (a.status === "online" && b.status !== "online") return -1;
+      if (a.status !== "online" && b.status === "online") return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    return { sortedGroupNames, groups, otherUsers };
+  };
+
+  const toggleGroup = (groupName) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [groupName]: !prev[groupName],
+    }));
+  };
+
+  const { sortedGroupNames, groups, otherUsers } = getGroupedUsers();
 
   if (loading) {
     return (
@@ -279,7 +354,9 @@ export default function Chat() {
           {/* Channels */}
           <div className="p-3 border-b border-gray-100">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase">Channels</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase">
+                Channels
+              </span>
               <button
                 onClick={() => setShowCreateChannel(true)}
                 className="p-1 hover:bg-gray-100 rounded"
@@ -295,9 +372,9 @@ export default function Chat() {
                   setActiveDM(null);
                 }}
                 className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm ${
-                  activeChannel?.id === channel.id
-                    ? "bg-primary/10 text-primary"
-                    : "text-gray-700 hover:bg-gray-50"
+                  activeChannel?.id === channel.id ?
+                    "bg-primary/10 text-primary"
+                  : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 <Hash className="w-4 h-4" />
@@ -339,11 +416,12 @@ export default function Chat() {
 
           {/* Direct Messages */}
           <div className="p-3 flex-1 overflow-y-auto">
-            <span className="text-xs font-semibold text-gray-500 uppercase">Direct Messages</span>
-            {filteredDMUsers.length === 0 ? (
+            <span className="text-xs font-semibold text-gray-500 uppercase">
+              Direct Messages
+            </span>
+            {filteredDMUsers.length === 0 ?
               <p className="text-xs text-gray-400 mt-2">No users available</p>
-            ) : (
-              filteredDMUsers.map((dmUser) => (
+            : filteredDMUsers.map((dmUser) => (
                 <button
                   key={dmUser.id}
                   onClick={() => {
@@ -352,9 +430,9 @@ export default function Chat() {
                     setActiveChannel(null);
                   }}
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm mt-1 cursor-pointer ${
-                    activeDM?.id === dmUser.id
-                      ? "bg-primary/10 text-primary"
-                      : "text-gray-700 hover:bg-gray-50"
+                    activeDM?.id === dmUser.id ?
+                      "bg-primary/10 text-primary"
+                    : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   <div className="relative">
@@ -363,14 +441,16 @@ export default function Chat() {
                     </div>
                     <div
                       className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white ${
-                        dmUser.status === "online" ? "bg-green-500" : "bg-gray-400"
+                        dmUser.status === "online" ?
+                          "bg-green-500"
+                        : "bg-gray-400"
                       }`}
                     />
                   </div>
                   <span className="truncate">{dmUser.name}</span>
                 </button>
               ))
-            )}
+            }
           </div>
         </div>
 
@@ -378,12 +458,12 @@ export default function Chat() {
         <div className="flex-1 bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col">
           {/* Chat Header */}
           <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-            {activeChannel ? (
+            {activeChannel ?
               <>
                 <Hash className="w-5 h-5 text-gray-400" />
                 <span className="font-semibold">{activeChannel.name}</span>
               </>
-            ) : activeDM ? (
+            : activeDM ?
               <>
                 <div className="relative">
                   <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs">
@@ -391,73 +471,115 @@ export default function Chat() {
                   </div>
                   <div
                     className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white ${
-                      activeDM.status === "online" ? "bg-green-500" : "bg-gray-400"
+                      activeDM.status === "online" ?
+                        "bg-green-500"
+                      : "bg-gray-400"
                     }`}
                   />
                 </div>
                 <span className="font-semibold">{activeDM.name}</span>
                 <span className="text-xs text-gray-500">({activeDM.role})</span>
               </>
-            ) : (
-              <span className="text-gray-500">Select a channel or DM</span>
-            )}
+            : <span className="text-gray-500">Select a channel or DM</span>}
             <span className="ml-auto text-xs text-gray-400">
-              Logged in as <span className="font-medium text-primary">{user?.name}</span>
+              Logged in as{" "}
+              <span className="font-medium text-primary">{user?.name}</span>
             </span>
           </div>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {activeChannel || activeDM ? (
-              messages.length > 0 ? (
-                messages.map((msg) => (
-                  <div key={msg.id} className="flex gap-3">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary text-xs font-semibold flex-shrink-0">
-                      {getInitials(msg.sender_name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-semibold text-sm">{msg.sender_name}</span>
-                        <span className="text-xs text-gray-400">{formatTime(msg.created_at)}</span>
+            {activeChannel || activeDM ?
+              messages.length > 0 ?
+                messages.map((msg) => {
+                  const isMe = msg.sender_id === user.id;
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex gap-3 ${isMe ? "flex-row-reverse" : "flex-row"}`}
+                    >
+                      <div className="w-8 h-8 flex-shrink-0">
+                        {!isMe && (
+                          <div className="w-full h-full bg-primary/20 rounded-full flex items-center justify-center text-primary text-xs font-semibold">
+                            {getInitials(msg.sender_name)}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-700">{msg.content}</p>
-                      {msg.file_url && (
-                        <a
-                          href={msg.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
+
+                      <div
+                        className={`flex flex-col max-w-[70%] ${isMe ? "items-end" : "items-start"}`}
+                      >
+                        <div className="flex items-baseline gap-2 mb-1">
+                          <span className="text-xs text-gray-400">
+                            {formatTime(msg.created_at)}
+                          </span>
+                          {!isMe && (
+                            <span className="font-semibold text-xs text-gray-600">
+                              {msg.sender_name}
+                            </span>
+                          )}
+                        </div>
+
+                        <div
+                          className={`px-4 py-2 rounded-2xl shadow-sm text-sm ${
+                            isMe ?
+                              "bg-primary text-white rounded-br-none"
+                            : "bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200"
+                          }`}
                         >
-                          📎 {msg.file_name || "Attachment"}
-                        </a>
-                      )}
+                          <p className="whitespace-pre-wrap break-words">
+                            {msg.content}
+                          </p>
+                          {msg.file_url && (
+                            <a
+                              href={msg.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`block mt-2 text-xs hover:underline flex items-center gap-1 ${
+                                isMe ? "text-blue-100" : "text-primary"
+                              }`}
+                            >
+                              <Paperclip className="w-3 h-3" />
+                              {msg.file_name || "Attachment"}
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-gray-500 py-8">No messages yet</p>
-              )
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <MessageSquare className="w-12 h-12 mb-2" />
-                  <p>{activeDM ? `No messages with ${activeDM.name} yet` : "Select a channel or start a DM"}</p>
-                  {activeDM && <p className="text-xs mt-2">Send a message to start the conversation!</p>}
-                </div>
-              )}
+                  );
+                })
+              : <p className="text-center text-gray-500 py-8">
+                  No messages yet
+                </p>
+
+            : <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                <MessageSquare className="w-12 h-12 mb-2" />
+                <p>
+                  {activeDM ?
+                    `No messages with ${activeDM.name} yet`
+                  : "Select a channel or start a DM"}
+                </p>
+                {activeDM && (
+                  <p className="text-xs mt-2">
+                    Send a message to start the conversation!
+                  </p>
+                )}
+              </div>
+            }
           </div>
 
           {/* Message Input */}
-          {activeChannel || activeDM ? (
+          {activeChannel || activeDM ?
             <div className="p-3 border-t border-gray-100">
               {/* Selected File Preview */}
               {selectedFile && (
                 <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 rounded-lg">
-                  {selectedFile.type.startsWith("image/") ? (
+                  {selectedFile.type.startsWith("image/") ?
                     <Image className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <File className="w-4 h-4 text-gray-500" />
-                  )}
-                  <span className="text-sm text-gray-700 flex-1 truncate">{selectedFile.name}</span>
+                  : <File className="w-4 h-4 text-gray-500" />}
+                  <span className="text-sm text-gray-700 flex-1 truncate">
+                    {selectedFile.name}
+                  </span>
                   <button
                     onClick={() => setSelectedFile(null)}
                     className="p-1 hover:bg-gray-200 rounded"
@@ -466,7 +588,7 @@ export default function Chat() {
                   </button>
                 </div>
               )}
-              
+
               <div className="flex gap-2">
                 <input
                   type="file"
@@ -478,12 +600,14 @@ export default function Chat() {
                   }}
                   className="hidden"
                 />
-                <button 
+                <button
                   onClick={() => fileInputRef.current?.click()}
                   className="p-2 hover:bg-gray-100 rounded text-gray-500"
                   disabled={uploading}
                 >
-                  {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                  {uploading ?
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  : <Paperclip className="w-5 h-5" />}
                 </button>
                 <input
                   type="text"
@@ -503,7 +627,7 @@ export default function Chat() {
                 </button>
               </div>
             </div>
-          ) : null}
+          : null}
         </div>
 
         {/* Right Sidebar - Members */}
@@ -513,47 +637,128 @@ export default function Chat() {
             <span className="font-semibold text-sm">Team Members</span>
           </div>
           <div className="p-3 overflow-y-auto">
-            {/* Online */}
-            <div className="mb-4">
-              <span className="text-xs font-semibold text-green-600 uppercase">
-                Online ({onlineUsers.length})
-              </span>
-              {onlineUsers.map((u) => (
-                <div key={u.id} className="flex items-center gap-2 py-1.5">
-                  <div className="relative">
-                    <div className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-xs text-green-700 font-medium">
-                      {getInitials(u.name)}
+            {/* Groups */}
+            {sortedGroupNames.map((groupName) => {
+              const isExpanded = expandedGroups[groupName] !== false; // Default to true
+              return (
+                <div key={groupName} className="mb-2">
+                  <button
+                    onClick={() => toggleGroup(groupName)}
+                    className="w-full flex items-center justify-between py-1 hover:bg-gray-50 rounded transition-colors"
+                  >
+                    <span className="text-xs font-semibold text-gray-400 uppercase">
+                      {groupName} ({groups[groupName].length})
+                    </span>
+                    {isExpanded ?
+                      <ChevronDown className="w-3 h-3 text-gray-400" />
+                    : <ChevronRight className="w-3 h-3 text-gray-400" />}
+                  </button>
+                  {isExpanded && (
+                    <div className="mt-1">
+                      {groups[groupName].map((u) => (
+                        <div
+                          key={`${groupName}-${u.id}`}
+                          className="flex items-center gap-2 py-1.5"
+                        >
+                          <div className="relative">
+                            <div
+                              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
+                                u.status === "online" ?
+                                  "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-500"
+                              }`}
+                            >
+                              {getInitials(u.name)}
+                            </div>
+                            <div
+                              className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
+                                u.status === "online" ?
+                                  "bg-green-500"
+                                : "bg-gray-400"
+                              }`}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`text-sm font-medium truncate ${
+                                u.status === "online" ?
+                                  "text-gray-900"
+                                : "text-gray-500"
+                              }`}
+                            >
+                              {u.name}
+                            </p>
+                            <p className="text-xs text-gray-400 truncate">
+                              {u.role}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{u.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{u.role}</p>
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })}
 
-            {/* Offline */}
-            <div>
-              <span className="text-xs font-semibold text-gray-400 uppercase">
-                Offline ({offlineUsers.length})
-              </span>
-              {offlineUsers.slice(0, 10).map((u) => (
-                <div key={u.id} className="flex items-center gap-2 py-1.5 opacity-60">
-                  <div className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center text-xs text-gray-500">
-                    {getInitials(u.name)}
+            {/* Other Users */}
+            {otherUsers.length > 0 && (
+              <div className="mt-4">
+                <button
+                  onClick={() => toggleGroup("Other Team Members")}
+                  className="w-full flex items-center justify-between py-1 hover:bg-gray-50 rounded transition-colors"
+                >
+                  <span className="text-xs font-semibold text-gray-400 uppercase">
+                    Other Team Members ({otherUsers.length})
+                  </span>
+                  {expandedGroups["Other Team Members"] !== false ?
+                    <ChevronDown className="w-3 h-3 text-gray-400" />
+                  : <ChevronRight className="w-3 h-3 text-gray-400" />}
+                </button>
+                {expandedGroups["Other Team Members"] !== false && (
+                  <div className="mt-1">
+                    {otherUsers.map((u) => (
+                      <div
+                        key={`other-${u.id}`}
+                        className="flex items-center gap-2 py-1.5 opacity-80"
+                      >
+                        <div className="relative">
+                          <div
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
+                              u.status === "online" ?
+                                "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-500"
+                            }`}
+                          >
+                            {getInitials(u.name)}
+                          </div>
+                          <div
+                            className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
+                              u.status === "online" ?
+                                "bg-green-500"
+                              : "bg-gray-400"
+                            }`}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`text-sm font-medium truncate ${
+                              u.status === "online" ?
+                                "text-gray-900"
+                              : "text-gray-500"
+                            }`}
+                          >
+                            {u.name}
+                          </p>
+                          <p className="text-xs text-gray-400 truncate">
+                            {u.role}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{u.name}</p>
-                    <p className="text-xs text-gray-400 truncate">{u.role}</p>
-                  </div>
-                </div>
-              ))}
-              {offlineUsers.length > 10 && (
-                <p className="text-xs text-gray-400 pl-9">+{offlineUsers.length - 10} more</p>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

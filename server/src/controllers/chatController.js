@@ -32,7 +32,7 @@ export const createChannel = async (req, res) => {
   try {
     const [result] = await pool.query(
       "INSERT INTO channels (name, description, created_by, is_private) VALUES (?, ?, ?, ?)",
-      [name, description || null, user_id, is_private || false]
+      [name, description || null, user_id, is_private || false],
     );
 
     const channelId = result.insertId;
@@ -40,10 +40,12 @@ export const createChannel = async (req, res) => {
     // Add creator as member
     await pool.query(
       "INSERT INTO channel_members (channel_id, user_id) VALUES (?, ?)",
-      [channelId, user_id]
+      [channelId, user_id],
     );
 
-    const [rows] = await pool.query("SELECT * FROM channels WHERE id = ?", [channelId]);
+    const [rows] = await pool.query("SELECT * FROM channels WHERE id = ?", [
+      channelId,
+    ]);
     res.status(201).json(rows[0]);
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
@@ -62,7 +64,7 @@ export const joinChannel = async (req, res) => {
   try {
     await pool.query(
       "INSERT IGNORE INTO channel_members (channel_id, user_id) VALUES (?, ?)",
-      [channelId, user_id]
+      [channelId, user_id],
     );
     res.json({ success: true });
   } catch (err) {
@@ -79,7 +81,7 @@ export const leaveChannel = async (req, res) => {
   try {
     await pool.query(
       "DELETE FROM channel_members WHERE channel_id = ? AND user_id = ?",
-      [channelId, user_id]
+      [channelId, user_id],
     );
     res.json({ success: true });
   } catch (err) {
@@ -98,14 +100,17 @@ export const getChannelMessages = async (req, res) => {
   const { limit = 50 } = req.query;
 
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query(
+      `
       SELECT m.*, u.name as sender_name, u.role as sender_role
       FROM messages m
       JOIN users u ON m.sender_id = u.id
       WHERE m.channel_id = ?
       ORDER BY m.created_at DESC
       LIMIT ?
-    `, [channelId, parseInt(limit)]);
+    `,
+      [channelId, parseInt(limit)],
+    );
 
     res.json(rows.reverse());
   } catch (err) {
@@ -121,7 +126,8 @@ export const getDMMessages = async (req, res) => {
   const { limit = 50 } = req.query;
 
   try {
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query(
+      `
       SELECT m.*, u.name as sender_name, u.role as sender_role
       FROM messages m
       JOIN users u ON m.sender_id = u.id
@@ -129,7 +135,9 @@ export const getDMMessages = async (req, res) => {
          OR (m.sender_id = ? AND m.recipient_id = ?)
       ORDER BY m.created_at DESC
       LIMIT ?
-    `, [userId, currentUserId, currentUserId, userId, parseInt(limit)]);
+    `,
+      [userId, currentUserId, currentUserId, userId, parseInt(limit)],
+    );
 
     res.json(rows.reverse());
   } catch (err) {
@@ -155,15 +163,25 @@ export const sendMessage = async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO messages (channel_id, sender_id, recipient_id, content, file_url, file_name) 
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [channel_id || null, user_id, recipient_id || null, content, file_url || null, file_name || null]
+      [
+        channel_id || null,
+        user_id,
+        recipient_id || null,
+        content,
+        file_url || null,
+        file_name || null,
+      ],
     );
 
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query(
+      `
       SELECT m.*, u.name as sender_name, u.role as sender_role
       FROM messages m
       JOIN users u ON m.sender_id = u.id
       WHERE m.id = ?
-    `, [result.insertId]);
+    `,
+      [result.insertId],
+    );
 
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -176,14 +194,39 @@ export const sendMessage = async (req, res) => {
 // PRESENCE
 // =============================================
 
-// Get all users and their presence
+// Get all users and their presence, including shared projects
 export const getPresence = async (req, res) => {
+  const { user_id } = req.query;
+
   try {
-    const [rows] = await pool.query(`
-      SELECT up.*, u.name, u.role
-      FROM user_presence up
-      JOIN users u ON up.user_id = u.id
-    `);
+    let query;
+    let params = [];
+
+    if (user_id) {
+      // Optimized query: fetches all presence but includes shared project titles for the current user
+      query = `
+        SELECT up.status, up.last_seen, up.current_channel_id, 
+               u.id, u.name, u.role,
+               (
+                 SELECT GROUP_CONCAT(p.title)
+                 FROM project_members pm
+                 JOIN projects p ON pm.project_id = p.id
+                 WHERE pm.user_id = u.id
+                   AND p.id IN (SELECT project_id FROM project_members WHERE user_id = ?)
+               ) as project_names
+        FROM user_presence up
+        JOIN users u ON up.user_id = u.id
+      `;
+      params = [user_id];
+    } else {
+      query = `
+        SELECT up.status, up.last_seen, up.current_channel_id, u.id, u.name, u.role
+        FROM user_presence up
+        JOIN users u ON up.user_id = u.id
+      `;
+    }
+
+    const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
     console.error("Error fetching presence:", err);
@@ -205,7 +248,13 @@ export const updatePresence = async (req, res) => {
       `INSERT INTO user_presence (user_id, status, last_seen, current_channel_id) 
        VALUES (?, ?, NOW(), ?)
        ON DUPLICATE KEY UPDATE status = ?, last_seen = NOW(), current_channel_id = ?`,
-      [user_id, status || 'online', current_channel_id || null, status || 'online', current_channel_id || null]
+      [
+        user_id,
+        status || "online",
+        current_channel_id || null,
+        status || "online",
+        current_channel_id || null,
+      ],
     );
     res.json({ success: true });
   } catch (err) {
@@ -220,7 +269,8 @@ export const getDMUsers = async (req, res) => {
 
   try {
     // Get users from same projects + all other users
-    const [rows] = await pool.query(`
+    const [rows] = await pool.query(
+      `
       SELECT DISTINCT u.id, u.name, u.role, 
              COALESCE(up.status, 'offline') as status,
              up.last_seen
@@ -228,7 +278,9 @@ export const getDMUsers = async (req, res) => {
       LEFT JOIN user_presence up ON u.id = up.user_id
       WHERE u.id != ?
       ORDER BY u.name
-    `, [user_id]);
+    `,
+      [user_id],
+    );
 
     res.json(rows);
   } catch (err) {

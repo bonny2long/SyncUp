@@ -131,8 +131,8 @@ router.delete("/sessions/:id", deleteSession);
 
 router.get("/sessions/:id/skills", getSessionSkills);
 
-router.get("/sessions/intern/:internId", userValidators.getProfile, getInternSessions);
-router.get("/sessions/mentor/:mentorId", userValidators.getProfile, getMentorSessions);
+router.get("/sessions/intern/:internId", getInternSessions);
+router.get("/sessions/mentor/:mentorId", getMentorSessions);
 
 router.get("/mentors/:id/availability", getMentorAvailability);
 
