@@ -32,12 +32,12 @@ export default function ConfirmModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative transform transition-all scale-100 animate-in zoom-in-95 duration-200"
+        className="bg-surface rounded-2xl shadow-2xl max-w-sm w-full p-6 relative transform transition-all scale-100 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 p-1 rounded-full hover:bg-surface-highlight text-text-secondary hover:text-neutral-dark transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
@@ -55,13 +55,13 @@ export default function ConfirmModal({
             : <AlertTriangle className="w-8 h-8" />}
           </div>
 
-          <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-          <p className="text-gray-600 mb-8 leading-relaxed">{message}</p>
+          <h3 className="text-xl font-bold text-neutral-dark mb-2">{title}</h3>
+          <p className="text-text-secondary mb-8 leading-relaxed">{message}</p>
 
           <div className="flex gap-3 w-full">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 transition-all"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-border text-neutral-dark font-medium hover:bg-surface-highlight focus:ring-4 focus:ring-gray-100 transition-all"
               disabled={loading}
             >
               Cancel

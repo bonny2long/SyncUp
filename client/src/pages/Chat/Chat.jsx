@@ -652,9 +652,13 @@ export default function Chat() {
                   {isExpanded && (
                     <div className="mt-1">
                       {groups[groupName].map((u) => (
-                        <div
+                        <button
                           key={`${groupName}-${u.id}`}
-                          className="flex items-center gap-2 py-1.5"
+                          onClick={() => {
+                            setActiveDM(u);
+                            setActiveChannel(null);
+                          }}
+                          className="w-full flex items-center gap-2 py-1.5 px-2 hover:bg-surface-highlight rounded transition-colors text-left"
                         >
                           <div className="relative">
                             <div
@@ -684,11 +688,11 @@ export default function Chat() {
                             >
                               {u.name}
                             </p>
-                            <p className="text-xs text-gray-400 truncate">
+                            <p className="text-xs text-text-secondary truncate">
                               {u.role}
                             </p>
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -713,9 +717,13 @@ export default function Chat() {
                 {expandedGroups["Other Team Members"] !== false && (
                   <div className="mt-1">
                     {otherUsers.map((u) => (
-                      <div
+                      <button
                         key={`other-${u.id}`}
-                        className="flex items-center gap-2 py-1.5 opacity-80"
+                        onClick={() => {
+                          setActiveDM(u);
+                          setActiveChannel(null);
+                        }}
+                        className="w-full flex items-center gap-2 py-1.5 px-2 hover:bg-surface-highlight rounded transition-colors text-left opacity-80"
                       >
                         <div className="relative">
                           <div
@@ -745,11 +753,11 @@ export default function Chat() {
                           >
                             {u.name}
                           </p>
-                          <p className="text-xs text-gray-400 truncate">
+                          <p className="text-xs text-text-secondary truncate">
                             {u.role}
                           </p>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
