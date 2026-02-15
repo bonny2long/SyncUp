@@ -18,14 +18,16 @@ export default function TeamActivityFeed({ projectId }) {
       try {
         setLoading(true);
         setError(null);
-        
+
         console.log("Fetching team updates for project:", projectId);
-        const response = await fetch(`${API_BASE}/progress_updates/project/${projectId}`);
-        
+        const response = await fetch(
+          `${API_BASE}/progress_updates/project/${projectId}`,
+        );
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         console.log("Team updates response:", data);
         setUpdates(data.slice(0, 5));
@@ -52,13 +54,18 @@ export default function TeamActivityFeed({ projectId }) {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
+
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
   const getInitials = (name) => {
     if (!name) return "U";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   if (loading) {
@@ -85,12 +92,12 @@ export default function TeamActivityFeed({ projectId }) {
 
   if (!projectId) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-4">
+      <div className="bg-surface rounded-lg border border-border p-4">
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold text-gray-900">Team Activity</h3>
+          <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
         </div>
-        <p className="text-sm text-gray-500 text-center py-4">
+        <p className="text-sm text-text-secondary text-center py-4">
           Select a project to view team activity
         </p>
       </div>
@@ -99,24 +106,24 @@ export default function TeamActivityFeed({ projectId }) {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-4">
+      <div className="bg-surface rounded-lg border border-border p-4">
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold text-gray-900">Team Activity</h3>
+          <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
         </div>
-        <p className="text-sm text-gray-500">{error}</p>
+        <p className="text-sm text-red-500">{error}</p>
       </div>
     );
   }
 
   if (updates.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-4">
+      <div className="bg-surface rounded-lg border border-border p-4">
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold text-gray-900">Team Activity</h3>
+          <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
         </div>
-        <p className="text-sm text-gray-500 text-center py-4">
+        <p className="text-sm text-text-secondary text-center py-4">
           No team updates yet. Be the first to post!
         </p>
       </div>
@@ -124,13 +131,13 @@ export default function TeamActivityFeed({ projectId }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-100 p-4">
+    <div className="bg-surface rounded-lg border border-border p-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold text-gray-900">Team Activity</h3>
+          <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
         </div>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-text-secondary">
           Last {updates.length} updates
         </span>
       </div>
@@ -139,15 +146,15 @@ export default function TeamActivityFeed({ projectId }) {
         {updates.map((update) => (
           <div
             key={update.id}
-            className="flex gap-3 p-2 rounded-lg hover:bg-gray-50 transition"
+            className="flex gap-3 p-2 rounded-lg hover:bg-surface-highlight transition"
           >
             <div className="w-8 h-8 bg-primary/20 flex items-center justify-center rounded-full text-primary font-semibold text-xs flex-shrink-0">
               {getInitials(update.user_name)}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm text-gray-900">
+                <span className="font-medium text-sm text-neutral-dark">
                   {update.user_name || "Unknown"}
                 </span>
                 {update.user_role && (
@@ -156,12 +163,12 @@ export default function TeamActivityFeed({ projectId }) {
                   </span>
                 )}
               </div>
-              
-              <p className="text-sm text-gray-600 line-clamp-2">
+
+              <p className="text-sm text-text-secondary line-clamp-2">
                 {update.content}
               </p>
-              
-              <div className="flex items-center gap-1 mt-1.5 text-xs text-gray-400">
+
+              <div className="flex items-center gap-1 mt-1.5 text-xs text-text-secondary">
                 <Clock className="w-3 h-3" />
                 <span>{formatTimeAgo(update.created_at)}</span>
               </div>

@@ -62,11 +62,11 @@ const TeamDashboard = ({ projectId }) => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <h3 className="text-red-800 font-medium mb-2">
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <h3 className="text-red-500 font-medium mb-2">
           Failed to load team analytics
         </h3>
-        <p className="text-red-600 text-sm">{error}</p>
+        <p className="text-text-secondary text-sm">{error}</p>
         <button
           onClick={loadTeamData}
           className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
@@ -79,8 +79,8 @@ const TeamDashboard = ({ projectId }) => {
 
   if (!teamData) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <p className="text-gray-600">No team data available</p>
+      <div className="bg-surface border border-border rounded-lg p-6">
+        <p className="text-text-secondary">No team data available</p>
       </div>
     );
   }
@@ -88,8 +88,8 @@ const TeamDashboard = ({ projectId }) => {
   return (
     <div className="space-y-6">
       {/* Team Overview - Compact Metrics */}
-      <TeamOverview 
-        data={teamData.overview} 
+      <TeamOverview
+        data={teamData.overview}
         teamMembers={teamData.teamMembers || []}
         activeThisWeek={teamData.activeThisWeek || []}
         signalBreakdown={teamData.signalBreakdown || []}
@@ -107,18 +107,17 @@ const TeamDashboard = ({ projectId }) => {
         {/* Toggle Button */}
         <button
           onClick={() => setShowCharts(!showCharts)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 bg-surface hover:bg-surface-highlight border border-border rounded-lg transition-colors"
         >
           <div className="flex items-center gap-2">
-            <BarChart2 className="w-4 h-4 text-gray-600" />
-            <span className="font-medium text-gray-700">
+            <BarChart2 className="w-4 h-4 text-text-secondary" />
+            <span className="font-medium text-neutral-dark">
               {showCharts ? "Hide Charts" : "View Charts"}
             </span>
           </div>
           {showCharts ?
-            <ChevronUp className="w-4 h-4 text-gray-500" />
-          : <ChevronDown className="w-4 h-4 text-gray-500" />
-          }
+            <ChevronUp className="w-4 h-4 text-text-secondary" />
+          : <ChevronDown className="w-4 h-4 text-text-secondary" />}
         </button>
 
         {/* Charts Content - Collapsible */}

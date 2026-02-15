@@ -16,7 +16,7 @@ const MyWorkPanel = React.memo(function MyWorkPanel({
         <h2 className="text-lg font-bold text-primary mb-1">
           {isMentor ? "Projects You're Contributing To" : "Your Projects"}
         </h2>
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-text-secondary">
           {isMentor ?
             "Teams you're helping as a mentor"
           : "Projects you own or are part of"}
@@ -33,7 +33,7 @@ const MyWorkPanel = React.memo(function MyWorkPanel({
           ))}
         </div>
       : projects.length === 0 ?
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-text-secondary">
           <p className="text-sm">
             {isMentor ?
               "Not contributing to any projects yet"

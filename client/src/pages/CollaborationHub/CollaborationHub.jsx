@@ -316,7 +316,7 @@ export default function CollaborationHub() {
                       );
                       setTeamAnalyticsProject(project);
                     }}
-                    className="w-full px-3 py-2 bg-surface-highlight border border-border rounded-lg text-sm text-neutral-dark focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
+                    className="w-full px-3 py-2 bg-surface text-neutral-dark border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
                   >
                     <option value="">Choose a project...</option>
                     {userProjects.map((project) => (
@@ -331,7 +331,7 @@ export default function CollaborationHub() {
               {/* Team Dashboard */}
               {teamAnalyticsProject ?
                 <TeamDashboard projectId={teamAnalyticsProject.id} />
-              : <div className="bg-surface-highlight border border-dashed border-border rounded-xl p-12 text-center">
+              : <div className="bg-surface border border-dashed border-border rounded-xl p-12 text-center">
                   <p className="text-text-secondary">
                     Please select a project to view team analytics
                   </p>

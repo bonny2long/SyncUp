@@ -87,17 +87,17 @@ export default function AddUpdateForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-4 rounded-2xl shadow-md flex flex-col gap-4 transition-opacity"
+      className="bg-surface p-4 rounded-2xl shadow-md border border-border flex flex-col gap-4 transition-opacity"
     >
       {/* Content textarea */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-2">
+        <label className="block text-xs font-medium text-text-secondary mb-2">
           What did you work on?
         </label>
         <textarea
-          className="w-full border border-gray-200 rounded-xl p-3 resize-none text-sm
+          className="w-full border border-border bg-surface text-neutral-dark rounded-xl p-3 resize-none text-sm
                      focus:outline-none focus:ring-2 focus:ring-primary/40
-                     disabled:bg-gray-50 disabled:text-gray-500 transition"
+                     disabled:bg-surface-highlight disabled:text-text-secondary transition"
           rows={3}
           placeholder="Describe your progress, challenges, or achievements..."
           value={content}
@@ -106,7 +106,7 @@ export default function AddUpdateForm({
           required
         />
         <div className="flex justify-between items-center mt-1">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-text-secondary">
             {content.length > 0 ? `${content.length} characters` : ""}
           </span>
         </div>
@@ -114,7 +114,7 @@ export default function AddUpdateForm({
 
       {/* Skill Tagging */}
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-2">
+        <label className="block text-xs font-medium text-text-secondary mb-2">
           Skills Used
         </label>
         <SkillMultiSelect
