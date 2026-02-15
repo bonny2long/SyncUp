@@ -50,7 +50,7 @@ export default function IncomingRequests({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading requests...</p>
+        <p className="text-sm text-text-secondary">Loading requests...</p>
       </div>
     );
   }
@@ -72,11 +72,11 @@ export default function IncomingRequests({
   if (sessions.length === 0) {
     return (
       <div className="text-center py-12">
-        <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <Clock className="w-16 h-16 text-text-secondary mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-neutral-dark mb-2">
           No pending requests
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           You're all caught up! New session requests will appear here.
         </p>
       </div>
@@ -86,7 +86,7 @@ export default function IncomingRequests({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-neutral-dark">
           Pending Requests ({sessions.length})
         </h2>
       </div>
@@ -111,7 +111,7 @@ export default function IncomingRequests({
         }}
         onConfirm={handleDeclineConfirm}
         title="Decline Session Request?"
-        message={`Are you sure you want to decline the session request from ${sessionToDecline?.intern_name || 'this intern'}? This action cannot be undone.`}
+        message={`Are you sure you want to decline the session request from ${sessionToDecline?.intern_name || "this intern"}? This action cannot be undone.`}
         confirmText="Decline Request"
         confirmColor="red"
         loading={actionLoading}
@@ -159,11 +159,11 @@ function RequestCard({ session, onAccept, onDecline }) {
   };
 
   return (
-    <div className="bg-white border-2 border-yellow-200 rounded-lg p-4 hover:shadow-lg transition">
+    <div className="bg-surface border-2 border-yellow-200/50 rounded-lg p-4 hover:shadow-lg transition">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 text-lg">
+          <h3 className="font-semibold text-neutral-dark text-lg">
             {session.topic}
           </h3>
           <p className="text-xs text-yellow-600 mt-1">
@@ -176,10 +176,10 @@ function RequestCard({ session, onAccept, onDecline }) {
       </div>
 
       {/* Intern Info */}
-      <div className="bg-gray-50 rounded-lg p-3 mb-3 space-y-2">
+      <div className="bg-surface-highlight rounded-lg p-3 mb-3 space-y-2">
         <div className="flex items-center gap-2 text-sm">
-          <User className="w-4 h-4 text-gray-500" />
-          <span className="font-medium text-gray-900">
+          <User className="w-4 h-4 text-text-secondary" />
+          <span className="font-medium text-neutral-dark">
             {session.intern_name}
           </span>
           {session.intern_role && (
@@ -188,20 +188,20 @@ function RequestCard({ session, onAccept, onDecline }) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Mail className="w-4 h-4 text-gray-500" />
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
+          <Mail className="w-4 h-4 text-text-secondary" />
           {session.intern_email}
         </div>
       </div>
 
       {/* Session Details */}
       <div className="space-y-2 mb-3">
-        <div className="flex items-center gap-2 text-sm text-gray-700">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Calendar className="w-4 h-4 text-primary" />
           <span className="font-medium">Preferred Time:</span>
           {formatDate(session.session_date)}
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-700">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Target className="w-4 h-4 text-secondary" />
           <span className="font-medium">Focus:</span>
           {formatFocus(session.session_focus)}
@@ -216,7 +216,7 @@ function RequestCard({ session, onAccept, onDecline }) {
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 pt-3 border-t border-gray-200">
+      <div className="flex gap-2 pt-3 border-t border-border">
         <button
           onClick={() => onAccept(session.id)}
           className="flex-1 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-medium"
@@ -225,7 +225,7 @@ function RequestCard({ session, onAccept, onDecline }) {
         </button>
         <button
           onClick={() => onDecline(session)}
-          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+          className="px-4 py-2 rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
         >
           Decline
         </button>

@@ -57,7 +57,7 @@ export default function UpdateCard({
 
   return (
     <div
-      className={`p-4 rounded-xl border bg-white hover:shadow-md transition relative ${
+      className={`p-4 rounded-xl border bg-surface border-border hover:shadow-md transition relative ${
         deleting ? "opacity-50 scale-[0.99]" : ""
       }`}
     >
@@ -69,7 +69,7 @@ export default function UpdateCard({
           </div>
 
           <div className="flex flex-col flex-1 min-w-0">
-            <p className="font-semibold text-gray-900 text-sm">
+            <p className="font-semibold text-neutral-dark text-sm">
               {update.user_name || "Unknown User"}
             </p>
             {update.user_role && (
@@ -91,16 +91,16 @@ export default function UpdateCard({
           <button
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-600 hover:text-gray-900"
+            className="p-1.5 rounded-lg hover:bg-surface-highlight transition text-text-secondary hover:text-neutral-dark"
             title="More actions"
           >
             <MoreVertical className="w-4 h-4" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+            <div className="absolute right-0 mt-1 w-40 bg-surface border border-border rounded-lg shadow-lg z-10">
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-highlight transition"
                 onClick={() => {
                   setIsEditing(true);
                   setMenuOpen(false);
@@ -111,7 +111,7 @@ export default function UpdateCard({
               </button>
               <button
                 type="button"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition"
                 onClick={handleDeleteClick}
               >
                 <Trash2 className="w-4 h-4" />
@@ -126,7 +126,7 @@ export default function UpdateCard({
       {isEditing ?
         <div className="flex flex-col gap-3">
           <textarea
-            className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent resize-none"
+            className="w-full border border-border bg-surface text-neutral-dark rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-transparent resize-none"
             rows={4}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -143,7 +143,7 @@ export default function UpdateCard({
                 setLocalError("");
                 setDraft(update.content);
               }}
-              className="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition"
+              className="px-3 py-2 rounded-lg text-sm font-medium text-text-secondary bg-surface-highlight hover:bg-surface-highlight/80 transition"
             >
               Cancel
             </button>
@@ -158,7 +158,7 @@ export default function UpdateCard({
         </div>
       : <div className="flex flex-col gap-3">
           {/* Content */}
-          <p className="text-gray-700 leading-relaxed">{update.content}</p>
+          <p className="text-neutral-dark leading-relaxed">{update.content}</p>
 
           {/* Skill badges */}
           {update.tagged_skills && update.tagged_skills.length > 0 && (
@@ -172,7 +172,7 @@ export default function UpdateCard({
       }
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100 text-xs text-gray-500">
+      <div className="flex items-center justify-between mt-3 pt-2 border-t border-border text-xs text-text-secondary">
         <span>{formatDate(update.created_at)}</span>
         {isSelectedProject && (
           <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">

@@ -163,9 +163,9 @@ export default function ProjectDetailModal({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition"
+          className="absolute top-3 right-3 p-2 rounded-full hover:bg-surface-highlight transition"
         >
-          <X className="w-5 h-5 text-gray-600" />
+          <X className="w-5 h-5 text-text-secondary" />
         </button>
 
         {/* Title */}
@@ -173,12 +173,16 @@ export default function ProjectDetailModal({
           {localProject.title}
         </h2>
 
-        <p className="text-gray-600 text-sm mb-2">{localProject.description}</p>
+        <p className="text-text-secondary text-sm mb-2">
+          {localProject.description}
+        </p>
 
         {skillIdeas.length > 0 && (
           <div className="mt-3">
-            <p className="text-xs text-gray-400 mb-1">Initial focus</p>
-            <p className="text-sm text-gray-500">{skillIdeas.join(", ")}</p>
+            <p className="text-xs text-text-secondary mb-1">Initial focus</p>
+            <p className="text-sm text-text-secondary">
+              {skillIdeas.join(", ")}
+            </p>
           </div>
         )}
 
@@ -236,7 +240,7 @@ export default function ProjectDetailModal({
               // If no valid actions, don't show dropdown
               if (validActions.length <= 1) {
                 return (
-                  <span className="text-sm px-3 py-1 rounded-lg bg-gray-100 text-gray-700 capitalize">
+                  <span className="text-sm px-3 py-1 rounded-lg bg-surface-highlight text-text-secondary capitalize">
                     {localProject.status}
                   </span>
                 );
@@ -247,7 +251,7 @@ export default function ProjectDetailModal({
                   value={localProject.status}
                   onChange={(e) => handleStatusChange(e.target.value)}
                   disabled={statusLoading}
-                  className="border border-gray-200 rounded-lg px-3 py-1 text-sm hover:border-primary transition"
+                  className="border border-border bg-surface text-neutral-dark rounded-lg px-3 py-1 text-sm hover:border-primary transition"
                 >
                   {validActions.map((action) => (
                     <option
@@ -269,7 +273,7 @@ export default function ProjectDetailModal({
                 disabled={loading}
                 className={`text-sm px-3 py-1 rounded-lg border transition ${
                   localProject.is_member ?
-                    "border-red-300 text-red-600 hover:bg-red-50"
+                    "border-red-500/30 text-red-500 hover:bg-red-500/10"
                   : "border-primary text-primary hover:bg-primary/10"
                 }`}
               >
@@ -279,7 +283,7 @@ export default function ProjectDetailModal({
 
             {/* Show view-only badge for public projects */}
             {localProject.visibility === "public" && (
-              <span className="text-sm px-3 py-1 rounded-lg bg-blue-100 text-blue-700">
+              <span className="text-sm px-3 py-1 rounded-lg bg-blue-500/10 text-blue-500">
                 Public - View Only
               </span>
             )}
@@ -298,10 +302,10 @@ export default function ProjectDetailModal({
               {displayTeam.map((member) => (
                 <div
                   key={member.id}
-                  className="p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  className="p-3 bg-surface-highlight rounded-lg border border-border"
                 >
-                  <p className="font-medium text-gray-900">{member.name}</p>
-                  <p className="text-xs text-gray-600">{member.role}</p>
+                  <p className="font-medium text-neutral-dark">{member.name}</p>
+                  <p className="text-xs text-text-secondary">{member.role}</p>
                 </div>
               ))}
             </div>
@@ -312,7 +316,7 @@ export default function ProjectDetailModal({
                 .map((name) => (
                   <span
                     key={name}
-                    className="text-[11px] px-2 py-1 bg-neutral-light border border-gray-200 rounded-full"
+                    className="text-[11px] px-2 py-1 bg-surface-highlight border border-border text-neutral-dark rounded-full"
                   >
                     {name}
                   </span>
@@ -320,7 +324,7 @@ export default function ProjectDetailModal({
 
               {(!localProject.team_members ||
                 localProject.team_members.trim() === "") && (
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-text-secondary">
                   No team members yet.
                 </span>
               )}
@@ -354,14 +358,14 @@ export default function ProjectDetailModal({
           </h3>
 
           {displayUpdates.length === 0 ?
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-text-secondary">
               No updates for this project.
             </p>
           : <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
               {displayUpdates.slice(0, 10).map((u) => (
                 <div
                   key={u.id}
-                  className="p-3 border border-gray-100 rounded-xl bg-neutral-light"
+                  className="p-3 border border-border rounded-xl bg-surface-highlight"
                 >
                   <p className="text-[12px] mb-1">
                     <span className="font-semibold text-secondary">
@@ -369,7 +373,7 @@ export default function ProjectDetailModal({
                     </span>{" "}
                     — {new Date(u.created_at).toLocaleDateString()}
                   </p>
-                  <p className="text-sm text-gray-700">{u.content}</p>
+                  <p className="text-sm text-neutral-dark">{u.content}</p>
                 </div>
               ))}
             </div>
@@ -386,10 +390,10 @@ export default function ProjectDetailModal({
               {portfolioDetails.sessions.map((session) => (
                 <div
                   key={session.id}
-                  className="p-3 bg-blue-50 rounded-lg border border-blue-200"
+                  className="p-3 bg-surface-highlight rounded-lg border border-border"
                 >
-                  <p className="font-medium text-blue-900">{session.topic}</p>
-                  <p className="text-xs text-blue-700">
+                  <p className="font-medium text-blue-500">{session.topic}</p>
+                  <p className="text-xs text-blue-400">
                     {new Date(session.session_date).toLocaleDateString()}
                   </p>
                 </div>

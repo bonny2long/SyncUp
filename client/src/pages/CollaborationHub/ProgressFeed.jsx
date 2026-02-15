@@ -142,13 +142,20 @@ export default function ProgressFeed({
 
   return (
     <div className="flex flex-col gap-6">
-      <AddUpdateForm
-        onNewUpdate={handleNewUpdate}
-        selectedProjectId={selectedProjectId}
-        allSkills={allSkills}
-        projectSkills={projectSkills}
-        loadingSkills={loadingSkills}
-      />
+      {selectedProjectId ?
+        <AddUpdateForm
+          onNewUpdate={handleNewUpdate}
+          selectedProjectId={selectedProjectId}
+          allSkills={allSkills}
+          projectSkills={projectSkills}
+          loadingSkills={loadingSkills}
+        />
+      : <div className="bg-surface border border-border rounded-xl p-4 text-center">
+          <p className="text-text-secondary text-sm">
+            Select a project from "My Work" to post an update
+          </p>
+        </div>
+      }
 
       {selectedProjectId && (
         <div className="p-3 bg-primary/10 text-primary rounded-xl font-medium text-sm flex items-center justify-between">
@@ -156,7 +163,7 @@ export default function ProgressFeed({
           <button
             type="button"
             onClick={onClearProject}
-            className="text-xs px-3 py-1 rounded-lg bg-white text-primary border border-primary hover:bg-primary hover:text-white transition"
+            className="text-xs px-3 py-1 rounded-lg bg-surface text-primary border border-primary hover:bg-primary hover:text-white transition"
           >
             Show All Updates
           </button>
@@ -175,7 +182,7 @@ export default function ProgressFeed({
           ))}
         </div>
       : displayUpdates.length === 0 ?
-        <p className="text-gray-500 text-sm">No updates yet...</p>
+        <p className="text-text-secondary text-sm">No updates yet...</p>
       : <div className="flex flex-col gap-3">
           {displayUpdates.map((update) => (
             <UpdateCard

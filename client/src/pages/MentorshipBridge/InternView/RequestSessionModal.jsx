@@ -203,19 +203,19 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-gray-100 relative max-h-[90vh] overflow-y-auto"
+        className="bg-surface w-full max-w-2xl rounded-2xl shadow-xl border border-border relative max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 pb-4 rounded-t-2xl">
+        <div className="sticky top-0 bg-surface border-b border-border p-6 pb-4 rounded-t-2xl">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-highlight transition"
           >
-            <X className="w-5 h-5 text-gray-600" />
+            <X className="w-5 h-5 text-text-secondary" />
           </button>
           <h2 className="text-2xl font-bold text-primary">Book Session</h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             with <span className="font-medium">{mentor.name}</span>
           </p>
         </div>
@@ -231,13 +231,13 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
             {loadingSlots ?
               <div className="flex items-center justify-center py-8">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-text-secondary">
                   Loading available times...
                 </p>
               </div>
             : availabilitySlots.length === 0 ?
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-500">
+              <div className="text-center py-8 bg-surface-highlight rounded-lg">
+                <p className="text-sm text-text-secondary">
                   {totalSlots > 0 ?
                     `All ${totalSlots} time slots are currently booked. Please check back later.`
                   : "No available times for this mentor"}
@@ -258,7 +258,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
                         className={`flex items-center gap-3 p-3 rounded-lg border-2 transition ${
                           isSelected ?
                             "border-primary bg-primary/5"
-                          : "border-gray-200 hover:border-primary/40 hover:bg-gray-50 cursor-pointer"
+                          : "border-border hover:border-primary/40 hover:bg-surface-highlight cursor-pointer"
                         }`}
                       >
                         <input
@@ -277,7 +277,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
                         <div className="flex-1">
                           <p
                             className={`font-medium ${
-                              isSelected ? "text-primary" : "text-gray-900"
+                              isSelected ? "text-primary" : "text-neutral-dark"
                             }`}
                           >
                             {formatDateTime(
@@ -301,7 +301,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
           {/* Session Focus */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">
               Session Purpose <span className="text-red-500">*</span>
             </label>
             <select
@@ -309,7 +309,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
               onChange={(e) =>
                 setFormData({ ...formData, session_focus: e.target.value })
               }
-              className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full p-3 border border-border rounded-lg bg-surface text-neutral-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
               required
             >
               <option value="">Select session focus...</option>
@@ -323,7 +323,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
           {/* Topic */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">
               Session Topic <span className="text-red-500">*</span>
             </label>
             <input
@@ -333,14 +333,14 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
                 setFormData({ ...formData, topic: e.target.value })
               }
               placeholder="e.g., React Hooks best practices"
-              className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="w-full p-3 border border-border rounded-lg bg-surface text-neutral-dark placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
               required
             />
           </div>
 
           {/* Details */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-text-secondary mb-2">
               Additional Details (Optional)
             </label>
             <textarea
@@ -350,16 +350,16 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
               }
               placeholder="Any specific questions or areas you'd like to cover..."
               rows="3"
-              className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+              className="w-full p-3 border border-border rounded-lg bg-surface text-neutral-dark placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-border">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition font-medium"
+              className="flex-1 px-4 py-3 rounded-lg border border-border text-text-secondary hover:bg-surface-highlight transition font-medium"
             >
               Cancel
             </button>

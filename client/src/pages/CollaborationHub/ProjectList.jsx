@@ -59,10 +59,10 @@ export default function ProjectList({
   }, {});
 
   const statusColors = {
-    planned: "bg-gray-100 text-gray-700",
-    active: "bg-green-100 text-green-700",
-    completed: "bg-blue-100 text-blue-700",
-    archived: "bg-red-100 text-red-600",
+    planned: "bg-surface-highlight text-text-secondary",
+    active: "bg-green-500/10 text-green-500",
+    completed: "bg-blue-500/10 text-blue-500",
+    archived: "bg-red-500/10 text-red-500",
   };
 
   // Update status
@@ -260,7 +260,7 @@ export default function ProjectList({
                 ${
                   active ?
                     "bg-secondary/20 border-secondary"
-                  : "bg-white border-gray-200 hover:shadow-md"
+                  : "bg-surface border-border hover:shadow-md"
                 }
                 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40`}
             >
@@ -271,7 +271,7 @@ export default function ProjectList({
                   <span
                     className={`text-[11px] px-2 py-1 rounded-full capitalize ${
                       statusColors[project.status] ||
-                      "bg-gray-100 text-gray-600"
+                      "bg-surface-highlight text-text-secondary"
                     }`}
                   >
                     {project.status}
@@ -357,7 +357,7 @@ export default function ProjectList({
                             initiateStatusChange(project.id, e.target.value);
                           }
                         }}
-                        className="text-[11px] border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none hover:border-primary transition"
+                        className="text-[11px] border border-border rounded-md px-2 py-1 bg-surface text-text-secondary focus:outline-none hover:border-primary transition"
                         onClick={(e) => e.stopPropagation()} // Prevent card selection
                       >
                         {validActions.map((action) => (
@@ -394,10 +394,12 @@ export default function ProjectList({
                 </div>
               </div>
 
-              <p className="text-sm text-gray-600">{project.description}</p>
+              <p className="text-sm text-text-secondary">
+                {project.description}
+              </p>
 
               {/* METRICS */}
-              <div className="flex flex-wrap gap-3 items-center mt-3 text-xs text-gray-500">
+              <div className="flex flex-wrap gap-3 items-center mt-3 text-xs text-text-secondary">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -437,7 +439,7 @@ export default function ProjectList({
                     .map((name) => (
                       <span
                         key={name}
-                        className="text-[10px] px-2 py-1 rounded-full bg-neutral-light text-neutral-dark border border-gray-100"
+                        className="text-[10px] px-2 py-1 rounded-full bg-surface-highlight text-neutral-dark border border-border"
                       >
                         {name}
                       </span>
@@ -445,7 +447,7 @@ export default function ProjectList({
 
                   {project.team_members.split(", ").filter(Boolean).length >
                     4 && (
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-neutral-light text-neutral-dark border border-gray-100">
+                    <span className="text-[10px] px-2 py-1 rounded-full bg-surface-highlight text-neutral-dark border border-border">
                       +
                       {project.team_members.split(", ").filter(Boolean).length -
                         4}{" "}
@@ -457,7 +459,7 @@ export default function ProjectList({
 
               {/* ACTIVITY CHART */}
               <div className="mt-3 flex flex-col gap-2">
-                <div className="flex items-center justify-between text-[11px] text-gray-500">
+                <div className="flex items-center justify-between text-[11px] text-text-secondary">
                   <span>Activity (7d)</span>
                   <span className="text-gray-400">
                     {activity.length > 0 ?
@@ -474,7 +476,7 @@ export default function ProjectList({
                     return (
                       <div
                         key={day.toISOString() + idx}
-                        className="flex-1 bg-neutral-light rounded-sm overflow-hidden"
+                        className="flex-1 bg-surface-highlight rounded-sm overflow-hidden"
                       >
                         <div
                           className="w-full bg-primary/70 rounded-sm transition-all duration-300"
@@ -485,12 +487,12 @@ export default function ProjectList({
                   })}
                 </div>
 
-                <div className="text-[11px] text-gray-500 flex items-center gap-2">
+                <div className="text-[11px] text-text-secondary flex items-center gap-2">
                   <span>Tasks</span>
-                  <div className="flex-1 h-2 bg-neutral-light rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 bg-surface-highlight rounded-full overflow-hidden">
                     <div className="h-full w-1/4 bg-secondary/70" />
                   </div>
-                  <span className="text-gray-400">Coming soon</span>
+                  <span className="text-text-secondary">Coming soon</span>
                 </div>
               </div>
             </div>

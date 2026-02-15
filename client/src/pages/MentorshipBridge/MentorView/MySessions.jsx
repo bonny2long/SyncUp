@@ -40,9 +40,10 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
       });
       addToast({
         type: "success",
-        message: skillIds.length > 0 ?
-          "Session completed! Intern earned 3x skill signals"
-        : "Session completed!",
+        message:
+          skillIds.length > 0 ?
+            "Session completed! Intern earned 3x skill signals"
+          : "Session completed!",
       });
       onRefresh();
     } catch (err) {
@@ -69,7 +70,10 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
     setActionLoading(true);
     try {
       await rescheduleSession(sessionToAction.id, newDateTime);
-      addToast({ type: "success", message: "Session rescheduled successfully" });
+      addToast({
+        type: "success",
+        message: "Session rescheduled successfully",
+      });
       setShowRescheduleModal(false);
       setSessionToAction(null);
       onRefresh();
@@ -105,7 +109,7 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading sessions...</p>
+        <p className="text-sm text-text-secondary">Loading sessions...</p>
       </div>
     );
   }
@@ -127,11 +131,11 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
   if (sessions.length === 0) {
     return (
       <div className="text-center py-12">
-        <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <Calendar className="w-16 h-16 text-text-secondary mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-neutral-dark mb-2">
           No upcoming sessions
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           Accepted session requests will appear here
         </p>
       </div>
@@ -141,7 +145,7 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-neutral-dark">
           Upcoming Sessions ({sessions.length})
         </h2>
       </div>
@@ -227,11 +231,11 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
   const isUpcoming = new Date(session.session_date) > new Date();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+    <div className="bg-surface border border-border rounded-lg p-4 hover:shadow-md transition">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 text-lg">
+          <h3 className="font-semibold text-neutral-dark text-lg">
             {session.topic}
           </h3>
           <div className="flex items-center gap-2 mt-1">
@@ -239,7 +243,7 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
               Accepted
             </span>
             {isUpcoming && (
-              <span className="text-xs text-gray-500 flex items-center gap-1">
+              <span className="text-xs text-text-secondary flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 Upcoming
               </span>
@@ -249,10 +253,10 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
       </div>
 
       {/* Intern Info */}
-      <div className="bg-gray-50 rounded-lg p-3 mb-3">
+      <div className="bg-surface-highlight rounded-lg p-3 mb-3">
         <div className="flex items-center gap-2 text-sm">
-          <User className="w-4 h-4 text-gray-500" />
-          <span className="font-medium text-gray-900">
+          <User className="w-4 h-4 text-text-secondary" />
+          <span className="font-medium text-neutral-dark">
             {session.intern_name}
           </span>
           {session.intern_role && (
@@ -265,11 +269,11 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
 
       {/* Session Details */}
       <div className="space-y-2 mb-3">
-        <div className="flex items-center gap-2 text-sm text-gray-700">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Calendar className="w-4 h-4 text-primary" />
           {formatDate(session.session_date)}
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-700">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Target className="w-4 h-4 text-secondary" />
           {formatFocus(session.session_focus)}
           {isTechnical && (
@@ -281,13 +285,13 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
       </div>
 
       {session.details && (
-        <div className="bg-gray-50 rounded-lg p-3 mb-3">
-          <p className="text-sm text-gray-700">{session.details}</p>
+        <div className="bg-surface-highlight rounded-lg p-3 mb-3">
+          <p className="text-sm text-text-secondary">{session.details}</p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 pt-3 border-t border-gray-200">
+      <div className="flex gap-2 pt-3 border-t border-border">
         <button
           onClick={() => onComplete(session.id, session.session_focus)}
           className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition font-medium"
@@ -302,7 +306,7 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
         </button>
         <button
           onClick={() => onCancel(session)}
-          className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+          className="px-4 py-2 rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
         >
           Cancel
         </button>

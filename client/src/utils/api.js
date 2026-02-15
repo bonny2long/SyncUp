@@ -71,6 +71,28 @@ export async function fetchMentorEngagementAnalytics() {
 }
 
 // ----------------------------------------------------
+// ACTIVITY CORRELATION ANALYTICS
+// ----------------------------------------------------
+
+export async function fetchMentorshipGrowthCorrelation() {
+  const res = await fetch(`${API_BASE}/analytics/correlation/mentorship-growth`);
+  if (!res.ok) throw new Error("Failed to fetch mentorship growth correlation");
+  return res.json();
+}
+
+export async function fetchEffectivePairings() {
+  const res = await fetch(`${API_BASE}/analytics/correlation/effective-pairings`);
+  if (!res.ok) throw new Error("Failed to fetch effective pairings");
+  return res.json();
+}
+
+export async function fetchEngagementLoops() {
+  const res = await fetch(`${API_BASE}/analytics/correlation/engagement-loops`);
+  if (!res.ok) throw new Error("Failed to fetch engagement loops");
+  return res.json();
+}
+
+// ----------------------------------------------------
 // USERS
 // ----------------------------------------------------
 export async function fetchUsers() {
@@ -408,6 +430,72 @@ export async function fetchMentorAvailability(mentorId) {
 }
 
 // ============================================================
+// SKILL VALIDATIONS (Upvotes & Endorsements)
+// ============================================================
+
+// Add validation (upvote or mentor endorsement)
+export async function addSkillValidation(signalId, validatorId, validationType = 'upvote') {
+  const res = await fetch(`${API_BASE}/skills/${signalId}/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      validator_id: validatorId, 
+      validation_type: validationType 
+    })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to add validation');
+  }
+  return res.json();
+}
+
+// Remove validation
+export async function removeSkillValidation(signalId, validatorId, validationType = 'upvote') {
+  const res = await fetch(`${API_BASE}/skills/${signalId}/validate`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      validator_id: validatorId, 
+      validation_type: validationType 
+    })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to remove validation');
+  }
+  return res.json();
+}
+
+// Get validation counts for a signal
+export async function getSkillValidations(signalId) {
+  const res = await fetch(`${API_BASE}/skills/${signalId}/validations`);
+  if (!res.ok) throw new Error('Failed to fetch validations');
+  return res.json();
+}
+
+// Get user's received validations (show on their profile)
+export async function getUserReceivedValidations(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/validations`);
+  if (!res.ok) throw new Error('Failed to fetch user validations');
+  return res.json();
+}
+
+// Get which signals a user has already validated
+export async function getUserValidatedSignals(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/has-validated`);
+  if (!res.ok) throw new Error('Failed to fetch validated signals');
+  return res.json();
+}
+
+// Get user's skill signals with validation counts (for validation UI)
+export async function getUserSkillSignals(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/signals`);
+  if (!res.ok) throw new Error('Failed to fetch skill signals');
+  return res.json();
+}
+
+// ============================================================
 // NOTIFICATIONS
 // ============================================================
 
@@ -449,5 +537,127 @@ export async function deleteNotification(notificationId) {
     method: "DELETE",
   });
   if (!res.ok) throw new Error("Failed to delete notification");
+  return res.json();
+}
+
+// ============================================================
+// CHAT
+// ============================================================
+
+export async function fetchChannels() {
+  const res = await fetch(`${API_BASE}/chat/channels`);
+  if (!res.ok) throw new Error("Failed to fetch channels");
+  return res.json();
+}
+
+export async function createChannel(
+  name,
+  description,
+  userId,
+  isPrivate = false,
+) {
+  const res = await fetch(`${API_BASE}/chat/channels?user_id=${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, description, is_private: isPrivate }),
+  });
+  if (!res.ok) throw new Error("Failed to create channel");
+  return res.json();
+}
+
+export async function joinChannel(channelId, userId) {
+  const res = await fetch(
+    `${API_BASE}/chat/channels/${channelId}/join?user_id=${userId}`,
+    {
+      method: "POST",
+    },
+  );
+  if (!res.ok) throw new Error("Failed to join channel");
+  return res.json();
+}
+
+export async function fetchChannelMessages(channelId, limit = 50) {
+  const res = await fetch(
+    `${API_BASE}/chat/channels/${channelId}/messages?limit=${limit}`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch messages");
+  return res.json();
+}
+
+export async function fetchDMMessages(userId, currentUserId, limit = 50) {
+  const res = await fetch(
+    `${API_BASE}/chat/dm/${userId}?currentUserId=${currentUserId}&limit=${limit}`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch DM");
+  return res.json();
+}
+
+export async function sendMessage(
+  content,
+  channelId = null,
+  recipientId = null,
+  userId,
+  fileUrl = null,
+  fileName = null,
+) {
+  const res = await fetch(`${API_BASE}/chat/messages?user_id=${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content,
+      channel_id: channelId,
+      recipient_id: recipientId,
+      file_url: fileUrl,
+      file_name: fileName,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to send message");
+  return res.json();
+}
+
+export async function fetchPresence(userId) {
+  const url =
+    userId ?
+      `${API_BASE}/chat/presence?user_id=${userId}`
+    : `${API_BASE}/chat/presence`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch presence");
+  return res.json();
+}
+
+export async function updatePresence(userId, status, channelId = null) {
+  const res = await fetch(`${API_BASE}/chat/presence?user_id=${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, current_channel_id: channelId }),
+  });
+  if (!res.ok) throw new Error("Failed to update presence");
+  return res.json();
+}
+
+export async function fetchDMUsers(userId) {
+  const res = await fetch(`${API_BASE}/chat/dm-users?user_id=${userId}`);
+  if (!res.ok) throw new Error("Failed to fetch DM users");
+  return res.json();
+}
+
+// ============================================================
+// FILE UPLOAD
+// ============================================================
+
+export async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/upload/upload`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to upload file");
+  }
+
   return res.json();
 }

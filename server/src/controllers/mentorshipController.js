@@ -5,6 +5,7 @@ import {
   notifySessionDeclined,
   notifySessionCompleted,
 } from "../services/notificationService.js";
+import { checkBadges } from "../services/checkBadges.js";
 
 const formatDateForMySQL = (dateStr) => {
   if (!dateStr) return null;
@@ -355,7 +356,10 @@ export const updateSessionStatus = async (req, res) => {
       console.error("Failed to send notification:", notifErr);
     }
 
-    res.json({ message: "Session updated successfully" });
+    // Check for new badges (for intern when session completed)
+    const newBadges = await checkBadges(session.intern_id);
+
+    res.json({ message: "Session updated successfully", newBadges });
   } catch (err) {
     await connection.rollback();
     console.error("Error updating mentorship session:", err);

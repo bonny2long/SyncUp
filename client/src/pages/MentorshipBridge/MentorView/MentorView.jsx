@@ -4,6 +4,7 @@ import { fetchMentorSessions } from "../../../utils/api";
 import IncomingRequests from "./IncomingRequests";
 import MySessions from "./MySessions";
 import MentorshipHistory from "./MentorshipHistory";
+import MentorLeaderboard from "./MentorLeaderboard";
 
 export default function MentorView() {
   const { user } = useUser();
@@ -49,19 +50,19 @@ export default function MentorView() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-primary mb-2">Mentorship</h1>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           Review session requests and guide the next generation of developers
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-2 border-b border-border">
         <button
           onClick={() => setActiveTab("requests")}
           className={`px-4 py-3 font-medium transition-all relative ${
             activeTab === "requests" ?
               "text-primary border-b-2 border-primary"
-            : "text-gray-600 hover:text-gray-900"
+            : "text-text-secondary hover:text-neutral-dark"
           }`}
         >
           Incoming Requests
@@ -77,7 +78,7 @@ export default function MentorView() {
           className={`px-4 py-3 font-medium transition-all ${
             activeTab === "sessions" ?
               "text-secondary border-b-2 border-secondary"
-            : "text-gray-600 hover:text-gray-900"
+            : "text-text-secondary hover:text-neutral-dark"
           }`}
         >
           My Sessions ({acceptedSessions.length})
@@ -88,10 +89,21 @@ export default function MentorView() {
           className={`px-4 py-3 font-medium transition-all ${
             activeTab === "history" ?
               "text-accent border-b-2 border-accent"
-            : "text-gray-600 hover:text-gray-900"
+            : "text-text-secondary hover:text-neutral-dark"
           }`}
         >
           History ({completedSessions.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab("leaderboard")}
+          className={`px-4 py-3 font-medium transition-all ${
+            activeTab === "leaderboard" ?
+              "text-amber-600 border-b-2 border-amber-500"
+            : "text-text-secondary hover:text-neutral-dark"
+          }`}
+        >
+          Leaderboard
         </button>
       </div>
 
@@ -123,6 +135,8 @@ export default function MentorView() {
             error={error}
           />
         )}
+
+        {activeTab === "leaderboard" && <MentorLeaderboard />}
       </div>
     </div>
   );

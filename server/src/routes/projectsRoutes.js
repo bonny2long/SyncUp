@@ -11,80 +11,172 @@ import {
   getUserProjects,
   getProjectPortfolioDetails,
   getProjectMetrics,
-  // NEW: Join Request functions
   createJoinRequest,
   getProjectRequests,
   getUserProjectRequests,
   approveJoinRequest,
   rejectJoinRequest,
   checkJoinRequestStatus,
+  getTeamMomentum,
 } from "../controllers/projectsController.js";
+import { projectValidators } from "../validators/index.js";
 
 const router = express.Router();
 
-// ============================================================
-// EXISTING ROUTES
-// ============================================================
-
-// GET /api/projects
+/**
+ * @swagger
+ * /projects:
+ *   get:
+ *     summary: Get all projects
+ *     tags: [Projects]
+ *     responses:
+ *       200:
+ *         description: List of projects
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Project'
+ */
 router.get("/", getProjects);
 
-// GET /api/projects/skills
+/**
+ * @swagger
+ * /projects/skills:
+ *   get:
+ *     summary: Get all skills used in projects
+ *     tags: [Projects]
+ *     responses:
+ *       200:
+ *         description: List of project skills
+ */
 router.get("/skills", getAllProjectSkills);
 
-// POST /api/projects
-router.post("/", createProject);
+/**
+ * @swagger
+ * /projects:
+ *   post:
+ *     summary: Create a new project
+ *     tags: [Projects]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - owner_id
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               owner_id:
+ *                 type: integer
+ *               visibility:
+ *                 type: string
+ *                 enum: [public, seeking]
+ *     responses:
+ *       201:
+ *         description: Project created
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ValidationError'
+ */
+router.post("/", projectValidators.create, createProject);
 
-// POST /api/projects/:id/skills
-router.post("/:id/skills", attachProjectSkills);
+router.post("/:id/skills", projectValidators.attachSkills, attachProjectSkills);
 
-// POST /api/projects/:projectId/members
-router.post("/:projectId/members", addProjectMember);
+router.post("/:projectId/members", projectValidators.addMember, addProjectMember);
 
-// DELETE /api/projects/:projectId/members
 router.delete("/:projectId/members", removeProjectMember);
 
-// PUT /api/projects/:id/status
-router.put("/:id/status", updateProjectStatus);
+/**
+ * @swagger
+ * /projects/{id}/status:
+ *   put:
+ *     summary: Update project status
+ *     tags: [Projects]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [planned, active, completed, archived]
+ *     responses:
+ *       200:
+ *         description: Status updated
+ *       400:
+ *         description: Validation error
+ */
+router.put("/:id/status", projectValidators.updateStatus, updateProjectStatus);
 
-// GET /api/projects/:id/skills
 router.get("/:id/skills", getProjectSkills);
 
-// GET /api/projects/user/:userId - MUST come before /:projectId routes
 router.get("/user/:userId", getUserProjects);
 
-// GET /api/projects/:projectId/portfolio-details
 router.get("/:projectId/portfolio-details", getProjectPortfolioDetails);
 
-// GET /api/projects/:projectId/metrics
 router.get("/:projectId/metrics", getProjectMetrics);
 
-// ============================================================
-// NEW: JOIN REQUEST ROUTES
-// ============================================================
+/**
+ * @swagger
+ * /projects/{projectId}/join-request:
+ *   post:
+ *     summary: Submit join request to project
+ *     tags: [Projects]
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Join request created
+ *       400:
+ *         description: Validation error or already member
+ */
+router.post("/:projectId/join-request", projectValidators.joinRequest, createJoinRequest);
 
-// POST /api/projects/:projectId/join-request
-// User submits request to join
-router.post("/:projectId/join-request", createJoinRequest);
-
-// GET /api/projects/:projectId/requests
-// Owner gets pending requests for this project
 router.get("/:projectId/requests", getProjectRequests);
 
-// GET /api/projects/requests/user/:userId
-// Owner gets all pending requests across their projects
 router.get("/requests/user/:userId", getUserProjectRequests);
 
-// GET /api/projects/:projectId/join-request/status/:userId
-// Check if user has pending request
 router.get("/:projectId/join-request/status/:userId", checkJoinRequestStatus);
 
-// PUT /api/projects/:projectId/requests/:requestId/approve
-// Owner approves request
 router.put("/:projectId/requests/:requestId/approve", approveJoinRequest);
 
-// PUT /api/projects/:projectId/requests/:requestId/reject
-// Owner rejects request
 router.put("/:projectId/requests/:requestId/reject", rejectJoinRequest);
+
+router.get("/:id/team-momentum", getTeamMomentum);
 
 export default router;

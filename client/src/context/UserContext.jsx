@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { updatePresence } from "../utils/api";
 
 const UserContext = createContext(null);
 
@@ -24,7 +25,10 @@ export function UserProvider({ children }) {
     setUser(user);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (user?.id) {
+      await updatePresence(user.id, "offline", null).catch(console.error);
+    }
     localStorage.removeItem("syncup_user");
     setUser(null);
   };

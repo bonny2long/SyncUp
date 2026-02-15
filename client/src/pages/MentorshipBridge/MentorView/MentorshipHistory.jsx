@@ -26,11 +26,11 @@ export default function MentorshipHistory({
   if (sessions.length === 0) {
     return (
       <div className="text-center py-12">
-        <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <Award className="w-16 h-16 text-text-secondary mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-neutral-dark mb-2">
           No completed sessions yet
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           Your mentorship impact will be tracked here once you complete sessions
         </p>
       </div>
@@ -49,7 +49,7 @@ export default function MentorshipHistory({
     <div className="space-y-6">
       {/* Impact Stats */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-lg font-semibold text-neutral-dark mb-4">
           Your Mentorship Impact
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -82,7 +82,7 @@ export default function MentorshipHistory({
 
       {/* Session History */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <h2 className="text-lg font-semibold text-neutral-dark mb-4">
           Recent Sessions
         </h2>
         <div className="space-y-3">
@@ -97,12 +97,12 @@ export default function MentorshipHistory({
 
 function ImpactCard({ icon, label, value, color }) {
   return (
-    <div className="bg-white p-4 rounded-lg border border-gray-200 hover:shadow-md transition">
+    <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition">
       <div className={`flex items-center gap-2 mb-2 ${color}`}>
         {icon}
-        <p className="text-sm text-gray-600">{label}</p>
+        <p className="text-sm text-text-secondary">{label}</p>
       </div>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
+      <p className="text-3xl font-bold text-neutral-dark">{value}</p>
     </div>
   );
 }
@@ -131,11 +131,11 @@ function HistoryCard({ session }) {
   );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
+    <div className="bg-surface border border-border rounded-lg p-4">
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">{session.topic}</h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <h3 className="font-semibold text-neutral-dark">{session.topic}</h3>
+          <p className="text-sm text-text-secondary mt-1">
             With: <span className="font-medium">{session.intern_name}</span>
           </p>
         </div>
@@ -147,15 +147,15 @@ function HistoryCard({ session }) {
         )}
       </div>
 
-      <div className="flex items-center gap-4 text-sm text-gray-600">
+      <div className="flex items-center gap-4 text-sm text-text-secondary">
         <span>{formatDate(session.session_date)}</span>
         <span>•</span>
         <span>{formatFocus(session.session_focus)}</span>
       </div>
 
       {session.notes && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
-          <p className="text-sm text-gray-700">{session.notes}</p>
+        <div className="mt-3 pt-3 border-t border-border">
+          <p className="text-sm text-text-secondary">{session.notes}</p>
         </div>
       )}
     </div>

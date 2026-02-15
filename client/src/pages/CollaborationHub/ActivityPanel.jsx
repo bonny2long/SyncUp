@@ -8,10 +8,10 @@ export default function ActivityPanel({
   projectId,
 }) {
   return (
-    <div className="flex flex-col gap-4 bg-white rounded-lg border border-gray-100 p-6">
+    <div className="flex flex-col gap-4 bg-surface rounded-lg border border-border p-6">
       <div>
         <h2 className="text-lg font-bold text-secondary mb-1">Your Activity</h2>
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-text-secondary">
           {selectedProject ?
             `Filtered to: ${selectedProject.title}`
           : "All your updates"}

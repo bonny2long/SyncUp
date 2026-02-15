@@ -86,7 +86,7 @@ export default function RequestsPanel({ onRefresh }) {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+      <div className="p-4 bg-surface border border-red-200 text-red-500 rounded-lg">
         {error}
       </div>
     );
@@ -94,7 +94,7 @@ export default function RequestsPanel({ onRefresh }) {
 
   if (requests.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-text-secondary">
         <p className="text-lg">No pending requests</p>
         <p className="text-sm mt-2">You're all caught up!</p>
       </div>
@@ -107,12 +107,12 @@ export default function RequestsPanel({ onRefresh }) {
         ([projectId, { projectTitle, requests: projectRequests }]) => (
           <div
             key={projectId}
-            className="bg-white rounded-lg border border-gray-100 p-6"
+            className="bg-surface rounded-lg border border-border p-6"
           >
             {/* Project Header */}
             <div className="mb-4">
               <h3 className="text-lg font-bold text-primary">{projectTitle}</h3>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-text-secondary mt-1">
                 {projectRequests.length} pending{" "}
                 {projectRequests.length === 1 ? "request" : "requests"}
               </p>

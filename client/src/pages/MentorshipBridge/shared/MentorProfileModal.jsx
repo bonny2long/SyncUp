@@ -14,7 +14,7 @@ export default function MentorProfileModal({ mentor, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-gray-100 relative overflow-hidden"
+        className="bg-surface w-full max-w-lg rounded-2xl shadow-xl border border-border relative overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary to-secondary" />
@@ -22,10 +22,10 @@ export default function MentorProfileModal({ mentor, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition"
+          className="absolute top-3 right-3 p-2 rounded-full hover:bg-surface-highlight transition"
           aria-label="Close"
         >
-          <X className="w-5 h-5 text-gray-600" />
+          <X className="w-5 h-5 text-text-secondary" />
         </button>
 
         <div className="p-6 pt-8">
@@ -37,14 +37,14 @@ export default function MentorProfileModal({ mentor, onClose }) {
               <h3 className="text-xl font-semibold text-primary leading-tight">
                 {mentor.name}
               </h3>
-              <div className="flex flex-wrap gap-2 mt-1 text-sm text-gray-600 items-center">
+              <div className="flex flex-wrap gap-2 mt-1 text-sm text-text-secondary items-center">
                 {mentor.role && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-semibold">
                     <Briefcase size={14} /> {mentor.role}
                   </span>
                 )}
                 {mentor.email && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-neutral-light text-neutral-dark text-xs">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-surface-highlight text-neutral-dark text-xs">
                     <Mail size={14} /> {mentor.email}
                   </span>
                 )}
@@ -52,12 +52,12 @@ export default function MentorProfileModal({ mentor, onClose }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-sm text-gray-700 mb-4">
-            <div className="p-3 rounded-xl bg-neutral-light border border-gray-100">
-              <p className="text-[11px] uppercase text-gray-500 mb-1">
+          <div className="grid grid-cols-2 gap-3 text-sm text-text-secondary mb-4">
+            <div className="p-3 rounded-xl bg-surface-highlight border border-border">
+              <p className="text-[11px] uppercase text-text-secondary mb-1">
                 Sessions
               </p>
-              <div className="flex flex-wrap gap-2 text-[11px] text-gray-600">
+              <div className="flex flex-wrap gap-2 text-[11px] text-neutral-dark">
                 <span className="font-semibold text-secondary">
                   Total: {mentor.stats?.total_sessions || 0}
                 </span>
@@ -67,16 +67,16 @@ export default function MentorProfileModal({ mentor, onClose }) {
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-neutral-light border border-gray-100">
-              <p className="text-[11px] uppercase text-gray-500 mb-1">
+            <div className="p-3 rounded-xl bg-surface-highlight border border-border">
+              <p className="text-[11px] uppercase text-text-secondary mb-1">
                 Availability
               </p>
               {availability.length ?
-                <div className="flex flex-col gap-1 text-[12px] text-gray-700">
+                <div className="flex flex-col gap-1 text-[12px] text-neutral-dark">
                   {availability.map((slot, idx) => (
                     <div
                       key={`${slot.available_date || idx}-${slot.available_time || idx}`}
-                      className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-white border border-gray-100"
+                      className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-surface border border-border"
                     >
                       <CalendarClock size={14} className="text-primary" />
                       <span className="font-medium">
@@ -94,8 +94,10 @@ export default function MentorProfileModal({ mentor, onClose }) {
           </div>
 
           {mentor.bio && (
-            <div className="p-3 rounded-xl bg-white border border-gray-100 text-sm text-gray-700">
-              <p className="text-[11px] uppercase text-gray-500 mb-1">About</p>
+            <div className="p-3 rounded-xl bg-surface border border-border text-sm text-text-secondary">
+              <p className="text-[11px] uppercase text-text-secondary mb-1">
+                About
+              </p>
               <p>{mentor.bio}</p>
             </div>
           )}

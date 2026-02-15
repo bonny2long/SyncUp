@@ -6,6 +6,7 @@ import CollaborationHub from "./CollaborationHub/CollaborationHub";
 import MentorshipBridge from "./MentorshipBridge/MentorshipBridge";
 import SkillTracker from "./SkillTracker/SkillTracker";
 import HealthStatus from "../components/HealthStatus";
+import Chat from "./Chat/Chat";
 
 export default function Dashboard() {
   const location = useLocation();
@@ -24,6 +25,8 @@ export default function Dashboard() {
         return <SkillTracker />;
       case "health":
         return <HealthStatus />;
+      case "chat":
+        return <Chat />;
       default:
         return <CollaborationHub />;
     }
@@ -45,7 +48,11 @@ export default function Dashboard() {
             activeTab={activeTab}
             onToggleSidebar={() => setIsSidebarOpen(true)}
           />
-          <main className="max-w-7xl mx-auto">{renderContent()}</main>
+          <main
+            className={activeTab === "chat" ? "h-full" : "max-w-7xl mx-auto"}
+          >
+            {renderContent()}
+          </main>
         </div>
       </div>
     </div>

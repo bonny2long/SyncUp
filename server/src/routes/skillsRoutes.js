@@ -6,6 +6,12 @@ import {
   getSkillSummary,
   getAllSkills,
   getRecentSkills,
+  addValidation,
+  removeValidation,
+  getSignalValidations,
+  getUserValidations,
+  getUserValidatedSignals,
+  getUserSkillSignals,
 } from "../controllers/skillsController.js";
 
 const router = express.Router();
@@ -27,5 +33,23 @@ router.get("/user/:id/summary", getSkillSummary);
 
 // GET /api/skills/user/:id/recent
 router.get("/user/:id/recent", getRecentSkills);
+
+// GET /api/skills/user/:id/signals - Get user's skill signals with validation counts
+router.get("/user/:id/signals", getUserSkillSignals);
+
+// POST /api/skills/:signalId/validate - Add validation (upvote or mentor endorsement)
+router.post("/:signalId/validate", addValidation);
+
+// DELETE /api/skills/:signalId/validate - Remove validation
+router.delete("/:signalId/validate", removeValidation);
+
+// GET /api/skills/:signalId/validations - Get validation counts
+router.get("/:signalId/validations", getSignalValidations);
+
+// GET /api/skills/user/:userId/validations - Get user's received validations
+router.get("/user/:userId/validations", getUserValidations);
+
+// GET /api/skills/user/:userId/has-validated - Check which signals user has validated
+router.get("/user/:userId/has-validated", getUserValidatedSignals);
 
 export default router;

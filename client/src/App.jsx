@@ -5,13 +5,15 @@ import { useUser } from "./context/UserContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProjectPortfolio from "./pages/ProjectPortfolio";
 import UserProfile from "./pages/UserProfile";
+import Chat from "./pages/Chat/Chat";
 
 function ProtectedRoute({ children, requireIntern = false }) {
   const { user, loading } = useUser();
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (requireIntern && user.role !== 'intern') return <Navigate to="/collaboration" replace />;
+  if (requireIntern && user.role !== "intern")
+    return <Navigate to="/collaboration" replace />;
 
   return children;
 }
@@ -23,6 +25,14 @@ export default function App() {
         <Route path="/" element={<Navigate to="/collaboration" replace />} />
         <Route
           path="/collaboration"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chat"
           element={
             <ProtectedRoute>
               <Dashboard />

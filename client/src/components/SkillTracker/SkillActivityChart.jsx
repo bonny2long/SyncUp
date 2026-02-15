@@ -92,8 +92,8 @@ export default function SkillActivityChart() {
   if (!chartData.length) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-gray-500">No activity yet.</p>
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-sm text-text-secondary">No activity yet.</p>
+        <p className="text-xs text-text-secondary mt-2">
           This updates automatically as you work.
         </p>
       </div>
@@ -132,23 +132,34 @@ export default function SkillActivityChart() {
       x: {
         type: "category",
         position: "bottom",
-        label: { fontSize: 12, wrapping: "on-space" },
+        label: {
+          fontSize: 12,
+          wrapping: "on-space",
+          color: "var(--color-text-secondary)",
+        },
       },
       y: {
         type: "number",
         position: "left",
         nice: true,
-        label: { fontSize: 11 },
+        label: { fontSize: 11, color: "var(--color-text-secondary)" },
       },
     },
     padding: { top: 12, right: 24, bottom: 16, left: 18 },
-    legend: { position: "bottom" },
+    legend: {
+      position: "bottom",
+      item: {
+        label: {
+          color: "var(--color-text-secondary)",
+        },
+      },
+    },
     background: { fill: "transparent" },
   };
 
   return (
     <div className="w-full">
-      {insight && <p className="text-xs text-gray-500 mb-2">{insight}</p>}
+      {insight && <p className="text-xs text-text-secondary mb-2">{insight}</p>}
       <div style={{ height: 260 }}>
         <AgCharts options={options} />
       </div>

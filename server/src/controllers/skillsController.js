@@ -235,3 +235,256 @@ export const getSkillSummary = async (req, res) => {
     res.status(500).json({ error: "Failed to generate skill summary" });
   }
 };
+
+// POST /api/skills/:signalId/validate - Add validation (upvote or mentor endorsement)
+export const addValidation = async (req, res) => {
+  const { signalId } = req.params;
+  const { validator_id, validation_type } = req.body;
+
+  if (!validator_id || !validation_type) {
+    return res.status(400).json({ error: "validator_id and validation_type are required" });
+  }
+
+  if (!["upvote", "mentor_endorsement"].includes(validation_type)) {
+    return res.status(400).json({ error: "Invalid validation_type" });
+  }
+
+  try {
+    // Get the skill signal to find the owner and source
+    const [signals] = await pool.query(
+      "SELECT user_id, source_type, source_id FROM user_skill_signals WHERE id = ?",
+      [signalId]
+    );
+
+    if (signals.length === 0) {
+      return res.status(404).json({ error: "Skill signal not found" });
+    }
+
+    const signal = signals[0];
+
+    // Guardrail: Cannot validate own signal
+    if (signal.user_id === Number(validator_id)) {
+      return res.status(403).json({ error: "Cannot validate your own skill signal" });
+    }
+
+    // Check if validator is a mentor (required for mentor_endorsement)
+    if (validation_type === "mentor_endorsement") {
+      const [users] = await pool.query(
+        "SELECT role FROM users WHERE id = ?",
+        [validator_id]
+      );
+      if (users.length === 0 || users[0].role !== "mentor") {
+        return res.status(403).json({ error: "Only mentors can give endorsements" });
+      }
+    }
+
+    // Guardrail: For upvotes, only project team members can validate
+    if (validation_type === "upvote") {
+      let projectId = null;
+
+      if (signal.source_type === "project") {
+        projectId = signal.source_id;
+      } else if (signal.source_type === "update") {
+        // Get project from progress update
+        const [updates] = await pool.query(
+          "SELECT project_id FROM progress_updates WHERE id = ?",
+          [signal.source_id]
+        );
+        if (updates.length > 0) {
+          projectId = updates[0].project_id;
+        }
+      } else if (signal.source_type === "mentorship") {
+        // Get project from mentorship session
+        const [sessions] = await pool.query(
+          "SELECT project_id FROM mentorship_sessions WHERE id = ?",
+          [signal.source_id]
+        );
+        if (sessions.length > 0 && sessions[0].project_id) {
+          projectId = sessions[0].project_id;
+        }
+      }
+
+      // If we found a project, check membership
+      if (projectId) {
+        const [members] = await pool.query(
+          "SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?",
+          [projectId, validator_id]
+        );
+        if (members.length === 0) {
+          return res.status(403).json({ error: "Only project team members can upvote" });
+        }
+      }
+      // If no project found, allow the upvote (signal might be orphaned or from update without project)
+    }
+
+    // Insert validation
+    await pool.query(
+      "INSERT INTO skill_validations (signal_id, validator_id, validation_type) VALUES (?, ?, ?)",
+      [signalId, validator_id, validation_type]
+    );
+
+    res.status(201).json({ message: "Validation added successfully" });
+  } catch (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ error: "Validation already exists" });
+    }
+    console.error("Error adding validation:", err);
+    res.status(500).json({ error: "Failed to add validation" });
+  }
+};
+
+// DELETE /api/skills/:signalId/validate - Remove validation
+export const removeValidation = async (req, res) => {
+  const { signalId } = req.params;
+  const { validator_id, validation_type } = req.body;
+
+  if (!validator_id || !validation_type) {
+    return res.status(400).json({ error: "validator_id and validation_type are required" });
+  }
+
+  try {
+    const [result] = await pool.query(
+      "DELETE FROM skill_validations WHERE signal_id = ? AND validator_id = ? AND validation_type = ?",
+      [signalId, validator_id, validation_type]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Validation not found" });
+    }
+
+    res.json({ message: "Validation removed successfully" });
+  } catch (err) {
+    console.error("Error removing validation:", err);
+    res.status(500).json({ error: "Failed to remove validation" });
+  }
+};
+
+// GET /api/skills/:signalId/validations - Get validation counts for a signal
+export const getSignalValidations = async (req, res) => {
+  const { signalId } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        validation_type,
+        COUNT(*) as count
+      FROM skill_validations
+      WHERE signal_id = ?
+      GROUP BY validation_type
+      `,
+      [signalId]
+    );
+
+    const validations = {
+      upvote: 0,
+      mentor_endorsement: 0,
+      total: 0
+    };
+
+    rows.forEach(row => {
+      validations[row.validation_type] = row.count;
+      validations.total += row.count;
+    });
+
+    res.json(validations);
+  } catch (err) {
+    console.error("Error fetching validations:", err);
+    res.status(500).json({ error: "Failed to fetch validations" });
+  }
+};
+
+// GET /api/skills/user/:userId/validations - Get user's received validations
+export const getUserValidations = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        sv.id,
+        sv.signal_id,
+        sv.validation_type,
+        sv.created_at,
+        s.skill_name,
+        u.name as validator_name,
+        u.role as validator_role
+      FROM skill_validations sv
+      JOIN user_skill_signals uss ON uss.id = sv.signal_id
+      JOIN skills s ON s.id = uss.skill_id
+      JOIN users u ON u.id = sv.validator_id
+      WHERE uss.user_id = ?
+      ORDER BY sv.created_at DESC
+      `,
+      [userId]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching user validations:", err);
+    res.status(500).json({ error: "Failed to fetch user validations" });
+  }
+};
+
+// GET /api/skills/user/:userId/has-validated - Check which signals user has validated
+export const getUserValidatedSignals = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT signal_id, validation_type FROM skill_validations WHERE validator_id = ?",
+      [userId]
+    );
+
+    const validated = rows.reduce((acc, row) => {
+      if (!acc[row.signal_id]) {
+        acc[row.signal_id] = [];
+      }
+      acc[row.signal_id].push(row.validation_type);
+      return acc;
+    }, {});
+
+    res.json(validated);
+  } catch (err) {
+    console.error("Error fetching user validated signals:", err);
+    res.status(500).json({ error: "Failed to fetch validated signals" });
+  }
+};
+
+// GET /api/skills/user/:userId/signals - Get user's skill signals with IDs for validation
+export const getUserSkillSignals = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const [signals] = await pool.query(
+      `
+      SELECT 
+        uss.id as signal_id,
+        uss.skill_id,
+        s.skill_name,
+        s.category,
+        uss.source_type,
+        uss.created_at,
+        uss.weight,
+        (
+          SELECT COUNT(*) FROM skill_validations sv 
+          WHERE sv.signal_id = uss.id AND sv.validation_type = 'upvote'
+        ) as upvote_count,
+        (
+          SELECT COUNT(*) FROM skill_validations sv 
+          WHERE sv.signal_id = uss.id AND sv.validation_type = 'mentor_endorsement'
+        ) as endorsement_count
+      FROM user_skill_signals uss
+      JOIN skills s ON s.id = uss.skill_id
+      WHERE uss.user_id = ?
+      ORDER BY uss.created_at DESC
+      `,
+      [userId]
+    );
+
+    res.json(signals);
+  } catch (err) {
+    console.error("Error fetching user skill signals:", err);
+    res.status(500).json({ error: "Failed to fetch skill signals" });
+  }
+};

@@ -22,11 +22,11 @@ export default function SessionHistory({ sessions, loading, error }) {
   if (sessions.length === 0) {
     return (
       <div className="text-center py-12">
-        <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <Award className="w-16 h-16 text-text-secondary mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-neutral-dark mb-2">
           No completed sessions yet
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           Complete your first mentorship session to start building your learning
           history!
         </p>
@@ -79,12 +79,12 @@ export default function SessionHistory({ sessions, loading, error }) {
 
 function StatCard({ icon, label, value, color }) {
   return (
-    <div className="bg-white p-4 rounded-lg border border-gray-200">
+    <div className="bg-surface p-4 rounded-lg border border-border">
       <div className={`flex items-center gap-2 mb-2 ${color}`}>
         {icon}
-        <p className="text-sm text-gray-600">{label}</p>
+        <p className="text-sm text-text-secondary">{label}</p>
       </div>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
+      <p className="text-3xl font-bold text-neural-dark">{value}</p>
     </div>
   );
 }
@@ -113,11 +113,13 @@ function HistoryCard({ session }) {
   );
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+    <div className="bg-surface border border-border rounded-lg p-4 hover:shadow-md transition">
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 mb-1">{session.topic}</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="font-semibold text-neutral-dark mb-1">
+            {session.topic}
+          </h3>
+          <p className="text-sm text-text-secondary">
             With:{" "}
             <span className="font-medium text-primary">
               {session.mentor_name}
@@ -132,7 +134,7 @@ function HistoryCard({ session }) {
         )}
       </div>
 
-      <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+      <div className="flex items-center gap-4 text-sm text-text-secondary mb-3">
         <span className="flex items-center gap-1">
           <Calendar className="w-4 h-4" />
           {formatDate(session.session_date)}
@@ -144,17 +146,17 @@ function HistoryCard({ session }) {
       </div>
 
       {session.details && (
-        <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded mb-3">
+        <p className="text-sm text-text-secondary bg-surface-highlight p-2 rounded mb-3">
           {session.details}
         </p>
       )}
 
       {session.notes && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="mt-3 pt-3 border-t border-border">
           <p className="text-xs font-semibold text-gray-700 mb-1">
             Session Notes:
           </p>
-          <p className="text-sm text-gray-600">{session.notes}</p>
+          <p className="text-sm text-text-secondary">{session.notes}</p>
         </div>
       )}
     </div>

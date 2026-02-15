@@ -4,6 +4,7 @@ import { useToast } from "../../context/ToastContext";
 import { fetchUpdates } from "../../utils/api";
 import { getErrorMessage } from "../../utils/errorHandler";
 import { useProjects } from "../../hooks/useProjects"; // Custom hook integrated
+import { BarChart3 } from "lucide-react";
 
 // Lazy load components
 const CreateProjectForm = lazy(() => import("./CreateProjectForm"));
@@ -15,6 +16,7 @@ const JoinProjectModal = lazy(() => import("./JoinProjectModal"));
 const ProjectDetailModal = lazy(
   () => import("../../components/modals/ProjectDetailModal"),
 );
+const TeamDashboard = lazy(() => import("./TeamDashboard/TeamDashboard"));
 
 export default function CollaborationHub() {
   const { user: currentUser } = useUser();
@@ -55,6 +57,7 @@ export default function CollaborationHub() {
   const [projectToJoin, setProjectToJoin] = useState(null);
   const [joining, setJoining] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [teamAnalyticsProject, setTeamAnalyticsProject] = useState(null);
 
   // Persist tab choice
   useEffect(() => {
@@ -191,11 +194,11 @@ export default function CollaborationHub() {
       )}
 
       {isMentor && (
-        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-6 rounded-xl border border-primary/20">
+        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-6 rounded-xl border border-primary/20 dark:from-primary/20 dark:to-secondary/20">
           <h3 className="text-lg font-bold text-primary mb-2">
             Share Your Expertise
           </h3>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-text-secondary">
             Browse active projects and join teams as a senior contributor.
           </p>
         </div>
@@ -206,9 +209,9 @@ export default function CollaborationHub() {
         {statsCards.map((stat, idx) => (
           <div
             key={idx}
-            className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm"
+            className="bg-surface p-4 rounded-lg border border-border shadow-sm"
           >
-            <p className="text-xs text-gray-500 mb-2">{stat.label}</p>
+            <p className="text-xs text-text-secondary mb-2">{stat.label}</p>
             <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
@@ -221,13 +224,13 @@ export default function CollaborationHub() {
       )}
 
       {/* NAVIGATION */}
-      <div className="flex gap-4 border-b border-gray-200">
+      <div className="flex gap-4 border-b border-border">
         <button
           onClick={() => handleTabChange(isMentor ? "browse" : "mywork")}
           className={`px-4 py-3 font-medium transition-all duration-300 ${
             activeTab === (isMentor ? "browse" : "mywork") ?
               "text-primary border-b-2 border-primary"
-            : "text-gray-600"
+            : "text-text-secondary"
           }`}
         >
           {isMentor ? "Browse Projects" : "My Work"} (
@@ -239,7 +242,7 @@ export default function CollaborationHub() {
           className={`px-4 py-3 font-medium transition-all duration-300 ${
             activeTab === (isMentor ? "myprojects" : "discover") ?
               "text-accent border-b-2 border-accent"
-            : "text-gray-600"
+            : "text-text-secondary"
           }`}
         >
           {isMentor ? "My Projects" : "Discover"} (
@@ -249,7 +252,7 @@ export default function CollaborationHub() {
         {(isIntern || mentorOwnsProjects) && (
           <button
             onClick={() => handleTabChange("requests")}
-            className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "requests" ? "text-secondary border-b-2 border-secondary" : "text-gray-600"}`}
+            className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "requests" ? "text-secondary border-b-2 border-secondary" : "text-text-secondary"}`}
           >
             Requests
           </button>
@@ -257,114 +260,188 @@ export default function CollaborationHub() {
 
         <button
           onClick={() => handleTabChange("activity")}
-          className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "activity" ? "text-secondary border-b-2 border-secondary" : "text-gray-600"}`}
+          className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "activity" ? "text-secondary border-b-2 border-secondary" : "text-text-secondary"}`}
         >
           {isMentor ? "Contributions" : "Activity"} ({userUpdates.length})
         </button>
+
+        {/* Team Analytics Tab - Show for users with projects */}
+        {userProjects.length > 0 && (
+          <button
+            onClick={() => {
+              handleTabChange("team");
+              // Set first project as default for team analytics
+              if (!teamAnalyticsProject && userProjects.length > 0) {
+                setTeamAnalyticsProject(userProjects[0]);
+              }
+            }}
+            className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "team" ? "text-secondary border-b-2 border-secondary" : "text-text-secondary"}`}
+          >
+            Team Analytics
+          </button>
+        )}
       </div>
 
       {/* MAIN CONTENT AREA */}
-      <div className="grid grid-cols-2 gap-6 min-h-[600px]">
-        {/* LEFT COLUMN: Panels */}
-        <div>
-          {activeTab === (isMentor ? "browse" : "discover") && (
+      <div className="min-h-[600px]">
+        {activeTab === "team" ?
+          <div className="w-full">
             <Suspense
               fallback={
                 <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
               }
             >
-              <DiscoverPanel
-                projects={discoverProjects}
-                selectedProject={selectedProject}
-                setSelectedProject={setSelectedProject}
-                onJoinClick={handleJoinClick}
-                onViewProject={handleViewProject}
-                loading={loading}
-              />
-            </Suspense>
-          )}
-
-          {(activeTab === "mywork" || activeTab === "myprojects") && (
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-              }
-            >
-              <MyWorkPanel
-                projects={userProjects}
-                selectedProject={selectedProject}
-                setSelectedProject={setSelectedProject}
-                updatesData={allUpdates}
-                loading={loading}
-                isMentor={isMentor}
-                onRefresh={loadData}
-              />
-            </Suspense>
-          )}
-
-          {activeTab === "requests" && (
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-              }
-            >
-              <RequestsPanel onRefresh={loadData} />
-            </Suspense>
-          )}
-
-          {activeTab === "activity" && (
-            <div>
-              <h2 className="text-lg font-bold text-secondary mb-3">
-                {isMentor ? "Your Contributions" : "Your Updates"}
-              </h2>
-              {/* Filter clear button logic remains same... */}
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN: Previews / Activity Feed */}
-        <div>
-          {/* Detailed Project Preview (shared by Discover/Browse) */}
-          {(activeTab === "discover" || activeTab === "browse") && (
-            <div className="bg-white rounded-lg border border-gray-100 p-6">
-              <h2 className="text-lg font-bold text-neutralDark mb-4">
-                Project Preview
-              </h2>
-              {selectedProject ?
-                <div className="space-y-4">
-                  {/* ... Preview content ... */}
-                  <button
-                    onClick={() => handleJoinClick(selectedProject)}
-                    className="w-full mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
-                  >
-                    Request to Join {isMentor && "as Mentor"}
-                  </button>
+              {/* Project Selector for Team Analytics */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface border border-border rounded-xl p-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    <BarChart3 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-neutral-dark leading-tight">
+                      Team Analytics
+                    </h3>
+                    <p className="text-xs text-text-secondary">
+                      View team-wide signal distribution and momentum
+                    </p>
+                  </div>
                 </div>
-              : <p className="text-gray-500 text-center py-8">
-                  Select a project to see details
-                </p>
-              }
-            </div>
-          )}
 
-          {/* Activity Feed for MyWork/Activity Tabs */}
-          {(activeTab === "mywork" ||
-            activeTab === "myprojects" ||
-            activeTab === "activity") && (
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                <div className="w-full md:w-auto min-w-[240px]">
+                  <select
+                    value={teamAnalyticsProject?.id || ""}
+                    onChange={(e) => {
+                      const project = userProjects.find(
+                        (p) => p.id === parseInt(e.target.value),
+                      );
+                      setTeamAnalyticsProject(project);
+                    }}
+                    className="w-full px-3 py-2 bg-surface text-neutral-dark border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
+                  >
+                    <option value="">Choose a project...</option>
+                    {userProjects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Team Dashboard */}
+              {teamAnalyticsProject ?
+                <TeamDashboard projectId={teamAnalyticsProject.id} />
+              : <div className="bg-surface border border-dashed border-border rounded-xl p-12 text-center">
+                  <p className="text-text-secondary">
+                    Please select a project to view team analytics
+                  </p>
+                </div>
               }
-            >
-              <ActivityPanel
-                selectedProject={selectedProject}
-                allUpdates={allUpdates}
-                currentUser={currentUser}
-                projectId={selectedProject?.id}
-              />
             </Suspense>
-          )}
-        </div>
+          </div>
+        : <div className="grid grid-cols-2 gap-6 text-left">
+            {/* LEFT COLUMN: Panels */}
+            <div className="text-left">
+              {activeTab === (isMentor ? "browse" : "discover") && (
+                <Suspense
+                  fallback={
+                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                  }
+                >
+                  <DiscoverPanel
+                    projects={discoverProjects}
+                    selectedProject={selectedProject}
+                    setSelectedProject={setSelectedProject}
+                    onJoinClick={handleJoinClick}
+                    onViewProject={handleViewProject}
+                    loading={loading}
+                  />
+                </Suspense>
+              )}
+
+              {(activeTab === "mywork" || activeTab === "myprojects") && (
+                <Suspense
+                  fallback={
+                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                  }
+                >
+                  <MyWorkPanel
+                    projects={userProjects}
+                    selectedProject={selectedProject}
+                    setSelectedProject={setSelectedProject}
+                    updatesData={allUpdates}
+                    loading={loading}
+                    isMentor={isMentor}
+                    onRefresh={loadData}
+                  />
+                </Suspense>
+              )}
+
+              {activeTab === "requests" && (
+                <Suspense
+                  fallback={
+                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                  }
+                >
+                  <RequestsPanel onRefresh={loadData} />
+                </Suspense>
+              )}
+
+              {activeTab === "activity" && (
+                <div>
+                  <h2 className="text-lg font-bold text-secondary mb-3">
+                    {isMentor ? "Your Contributions" : "Your Updates"}
+                  </h2>
+                  {/* Filter clear button logic remains same... */}
+                </div>
+              )}
+            </div>
+
+            {/* RIGHT COLUMN: Previews / Activity Feed */}
+            <div className="text-left">
+              {/* Detailed Project Preview (shared by Discover/Browse) */}
+              {(activeTab === "discover" || activeTab === "browse") && (
+                <div className="bg-surface rounded-lg border border-border p-6">
+                  <h2 className="text-lg font-bold text-neutral-dark mb-4">
+                    Project Preview
+                  </h2>
+                  {selectedProject ?
+                    <div className="space-y-4">
+                      {/* ... Preview content ... */}
+                      <button
+                        onClick={() => handleJoinClick(selectedProject)}
+                        className="w-full mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
+                      >
+                        Request to Join {isMentor && "as Mentor"}
+                      </button>
+                    </div>
+                  : <p className="text-gray-500 text-center py-8">
+                      Select a project to see details
+                    </p>
+                  }
+                </div>
+              )}
+
+              {/* Activity Feed for MyWork/Activity Tabs */}
+              {(activeTab === "mywork" ||
+                activeTab === "myprojects" ||
+                activeTab === "activity") && (
+                <Suspense
+                  fallback={
+                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
+                  }
+                >
+                  <ActivityPanel
+                    selectedProject={selectedProject}
+                    allUpdates={allUpdates}
+                    currentUser={currentUser}
+                    projectId={selectedProject?.id}
+                  />
+                </Suspense>
+              )}
+            </div>
+          </div>
+        }
       </div>
 
       {/* MODALS */}
