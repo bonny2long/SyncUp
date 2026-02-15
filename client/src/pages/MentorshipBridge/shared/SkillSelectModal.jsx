@@ -54,16 +54,16 @@ export default function SkillSelectModal({ isOpen, onClose, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-5">
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+      <div className="bg-surface rounded-2xl shadow-xl max-w-md w-full mx-4 p-5 border border-border">
+        <h3 className="text-lg font-semibold text-neutral-dark mb-1">
           Select Skills Covered
         </h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-text-secondary mb-4">
           Which skills were practiced or discussed in this session?
         </p>
 
         {loading && (
-          <p className="text-sm text-gray-400 py-4">Loading skills...</p>
+          <p className="text-sm text-text-secondary py-4">Loading skills...</p>
         )}
 
         {error && <p className="text-sm text-red-500 py-4">{error}</p>}
@@ -76,7 +76,7 @@ export default function SkillSelectModal({ isOpen, onClose, onConfirm }) {
                 className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${
                   selected.includes(skill.id) ?
                     "bg-primary/10 border border-primary/30"
-                  : "bg-gray-50 hover:bg-gray-100 border border-transparent"
+                  : "bg-surface-highlight hover:bg-border border border-transparent"
                 }`}
               >
                 <input
@@ -85,11 +85,11 @@ export default function SkillSelectModal({ isOpen, onClose, onConfirm }) {
                   onChange={() => handleToggle(skill.id)}
                   className="w-4 h-4 accent-primary"
                 />
-                <span className="text-sm font-medium text-gray-800">
+                <span className="text-sm font-medium text-neutral-dark">
                   {skill.skill_name}
                 </span>
                 {skill.category && (
-                  <span className="text-xs text-gray-400 ml-auto">
+                  <span className="text-xs text-text-secondary ml-auto">
                     {skill.category}
                   </span>
                 )}
@@ -102,7 +102,7 @@ export default function SkillSelectModal({ isOpen, onClose, onConfirm }) {
           <button
             type="button"
             onClick={handleSkip}
-            className="px-4 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+            className="px-4 py-2 text-sm rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
           >
             Skip
           </button>

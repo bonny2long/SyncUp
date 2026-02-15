@@ -71,6 +71,28 @@ export async function fetchMentorEngagementAnalytics() {
 }
 
 // ----------------------------------------------------
+// ACTIVITY CORRELATION ANALYTICS
+// ----------------------------------------------------
+
+export async function fetchMentorshipGrowthCorrelation() {
+  const res = await fetch(`${API_BASE}/analytics/correlation/mentorship-growth`);
+  if (!res.ok) throw new Error("Failed to fetch mentorship growth correlation");
+  return res.json();
+}
+
+export async function fetchEffectivePairings() {
+  const res = await fetch(`${API_BASE}/analytics/correlation/effective-pairings`);
+  if (!res.ok) throw new Error("Failed to fetch effective pairings");
+  return res.json();
+}
+
+export async function fetchEngagementLoops() {
+  const res = await fetch(`${API_BASE}/analytics/correlation/engagement-loops`);
+  if (!res.ok) throw new Error("Failed to fetch engagement loops");
+  return res.json();
+}
+
+// ----------------------------------------------------
 // USERS
 // ----------------------------------------------------
 export async function fetchUsers() {
@@ -404,6 +426,72 @@ export async function fetchMentorAvailability(mentorId) {
     `${API_BASE}/mentorship/mentors/${mentorId}/availability`,
   );
   if (!res.ok) throw new Error("Failed to fetch mentor availability");
+  return res.json();
+}
+
+// ============================================================
+// SKILL VALIDATIONS (Upvotes & Endorsements)
+// ============================================================
+
+// Add validation (upvote or mentor endorsement)
+export async function addSkillValidation(signalId, validatorId, validationType = 'upvote') {
+  const res = await fetch(`${API_BASE}/skills/${signalId}/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      validator_id: validatorId, 
+      validation_type: validationType 
+    })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to add validation');
+  }
+  return res.json();
+}
+
+// Remove validation
+export async function removeSkillValidation(signalId, validatorId, validationType = 'upvote') {
+  const res = await fetch(`${API_BASE}/skills/${signalId}/validate`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      validator_id: validatorId, 
+      validation_type: validationType 
+    })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to remove validation');
+  }
+  return res.json();
+}
+
+// Get validation counts for a signal
+export async function getSkillValidations(signalId) {
+  const res = await fetch(`${API_BASE}/skills/${signalId}/validations`);
+  if (!res.ok) throw new Error('Failed to fetch validations');
+  return res.json();
+}
+
+// Get user's received validations (show on their profile)
+export async function getUserReceivedValidations(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/validations`);
+  if (!res.ok) throw new Error('Failed to fetch user validations');
+  return res.json();
+}
+
+// Get which signals a user has already validated
+export async function getUserValidatedSignals(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/has-validated`);
+  if (!res.ok) throw new Error('Failed to fetch validated signals');
+  return res.json();
+}
+
+// Get user's skill signals with validation counts (for validation UI)
+export async function getUserSkillSignals(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/signals`);
+  if (!res.ok) throw new Error('Failed to fetch skill signals');
   return res.json();
 }
 

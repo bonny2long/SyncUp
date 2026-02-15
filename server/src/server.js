@@ -37,7 +37,7 @@ app.use("/api/progress_updates", progressRoutes);
 app.use("/api/mentorship", mentorshipRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/projects", projectsRoutes);
-app.use("/api/analytics", searchLimiter);
+app.use("/api/analytics", analyticsRoutes);
 app.use("/api/skills", skillsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/badges", badgeRoutes);

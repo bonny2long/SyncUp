@@ -72,9 +72,9 @@ export default function SkillSummaryCard() {
   });
 
   return (
-    <div className="bg-white border rounded-lg p-5">
-      <h3 className="font-medium text-gray-900">Top Skills Snapshot</h3>
-      <p className="text-xs text-gray-400 mt-1">
+    <div className="bg-surface border border-border rounded-lg p-5">
+      <h3 className="font-medium text-neutral-dark">Top Skills Snapshot</h3>
+      <p className="text-xs text-text-secondary mt-1">
         A high-level view of your current skill momentum
       </p>
 
@@ -118,9 +118,11 @@ export default function SkillSummaryCard() {
                 nice: true,
                 label: {
                   fontSize: 11,
+                  color: "var(--color-text-secondary)",
                 },
                 title: {
                   text: "Skill Strength",
+                  color: "var(--color-text-secondary)",
                 },
               },
               y: {
@@ -129,6 +131,7 @@ export default function SkillSummaryCard() {
                 label: {
                   fontSize: 12,
                   wrapping: "on-space",
+                  color: "var(--color-text-secondary)",
                 },
               },
             },

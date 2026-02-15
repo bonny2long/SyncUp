@@ -335,18 +335,18 @@ export default function Chat() {
       {/* Main Chat Layout */}
       <div className="flex flex-1 gap-4 overflow-hidden">
         {/* Left Sidebar - Channels & DMs */}
-        <div className="w-64 flex-shrink-0 bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col">
+        <div className="w-64 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
           {/* Channels */}
-          <div className="p-3 border-b border-gray-100">
+          <div className="p-3 border-b border-border">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-gray-500 uppercase">
                 Channels
               </span>
               <button
                 onClick={() => setShowCreateChannel(true)}
-                className="p-1 hover:bg-gray-100 rounded"
+                className="p-1 hover:bg-surface-highlight rounded"
               >
-                <Plus className="w-4 h-4 text-gray-500" />
+                <Plus className="w-4 h-4 text-text-secondary" />
               </button>
             </div>
             {filteredChannels.map((channel) => (
@@ -359,7 +359,7 @@ export default function Chat() {
                 className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm ${
                   activeChannel?.id === channel.id ?
                     "bg-primary/10 text-primary"
-                  : "text-gray-700 hover:bg-gray-50"
+                  : "text-neutral-dark hover:bg-surface-highlight"
                 }`}
               >
                 <Hash className="w-4 h-4" />
@@ -369,13 +369,13 @@ export default function Chat() {
 
             {/* Create Channel Form */}
             {showCreateChannel && (
-              <div className="mt-2 p-2 bg-gray-50 rounded">
+              <div className="mt-2 p-2 bg-surface-highlight rounded">
                 <input
                   type="text"
                   placeholder="Channel name"
                   value={newChannelName}
                   onChange={(e) => setNewChannelName(e.target.value)}
-                  className="w-full px-2 py-1 text-sm border rounded mb-2"
+                  className="w-full px-2 py-1 text-sm border border-border rounded mb-2 bg-surface text-neutral-dark"
                   autoFocus
                 />
                 <div className="flex gap-2">
@@ -401,11 +401,13 @@ export default function Chat() {
 
           {/* Direct Messages */}
           <div className="p-3 flex-1 overflow-y-auto">
-            <span className="text-xs font-semibold text-gray-500 uppercase">
+            <span className="text-xs font-semibold text-text-secondary uppercase">
               Direct Messages
             </span>
             {filteredDMUsers.length === 0 ?
-              <p className="text-xs text-gray-400 mt-2">No users available</p>
+              <p className="text-xs text-text-secondary/70 mt-2">
+                No users available
+              </p>
             : filteredDMUsers.map((dmUser) => (
                 <button
                   key={dmUser.id}
@@ -417,11 +419,11 @@ export default function Chat() {
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm mt-1 cursor-pointer ${
                     activeDM?.id === dmUser.id ?
                       "bg-primary/10 text-primary"
-                    : "text-gray-700 hover:bg-gray-50"
+                    : "text-neutral-dark hover:bg-surface-highlight"
                   }`}
                 >
                   <div className="relative">
-                    <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs">
+                    <div className="w-6 h-6 bg-surface-highlight lg:bg-gray-200 rounded-full flex items-center justify-center text-xs dark:bg-gray-700">
                       {getInitials(dmUser.name)}
                     </div>
                     <div
@@ -440,9 +442,9 @@ export default function Chat() {
         </div>
 
         {/* Center - Chat Window */}
-        <div className="flex-1 bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col">
+        <div className="flex-1 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
           {/* Chat Header */}
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
             {activeChannel ?
               <>
                 <Hash className="w-5 h-5 text-gray-400" />
@@ -451,22 +453,29 @@ export default function Chat() {
             : activeDM ?
               <>
                 <div className="relative">
-                  <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs">
+                  <div className="w-6 h-6 bg-surface-highlight lg:bg-gray-200 rounded-full flex items-center justify-center text-xs dark:bg-gray-700">
                     {getInitials(activeDM.name)}
                   </div>
                   <div
-                    className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white ${
+                    className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-surface ${
                       activeDM.status === "online" ?
                         "bg-green-500"
                       : "bg-gray-400"
                     }`}
                   />
                 </div>
-                <span className="font-semibold">{activeDM.name}</span>
-                <span className="text-xs text-gray-500">({activeDM.role})</span>
+                <span className="font-semibold text-neutral-dark">
+                  {activeDM.name}
+                </span>
+                <span className="text-xs text-text-secondary">
+                  ({activeDM.role})
+                </span>
               </>
-            : <span className="text-gray-500">Select a channel or DM</span>}
-            <span className="ml-auto text-xs text-gray-400">
+            : <span className="text-text-secondary">
+                Select a channel or DM
+              </span>
+            }
+            <span className="ml-auto text-xs text-text-secondary">
               Logged in as{" "}
               <span className="font-medium text-primary">{user?.name}</span>
             </span>
@@ -495,11 +504,11 @@ export default function Chat() {
                         className={`flex flex-col max-w-[70%] ${isMe ? "items-end" : "items-start"}`}
                       >
                         <div className="flex items-baseline gap-2 mb-1">
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-text-secondary">
                             {formatTime(msg.created_at)}
                           </span>
                           {!isMe && (
-                            <span className="font-semibold text-xs text-gray-600">
+                            <span className="font-semibold text-xs text-neutral-dark">
                               {msg.sender_name}
                             </span>
                           )}
@@ -509,7 +518,7 @@ export default function Chat() {
                           className={`px-4 py-2 rounded-2xl shadow-sm text-sm ${
                             isMe ?
                               "bg-primary text-white rounded-br-none"
-                            : "bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200"
+                            : "bg-surface-highlight text-neutral-dark rounded-bl-none border border-border"
                           }`}
                         >
                           <p className="whitespace-pre-wrap break-words">
@@ -533,11 +542,11 @@ export default function Chat() {
                     </div>
                   );
                 })
-              : <p className="text-center text-gray-500 py-8">
+              : <p className="text-center text-text-secondary py-8">
                   No messages yet
                 </p>
 
-            : <div className="flex flex-col items-center justify-center h-full text-gray-400">
+            : <div className="flex flex-col items-center justify-center h-full text-text-secondary">
                 <MessageSquare className="w-12 h-12 mb-2" />
                 <p>
                   {activeDM ?
@@ -555,21 +564,21 @@ export default function Chat() {
 
           {/* Message Input */}
           {activeChannel || activeDM ?
-            <div className="p-3 border-t border-gray-100">
+            <div className="p-3 border-t border-border">
               {/* Selected File Preview */}
               {selectedFile && (
-                <div className="flex items-center gap-2 mb-2 p-2 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-2 p-2 bg-surface-highlight rounded-lg border border-border">
                   {selectedFile.type.startsWith("image/") ?
                     <Image className="w-4 h-4 text-gray-500" />
                   : <File className="w-4 h-4 text-gray-500" />}
-                  <span className="text-sm text-gray-700 flex-1 truncate">
+                  <span className="text-sm text-neutral-dark flex-1 truncate">
                     {selectedFile.name}
                   </span>
                   <button
                     onClick={() => setSelectedFile(null)}
-                    className="p-1 hover:bg-gray-200 rounded"
+                    className="p-1 hover:bg-surface rounded"
                   >
-                    <X className="w-4 h-4 text-gray-500" />
+                    <X className="w-4 h-4 text-text-secondary" />
                   </button>
                 </div>
               )}
@@ -587,7 +596,7 @@ export default function Chat() {
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-2 hover:bg-gray-100 rounded text-gray-500"
+                  className="p-2 hover:bg-surface-highlight rounded text-text-secondary"
                   disabled={uploading}
                 >
                   {uploading ?
@@ -600,7 +609,7 @@ export default function Chat() {
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                   placeholder={`Message ${activeChannel ? "#" + activeChannel.name : activeDM?.name}`}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-surface-highlight text-neutral-dark placeholder-text-secondary"
                   disabled={sending}
                 />
                 <button
@@ -616,10 +625,12 @@ export default function Chat() {
         </div>
 
         {/* Right Sidebar - Members */}
-        <div className="w-56 flex-shrink-0 bg-white border border-gray-200 rounded-lg overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-gray-100 flex items-center gap-2">
-            <Users className="w-4 h-4 text-gray-500" />
-            <span className="font-semibold text-sm">Team Members</span>
+        <div className="w-56 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
+          <div className="p-3 border-b border-border flex items-center gap-2">
+            <Users className="w-4 h-4 text-text-secondary" />
+            <span className="font-semibold text-sm text-neutral-dark">
+              Team Members
+            </span>
           </div>
           <div className="p-3 overflow-y-auto flex-1">
             {/* Groups */}
@@ -629,14 +640,14 @@ export default function Chat() {
                 <div key={groupName} className="mb-2">
                   <button
                     onClick={() => toggleGroup(groupName)}
-                    className="w-full flex items-center justify-between py-1 hover:bg-gray-50 rounded transition-colors"
+                    className="w-full flex items-center justify-between py-1 hover:bg-surface-highlight rounded transition-colors"
                   >
-                    <span className="text-xs font-semibold text-gray-400 uppercase">
+                    <span className="text-xs font-semibold text-text-secondary uppercase">
                       {groupName} ({groups[groupName].length})
                     </span>
                     {isExpanded ?
-                      <ChevronDown className="w-3 h-3 text-gray-400" />
-                    : <ChevronRight className="w-3 h-3 text-gray-400" />}
+                      <ChevronDown className="w-3 h-3 text-text-secondary" />
+                    : <ChevronRight className="w-3 h-3 text-text-secondary" />}
                   </button>
                   {isExpanded && (
                     <div className="mt-1">
@@ -650,7 +661,7 @@ export default function Chat() {
                               className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                                 u.status === "online" ?
                                   "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-500"
+                                : "bg-surface-highlight text-text-secondary lg:bg-gray-100 lg:text-gray-500 dark:bg-gray-700"
                               }`}
                             >
                               {getInitials(u.name)}
@@ -667,8 +678,8 @@ export default function Chat() {
                             <p
                               className={`text-sm font-medium truncate ${
                                 u.status === "online" ?
-                                  "text-gray-900"
-                                : "text-gray-500"
+                                  "text-neutral-dark"
+                                : "text-text-secondary"
                               }`}
                             >
                               {u.name}
@@ -690,14 +701,14 @@ export default function Chat() {
               <div className="mt-4">
                 <button
                   onClick={() => toggleGroup("Other Team Members")}
-                  className="w-full flex items-center justify-between py-1 hover:bg-gray-50 rounded transition-colors"
+                  className="w-full flex items-center justify-between py-1 hover:bg-surface-highlight rounded transition-colors"
                 >
-                  <span className="text-xs font-semibold text-gray-400 uppercase">
+                  <span className="text-xs font-semibold text-text-secondary uppercase">
                     Other Team Members ({otherUsers.length})
                   </span>
                   {expandedGroups["Other Team Members"] !== false ?
-                    <ChevronDown className="w-3 h-3 text-gray-400" />
-                  : <ChevronRight className="w-3 h-3 text-gray-400" />}
+                    <ChevronDown className="w-3 h-3 text-text-secondary" />
+                  : <ChevronRight className="w-3 h-3 text-text-secondary" />}
                 </button>
                 {expandedGroups["Other Team Members"] !== false && (
                   <div className="mt-1">
@@ -711,7 +722,7 @@ export default function Chat() {
                             className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                               u.status === "online" ?
                                 "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-500"
+                              : "bg-surface-highlight text-text-secondary lg:bg-gray-100 lg:text-gray-500 dark:bg-gray-700"
                             }`}
                           >
                             {getInitials(u.name)}
@@ -728,8 +739,8 @@ export default function Chat() {
                           <p
                             className={`text-sm font-medium truncate ${
                               u.status === "online" ?
-                                "text-gray-900"
-                              : "text-gray-500"
+                                "text-neutral-dark"
+                              : "text-text-secondary"
                             }`}
                           >
                             {u.name}

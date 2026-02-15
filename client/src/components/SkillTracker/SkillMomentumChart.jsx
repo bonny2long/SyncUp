@@ -172,17 +172,28 @@ export default function SkillMomentumChart() {
       x: {
         type: "category",
         position: "bottom",
-        label: { fontSize: 12, wrapping: "on-space" },
+        label: {
+          fontSize: 12,
+          wrapping: "on-space",
+          color: "var(--color-text-secondary)",
+        },
       },
       y: {
         type: "number",
         position: "left",
         nice: true,
-        label: { fontSize: 11 },
+        label: { fontSize: 11, color: "var(--color-text-secondary)" },
       },
     },
     padding: { top: 12, right: 48, bottom: 16, left: 18 },
-    legend: { position: "bottom" },
+    legend: {
+      position: "bottom",
+      item: {
+        label: {
+          color: "var(--color-text-secondary)",
+        },
+      },
+    },
     background: { fill: "transparent" },
   };
 

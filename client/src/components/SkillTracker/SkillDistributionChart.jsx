@@ -81,8 +81,8 @@ export default function SkillDistributionChart() {
   if (!sortedData.length) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-gray-500">No activity yet.</p>
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-sm text-text-secondary">No activity yet.</p>
+        <p className="text-xs text-text-secondary mt-2">
           This updates automatically as you work.
         </p>
       </div>
@@ -113,11 +113,11 @@ export default function SkillDistributionChart() {
       number: {
         position: "bottom",
         nice: true,
-        label: { fontSize: 11 },
+        label: { fontSize: 11, color: "var(--color-text-secondary)" },
       },
       category: {
         position: "left",
-        label: { fontSize: 12 },
+        label: { fontSize: 12, color: "var(--color-text-secondary)" },
       },
     },
     padding: { left: 20, right: 20, top: 10, bottom: 10 },
@@ -126,7 +126,7 @@ export default function SkillDistributionChart() {
 
   return (
     <div className="w-full">
-      {insight && <p className="text-xs text-gray-500 mb-2">{insight}</p>}
+      {insight && <p className="text-xs text-text-secondary mb-2">{insight}</p>}
       <div style={{ height: 260 }}>
         <AgCharts options={chartOptions} />
       </div>

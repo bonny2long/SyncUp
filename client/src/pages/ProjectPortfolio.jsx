@@ -41,6 +41,7 @@ export default function ProjectPortfolio() {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [displayCount, setDisplayCount] = useState(12);
 
   // Filter by status
   const filteredProjects = projects.filter((p) =>
@@ -96,48 +97,20 @@ export default function ProjectPortfolio() {
           <div className="min-h-screen bg-neutralLight p-6">
             <div className="max-w-7xl mx-auto">
               {/* Header */}
-              <div className="mb-8">
-                <h1 className="text-4xl font-bold text-neutralDark mb-2">
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold text-neutral-dark mb-2">
                   Project Portfolio
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-text-secondary text-sm">
                   Showcase your completed work and achievements
                 </p>
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-white p-4 rounded-lg border border-gray-100">
-                  <p className="text-sm text-gray-600">Total Projects</p>
-                  <p className="text-2xl font-bold text-neutralDark">
-                    {projects.length}
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-gray-100">
-                  <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-accent">
-                    {projects.filter((p) => p.status === "active").length}
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-gray-100">
-                  <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {projects.filter((p) => p.status === "completed").length}
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-lg border border-gray-100">
-                  <p className="text-sm text-gray-600">Unique Skills</p>
-                  <p className="text-2xl font-bold text-secondary">
-                    {projects.reduce((sum, p) => sum + (p.skill_count || 0), 0)}
-                  </p>
-                </div>
-              </div>
-
               {/* Loading state */}
               {loading ?
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[...Array(6)].map((_, i) => (
-                    <SkeletonLoader key={i} type="chart" height={300} />
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {[...Array(8)].map((_, i) => (
+                    <SkeletonLoader key={i} type="chart" height={80} />
                   ))}
                 </div>
               : error ?
@@ -145,64 +118,72 @@ export default function ProjectPortfolio() {
                   <ChartError onRetry={refresh} error={error} />
                 </div>
               : <>
-                  {/* Filters & Sort */}
-                  <div className="flex flex-col md:flex-row gap-4 mb-6">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-neutralDark mb-2">
-                        Filter by Status
-                      </label>
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      >
-                        {STATUS_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  {/* Inline Filters */}
+                  <div className="flex flex-wrap gap-3 mb-6">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    >
+                      {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
 
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-neutralDark mb-2">
-                        Sort by
-                      </label>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      >
-                        {SORT_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    >
+                      {SORT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Empty state */}
                   {sortedProjects.length === 0 ?
-                    <div className="text-center py-12 bg-white rounded-lg border border-gray-100">
-                      <p className="text-gray-500 text-lg mb-2">
+                    <div className="text-center py-12 bg-surface rounded-lg border border-border">
+                      <p className="text-text-secondary text-lg mb-2">
                         No projects yet
                       </p>
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-text-secondary/70 text-sm">
                         Create your first project in CollaborationHub
                       </p>
                     </div>
                   : /* Projects Grid */
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {sortedProjects.map((project) => (
-                        <ProjectCard
-                          key={project.id}
-                          project={project}
-                          variant="portfolio"
-                          onClick={() => handleProjectClick(project)}
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {sortedProjects
+                          .slice(0, displayCount)
+                          .map((project) => (
+                            <ProjectCard
+                              key={project.id}
+                              project={project}
+                              variant="portfolio"
+                              onClick={() => handleProjectClick(project)}
+                            />
+                          ))}
+                      </div>
+
+                      {/* Load More */}
+                      {displayCount < sortedProjects.length && (
+                        <div className="text-center mt-6">
+                          <button
+                            onClick={() => setDisplayCount((prev) => prev + 12)}
+                            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
+                          >
+                            Load{" "}
+                            {Math.min(12, sortedProjects.length - displayCount)}{" "}
+                            More Projects
+                          </button>
+                        </div>
+                      )}
+                    </>
                   }
                 </>
               }

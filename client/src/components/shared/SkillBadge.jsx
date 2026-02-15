@@ -181,7 +181,7 @@ export function getSkillColor(skillName) {
   return SKILL_COLOR_MAP[normalized] || DEFAULT_COLOR;
 }
 
-export default function SkillBadge({ skill, size = "sm", variant = "badge" }) {
+export default function SkillBadge({ skill, size = "md", variant = "badge" }) {
   if (!skill) return null;
 
   const colors = getSkillColor(skill);

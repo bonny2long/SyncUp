@@ -24,7 +24,10 @@ export default function MyRequests({
   const handleCancel = (session) => {
     // Authorization check: Ensure this intern owns the session
     if (session.intern_id !== user.id) {
-      addToast({ type: "error", message: "You can only cancel your own requests" });
+      addToast({
+        type: "error",
+        message: "You can only cancel your own requests",
+      });
       return;
     }
     setSessionToAction(session);
@@ -59,7 +62,10 @@ export default function MyRequests({
   const handleReschedule = (session) => {
     // Authorization check: Ensure this intern owns the session
     if (session.intern_id !== user.id) {
-      addToast({ type: "error", message: "You can only reschedule your own sessions" });
+      addToast({
+        type: "error",
+        message: "You can only reschedule your own sessions",
+      });
       return;
     }
     setSessionToAction(session);
@@ -80,7 +86,10 @@ export default function MyRequests({
     setActionLoading(true);
     try {
       await rescheduleSession(sessionToAction.id, newDateTime);
-      addToast({ type: "success", message: "Session rescheduled successfully" });
+      addToast({
+        type: "success",
+        message: "Session rescheduled successfully",
+      });
       setShowRescheduleModal(false);
       setSessionToAction(null);
       onRefresh();
@@ -94,7 +103,7 @@ export default function MyRequests({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading your requests...</p>
+        <p className="text-sm text-text-secondary">Loading your requests...</p>
       </div>
     );
   }
@@ -117,17 +126,17 @@ export default function MyRequests({
     <div className="space-y-6">
       {/* Pending Requests */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-neutral-dark mb-3 flex items-center gap-2">
           <Clock className="w-5 h-5 text-yellow-600" />
           Pending Requests
           {pending.length > 0 && (
-            <span className="text-sm font-normal text-gray-500">
+            <span className="text-sm font-normal text-text-secondary">
               ({pending.length})
             </span>
           )}
         </h2>
         {pending.length === 0 ?
-          <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-text-secondary bg-surface-highlight p-4 rounded-lg">
             No pending requests. Find a mentor to get started!
           </p>
         : <div className="space-y-3">
@@ -145,17 +154,17 @@ export default function MyRequests({
 
       {/* Upcoming Sessions (Accepted) */}
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-neutral-dark mb-3 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-green-600" />
           Upcoming Sessions
           {accepted.length > 0 && (
-            <span className="text-sm font-normal text-gray-500">
+            <span className="text-sm font-normal text-text-secondary">
               ({accepted.length})
             </span>
           )}
         </h2>
         {accepted.length === 0 ?
-          <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-text-secondary bg-surface-highlight p-4 rounded-lg">
             No upcoming sessions scheduled
           </p>
         : <div className="space-y-3">
@@ -175,7 +184,7 @@ export default function MyRequests({
       {/* Declined Requests */}
       {declined.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-neutral-dark mb-3 flex items-center gap-2">
             <XCircle className="w-5 h-5 text-red-600" />
             Declined Requests ({declined.length})
           </h2>
@@ -257,11 +266,11 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+    <div className="bg-surface border border-border rounded-lg p-4 hover:shadow-md transition">
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">{session.topic}</h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <h3 className="font-semibold text-neutral-dark">{session.topic}</h3>
+          <p className="text-sm text-text-secondary mt-1">
             With:{" "}
             <span className="font-medium text-primary">
               {session.mentor_name}
@@ -279,7 +288,7 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
         </span>
       </div>
 
-      <div className="text-sm text-gray-600 space-y-1 mb-3">
+      <div className="text-sm text-text-secondary space-y-1 mb-3">
         <p className="flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           {formatDate(session.session_date)}
@@ -291,13 +300,13 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
             {formatFocus(session.session_focus)}
           </span>
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-text-secondary">
           Requested {formatTimeAgo(session.created_at)}
         </p>
       </div>
 
       {session.details && (
-        <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded mb-3">
+        <p className="text-sm text-text-secondary bg-surface-highlight p-2 rounded mb-3">
           {session.details}
         </p>
       )}
@@ -307,7 +316,7 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
         {type === "pending" && (
           <button
             onClick={() => onCancel(session)}
-            className="text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+            className="text-sm px-4 py-2 rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
           >
             Cancel Request
           </button>
@@ -323,7 +332,7 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
             </button>
             <button
               onClick={() => onCancel(session)}
-              className="text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+              className="text-sm px-4 py-2 rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
             >
               Cancel
             </button>

@@ -68,7 +68,7 @@ export default function CreateProjectForm({ onCreated }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-4 rounded-xl shadow-md flex flex-col gap-3"
+      className="bg-surface p-4 rounded-xl shadow-md flex flex-col gap-3 border border-border"
     >
       <h3 className="font-semibold text-secondary">Create Project</h3>
 
@@ -77,7 +77,7 @@ export default function CreateProjectForm({ onCreated }) {
         placeholder="Project title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="border rounded p-2 text-sm"
+        className="border border-border rounded p-2 text-sm bg-surface-highlight text-neutral-dark placeholder-text-secondary"
       />
 
       <textarea
@@ -85,22 +85,26 @@ export default function CreateProjectForm({ onCreated }) {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         rows={3}
-        className="border rounded p-2 text-sm resize-none"
+        className="border border-border rounded p-2 text-sm resize-none bg-surface-highlight text-neutral-dark placeholder-text-secondary"
       />
 
       {/* VISIBILITY SELECTOR */}
       <div className="flex flex-col gap-2">
-        <label className="text-xs text-gray-500 font-medium">
+        <label className="text-xs text-text-secondary font-medium">
           How do you want to share this project?
         </label>
 
         <div className="flex gap-3">
           {/* Build in Public Option */}
           <label
-            className="flex-1 p-3 border-2 rounded-lg cursor-pointer transition hover:bg-gray-50"
+            className="flex-1 p-3 border-2 rounded-lg cursor-pointer transition hover:bg-surface-highlight"
             style={{
-              borderColor: visibility === "public" ? "#4C5FD5" : "#e5e7eb",
-              backgroundColor: visibility === "public" ? "#F5F7FA" : "white",
+              borderColor:
+                visibility === "public" ? "#4C5FD5" : "var(--color-border)",
+              backgroundColor:
+                visibility === "public" ?
+                  "var(--color-surface-highlight)"
+                : "var(--color-surface)",
             }}
           >
             <div className="flex items-start gap-2">
@@ -113,10 +117,10 @@ export default function CreateProjectForm({ onCreated }) {
                 className="mt-0.5"
               />
               <div>
-                <p className="text-sm font-semibold text-neutralDark">
+                <p className="text-sm font-semibold text-neutral-dark">
                   Build in Public
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-text-secondary mt-1">
                   Share your progress with the community. No join requests.
                 </p>
               </div>
@@ -125,10 +129,14 @@ export default function CreateProjectForm({ onCreated }) {
 
           {/* Seeking Members Option */}
           <label
-            className="flex-1 p-3 border-2 rounded-lg cursor-pointer transition hover:bg-gray-50"
+            className="flex-1 p-3 border-2 rounded-lg cursor-pointer transition hover:bg-surface-highlight"
             style={{
-              borderColor: visibility === "seeking" ? "#9B5DE5" : "#e5e7eb",
-              backgroundColor: visibility === "seeking" ? "#F5F7FA" : "white",
+              borderColor:
+                visibility === "seeking" ? "#9B5DE5" : "var(--color-border)",
+              backgroundColor:
+                visibility === "seeking" ?
+                  "var(--color-surface-highlight)"
+                : "var(--color-surface)",
             }}
           >
             <div className="flex items-start gap-2">
@@ -141,11 +149,11 @@ export default function CreateProjectForm({ onCreated }) {
                 className="mt-0.5"
               />
               <div>
-                <p className="text-sm font-semibold text-neutralDark flex items-center gap-2">
+                <p className="text-sm font-semibold text-neutral-dark flex items-center gap-2">
                   <UserPlus className="w-4 h-4" />
                   Seeking Members
                 </p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-text-secondary mt-1">
                   Accept join requests from interested collaborators.
                 </p>
               </div>
@@ -156,7 +164,7 @@ export default function CreateProjectForm({ onCreated }) {
 
       {/* SKILLS SECTION */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs text-gray-500">
+        <label className="text-xs text-text-secondary">
           Tag relevant skills (type & enter)
         </label>
 
@@ -172,12 +180,12 @@ export default function CreateProjectForm({ onCreated }) {
               }
             }}
             placeholder="e.g. React, UX Design, Public Speaking"
-            className="flex-1 border border-gray-200 rounded-lg p-2 text-sm"
+            className="flex-1 border border-border rounded-lg p-2 text-sm bg-surface-highlight text-neutral-dark placeholder-text-secondary"
           />
           <button
             type="button"
             onClick={addSkill}
-            className="px-3 rounded-lg bg-gray-100 text-sm hover:bg-gray-200"
+            className="px-3 rounded-lg bg-surface-highlight text-text-secondary text-sm hover:bg-border border border-border"
           >
             Add
           </button>

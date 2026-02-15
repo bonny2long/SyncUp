@@ -26,15 +26,12 @@ export default function InternView() {
       setLoading(true);
       setError(null);
       const data = await fetchInternSessions(user.id);
-      
-      // Debug: Log what the API returned
-      console.log("API returned sessions:", data.length, "sessions for intern", user.id);
-      console.log("Session intern_ids:", data.map(s => ({ id: s.id, intern_id: s.intern_id, topic: s.topic })));
-      
+
       // Additional security: Filter to ensure only this intern's sessions
-      const filteredSessions = data.filter(session => session.intern_id === user.id);
-      console.log("Filtered to:", filteredSessions.length, "sessions after filtering");
-      
+      const filteredSessions = data.filter(
+        (session) => session.intern_id === user.id,
+      );
+
       setSessions(filteredSessions);
     } catch (err) {
       console.error("Error loading sessions:", err);
@@ -59,19 +56,19 @@ export default function InternView() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-primary mb-2">Find a Mentor</h1>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-text-secondary">
           Connect with experienced mentors to accelerate your learning
         </p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-2 border-b border-border">
         <button
           onClick={() => setActiveTab("find")}
           className={`px-4 py-3 font-medium transition-all ${
             activeTab === "find" ?
               "text-primary border-b-2 border-primary"
-            : "text-gray-600 hover:text-gray-900"
+            : "text-text-secondary hover:text-neutral-dark"
           }`}
         >
           Find Mentors
@@ -82,7 +79,7 @@ export default function InternView() {
           className={`px-4 py-3 font-medium transition-all relative ${
             activeTab === "requests" ?
               "text-secondary border-b-2 border-secondary"
-            : "text-gray-600 hover:text-gray-900"
+            : "text-text-secondary hover:text-neutral-dark"
           }`}
         >
           My Requests
@@ -98,7 +95,7 @@ export default function InternView() {
           className={`px-4 py-3 font-medium transition-all ${
             activeTab === "history" ?
               "text-accent border-b-2 border-accent"
-            : "text-gray-600 hover:text-gray-900"
+            : "text-text-secondary hover:text-neutral-dark"
           }`}
         >
           History ({completedSessions.length})

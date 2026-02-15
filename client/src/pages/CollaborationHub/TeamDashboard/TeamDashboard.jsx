@@ -5,9 +5,8 @@ import SkeletonLoader from "../../../components/shared/SkeletonLoader";
 import TeamOverview from "./TeamOverview";
 import TeamSkillChart from "./TeamSkillChart";
 import TeamMomentumChart from "./TeamMomentumChart";
-import TeamComparison from "./TeamComparison";
-import TeamInsights from "./TeamInsights";
 import TeamActivityFeed from "./TeamActivityFeed";
+import KeyInsight from "./KeyInsight";
 import { BarChart2, ChevronDown, ChevronUp } from "lucide-react";
 
 const TeamDashboard = ({ projectId }) => {
@@ -100,6 +99,9 @@ const TeamDashboard = ({ projectId }) => {
       {/* Team Activity Feed - Always Visible */}
       <TeamActivityFeed projectId={projectId} />
 
+      {/* Key Insight - Single actionable insight */}
+      <KeyInsight data={teamData} />
+
       {/* Charts Section - Collapsible */}
       <div>
         {/* Toggle Button */}
@@ -121,7 +123,7 @@ const TeamDashboard = ({ projectId }) => {
 
         {/* Charts Content - Collapsible */}
         {showCharts && (
-          <div className="space-y-6 mt-4">
+          <div className="mt-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Team Skill Distribution */}
               <div className="h-full">
@@ -131,18 +133,6 @@ const TeamDashboard = ({ projectId }) => {
               {/* Team Momentum */}
               <div className="h-full">
                 <TeamMomentumChart data={teamData.momentum} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-              {/* Individual vs Team Comparison */}
-              <div className="h-full">
-                <TeamComparison data={teamData.individualComparison} />
-              </div>
-
-              {/* AI-Powered Insights */}
-              <div className="h-full">
-                <TeamInsights data={teamData} projectId={projectId} />
               </div>
             </div>
           </div>

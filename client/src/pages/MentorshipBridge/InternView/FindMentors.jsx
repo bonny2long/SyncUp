@@ -60,7 +60,7 @@ export default function FindMentors({ onSessionRequested }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading mentors...</p>
+        <p className="text-sm text-text-secondary">Loading mentors...</p>
       </div>
     );
   }
@@ -128,7 +128,7 @@ export default function FindMentors({ onSessionRequested }) {
           className={`px-4 py-2 text-sm rounded-lg border transition ${
             tab === "available" ?
               "bg-primary text-white border-primary"
-            : "bg-white text-gray-700 border-gray-200 hover:border-primary/40"
+            : "bg-surface text-text-secondary border-border hover:border-primary/40"
           }`}
         >
           Available Mentors
@@ -138,7 +138,7 @@ export default function FindMentors({ onSessionRequested }) {
           className={`px-4 py-2 text-sm rounded-lg border transition ${
             tab === "project" ?
               "bg-secondary text-white border-secondary"
-            : "bg-white text-gray-700 border-gray-200 hover:border-secondary/40"
+            : "bg-surface text-text-secondary border-border hover:border-secondary/40"
           }`}
         >
           Project Mentors
@@ -151,7 +151,7 @@ export default function FindMentors({ onSessionRequested }) {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={`Search ${tab === "available" ? "available" : "project"} mentors...`}
-        className="w-full p-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="w-full p-3 text-sm border border-border rounded-lg bg-surface text-neutral-dark placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
       />
 
       {error && (
@@ -163,7 +163,7 @@ export default function FindMentors({ onSessionRequested }) {
       {/* Mentor Grid */}
       {filtered.length === 0 && !error ?
         <div className="text-center py-12">
-          <p className="text-gray-500">
+          <p className="text-text-secondary">
             {search ?
               "No mentors found matching your search"
             : "No mentors available"}
