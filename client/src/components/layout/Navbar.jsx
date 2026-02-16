@@ -114,6 +114,7 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     portfolio: "Project Portfolio",
     health: "System Health",
     chat: "Team Chat",
+    settings: "Settings",
   };
   const pageTitle = titleMap[activeTab] || "SyncUp";
 
@@ -188,7 +189,15 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
               </button>
             </li>
             <li className="px-4 py-2.5 hover:bg-neutralLight cursor-pointer text-neutral-dark transition-colors">
-              Settings
+              <button
+                onClick={() => {
+                  navigate("/settings");
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left"
+              >
+                Settings
+              </button>
             </li>
 
             <li className="border-t border-border" />

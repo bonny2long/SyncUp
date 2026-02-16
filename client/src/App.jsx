@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import Settings from "./pages/Settings";
 import { useUser } from "./context/UserContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProjectPortfolio from "./pages/ProjectPortfolio";
@@ -77,6 +78,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProjectPortfolio />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
             </ProtectedRoute>
           }
         />
