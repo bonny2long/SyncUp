@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+
 export default function ProfileSection() {
-  const { user } = useUser();
+  const { user, login } = useUser();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -28,10 +30,20 @@ export default function ProfileSection() {
   };
 
   const handleSave = async () => {
+    if (!user?.id) return;
+    
     setSaving(true);
     try {
-      // Simulated API call - replace with actual API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await fetch(`${API_BASE}/users/${user.id}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      
+      if (!res.ok) throw new Error("Failed to save");
+      
+      const updatedUser = await res.json();
+      login(updatedUser);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {

@@ -19,7 +19,12 @@ export const getUserProfile = async (req, res) => {
   try {
     // Get basic user info
     const [users] = await pool.query(
-      "SELECT id, name, email, role, join_date FROM users WHERE id = ?",
+      `SELECT id, name, email, role, join_date, bio,
+        email_notifications, notify_join_requests, notify_mentions,
+        notify_session_reminders, notify_project_updates, notify_weekly_summary,
+        profile_visibility, show_email, show_projects, show_skills,
+        accept_mentorship, auto_accept_teammates
+      FROM users WHERE id = ?`,
       [userId],
     );
 
@@ -222,5 +227,139 @@ export const getUserActivityTimeline = async (req, res) => {
   } catch (err) {
     console.error("Error fetching activity timeline:", err);
     res.status(500).json({ error: "Failed to fetch activity timeline" });
+  }
+};
+
+// PUT /api/users/:userId/profile
+// Update user profile (name, email, bio), notification settings, and privacy settings
+export const updateUserProfile = async (req, res) => {
+  const { userId } = req.params;
+  const { 
+    name, 
+    email, 
+    bio,
+    email_notifications,
+    notify_join_requests,
+    notify_mentions,
+    notify_session_reminders,
+    notify_project_updates,
+    notify_weekly_summary,
+    profile_visibility,
+    show_email,
+    show_projects,
+    show_skills,
+    accept_mentorship,
+    auto_accept_teammates
+  } = req.body;
+
+  try {
+    await pool.query(
+      `UPDATE users SET 
+        name = ?, email = ?, bio = ?,
+        email_notifications = ?, notify_join_requests = ?, notify_mentions = ?,
+        notify_session_reminders = ?, notify_project_updates = ?, notify_weekly_summary = ?,
+        profile_visibility = ?, show_email = ?, show_projects = ?, show_skills = ?,
+        accept_mentorship = ?, auto_accept_teammates = ?
+      WHERE id = ?`,
+      [
+        name, email, bio || null,
+        email_notifications ?? true, notify_join_requests ?? true, notify_mentions ?? true,
+        notify_session_reminders ?? true, notify_project_updates ?? true, notify_weekly_summary ?? false,
+        profile_visibility ?? 'team', show_email ?? false, show_projects ?? true, show_skills ?? true,
+        accept_mentorship ?? true, auto_accept_teammates ?? false,
+        userId
+      ]
+    );
+
+    const [users] = await pool.query(
+      `SELECT id, name, email, role, join_date, bio,
+        email_notifications, notify_join_requests, notify_mentions,
+        notify_session_reminders, notify_project_updates, notify_weekly_summary,
+        profile_visibility, show_email, show_projects, show_skills,
+        accept_mentorship, auto_accept_teammates
+      FROM users WHERE id = ?`,
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(users[0]);
+  } catch (err) {
+    console.error("Error updating user profile:", err);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+};
+
+// PUT /api/users/:userId/password
+// Change user password
+export const changePassword = async (req, res) => {
+  const { userId } = req.params;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "Current and new password are required" });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters" });
+  }
+
+  try {
+    // Get current password hash
+    const [users] = await pool.query(
+      "SELECT password_hash FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // For demo purposes, compare directly (in production, use bcrypt)
+    const storedHash = users[0].password_hash;
+    
+    // If no password set, allow setting one
+    if (storedHash && storedHash !== currentPassword) {
+      return res.status(400).json({ error: "Current password is incorrect" });
+    }
+
+    // Update password
+    await pool.query(
+      "UPDATE users SET password_hash = ? WHERE id = ?",
+      [newPassword, userId]
+    );
+
+    res.json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error("Error changing password:", err);
+    res.status(500).json({ error: "Failed to change password" });
+  }
+};
+
+// DELETE /api/users/:userId
+// Delete user account
+export const deleteUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Delete related data first (cascading should handle this, but being explicit)
+    await pool.query("DELETE FROM user_skill_signals WHERE user_id = ?", [userId]);
+    await pool.query("DELETE FROM project_members WHERE user_id = ?", [userId]);
+    await pool.query("DELETE FROM notifications WHERE user_id = ?", [userId]);
+    await pool.query("DELETE FROM skill_validations WHERE user_id = ?", [userId]);
+    
+    // Delete user
+    const [result] = await pool.query("DELETE FROM users WHERE id = ?", [userId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ message: "Account deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting account:", err);
+    res.status(500).json({ error: "Failed to delete account" });
   }
 };

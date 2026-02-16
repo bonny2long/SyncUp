@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
 import ToggleSwitch from "../shared/ToggleSwitch";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+
 export default function PrivacySection() {
-  const { user } = useUser();
+  const { user, login } = useUser();
   const [visibility, setVisibility] = useState("team");
   const [settings, setSettings] = useState({
     showEmail: false,
@@ -17,12 +19,42 @@ export default function PrivacySection() {
 
   const isMentor = user?.role === "mentor";
 
-  const handleVisibilityChange = async (value) => {
-    setVisibility(value);
+  useEffect(() => {
+    if (user) {
+      setVisibility(user.profile_visibility || "team");
+      setSettings({
+        showEmail: user.show_email ?? false,
+        showProjects: user.show_projects ?? true,
+        showSkills: user.show_skills ?? true,
+        acceptMentorship: user.accept_mentorship ?? true,
+        autoAcceptTeammates: user.auto_accept_teammates ?? false,
+      });
+    }
+  }, [user]);
+
+  const saveSettings = async (newVisibility, newSettings) => {
+    if (!user?.id) return;
+    
     setSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setLastSaved(new Date());
+      const res = await fetch(`${API_BASE}/users/${user.id}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile_visibility: newVisibility,
+          show_email: newSettings.showEmail,
+          show_projects: newSettings.showProjects,
+          show_skills: newSettings.showSkills,
+          accept_mentorship: newSettings.acceptMentorship,
+          auto_accept_teammates: newSettings.autoAcceptTeammates,
+        }),
+      });
+      
+      if (res.ok) {
+        const updatedUser = await res.json();
+        login(updatedUser);
+        setLastSaved(new Date());
+      }
     } catch (error) {
       console.error("Failed to save:", error);
     } finally {
@@ -30,18 +62,15 @@ export default function PrivacySection() {
     }
   };
 
+  const handleVisibilityChange = async (value) => {
+    setVisibility(value);
+    await saveSettings(value, settings);
+  };
+
   const handleToggle = async (key) => {
     const newSettings = { ...settings, [key]: !settings[key] };
     setSettings(newSettings);
-    setSaving(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error("Failed to save:", error);
-    } finally {
-      setSaving(false);
-    }
+    await saveSettings(visibility, newSettings);
   };
 
   const formatLastSaved = () => {

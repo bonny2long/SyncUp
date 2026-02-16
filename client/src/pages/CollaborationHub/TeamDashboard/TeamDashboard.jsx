@@ -107,11 +107,11 @@ const TeamDashboard = ({ projectId }) => {
         {/* Toggle Button */}
         <button
           onClick={() => setShowCharts(!showCharts)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-surface hover:bg-surface-highlight border border-border rounded-lg transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 bg-surface dark:bg-surface-highlight hover:bg-surface-highlight dark:hover:bg-gray-800 border border-border dark:border-gray-700 rounded-lg transition-colors"
         >
           <div className="flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-text-secondary" />
-            <span className="font-medium text-neutral-dark">
+            <span className="font-medium text-neutral-dark dark:text-white">
               {showCharts ? "Hide Charts" : "View Charts"}
             </span>
           </div>

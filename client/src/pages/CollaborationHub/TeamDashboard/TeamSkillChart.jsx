@@ -141,12 +141,12 @@ const TeamSkillChart = ({ data }) => {
 
   if (!chartData.length) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <div className="flex items-center justify-center text-gray-400 text-4xl mb-4">
+      <div className="bg-surface dark:bg-surface-highlight border border-border dark:border-gray-700 rounded-lg p-8 text-center">
+        <div className="flex items-center justify-center text-text-secondary text-4xl mb-4">
           <BarChart3 className="w-8 h-8" />
         </div>
-        <h3 className="text-gray-600 font-medium mb-2">No Skill Data Available</h3>
-        <p className="text-gray-500 text-sm">
+        <h3 className="text-neutral-dark dark:text-white font-medium mb-2">No Skill Data Available</h3>
+        <p className="text-text-secondary text-sm">
           Team members haven't generated any skill signals yet. Start collaborating on projects to see skill distribution.
         </p>
       </div>
@@ -154,10 +154,10 @@ const TeamSkillChart = ({ data }) => {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
+    <div className="bg-surface dark:bg-surface-highlight border border-border dark:border-gray-700 rounded-lg p-6">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Team Skill Distribution</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className="text-lg font-semibold text-neutral-dark dark:text-white mb-2">Team Skill Distribution</h3>
+        <p className="text-sm text-text-secondary">
           Most developed skills across your team based on accumulated signals
         </p>
       </div>
@@ -167,26 +167,26 @@ const TeamSkillChart = ({ data }) => {
       {chartData.length > 0 && (
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-blue-600">{chartData.length}</p>
-            <p className="text-xs text-gray-600">Total Skills</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{chartData.length}</p>
+            <p className="text-xs text-text-secondary">Total Skills</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
               {chartData.reduce((sum, skill) => sum + skill.members, 0)}
             </p>
-            <p className="text-xs text-gray-600">Skill Contributors</p>
+            <p className="text-xs text-text-secondary">Skill Contributors</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-purple-600">
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
               {Math.max(...chartData.map(s => s.weight))}
             </p>
-            <p className="text-xs text-gray-600">Top Skill Weight</p>
+            <p className="text-xs text-text-secondary">Top Skill Weight</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-orange-600">
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               {chartData[0]?.skill || "N/A"}
             </p>
-            <p className="text-xs text-gray-600">Leading Skill</p>
+            <p className="text-xs text-text-secondary">Leading Skill</p>
           </div>
         </div>
       )}

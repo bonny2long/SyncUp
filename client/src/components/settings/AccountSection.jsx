@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { useUser } from "../../context/UserContext";
+import { useToast } from "../../context/ToastContext";
 import { AlertTriangle } from "lucide-react";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 export default function AccountSection() {
   const { user, logout } = useUser();
+  const { addToast } = useToast();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -32,15 +36,30 @@ export default function AccountSection() {
 
     setChangingPassword(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await fetch(`${API_BASE}/users/${user.id}/password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to change password");
+      }
+
       setPasswordSuccess(true);
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      addToast({ type: "success", message: "Password changed successfully!" });
       setTimeout(() => {
         setShowPasswordModal(false);
         setPasswordSuccess(false);
       }, 2000);
-    } catch {
-      setPasswordError("Failed to change password");
+    } catch (err) {
+      setPasswordError(err.message);
     } finally {
       setChangingPassword(false);
     }
@@ -48,10 +67,18 @@ export default function AccountSection() {
 
   const handleDeleteAccount = async () => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const res = await fetch(`${API_BASE}/users/${user.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete account");
+      }
+
+      addToast({ type: "success", message: "Account deleted successfully" });
       logout();
-    } catch (error) {
-      console.error("Failed to delete account:", error);
+    } catch (err) {
+      addToast({ type: "error", message: "Failed to delete account" });
     }
   };
 
@@ -90,8 +117,8 @@ export default function AccountSection() {
             <p className="text-gray-500 dark:text-gray-400">
               Account created:{" "}
               <span className="text-neutral-dark dark:text-gray-300">
-                {user?.createdAt
-                  ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                {user?.join_date
+                  ? new Date(user.join_date).toLocaleDateString("en-US", {
                       month: "long",
                       day: "numeric",
                       year: "numeric",

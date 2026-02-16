@@ -162,12 +162,12 @@ const TeamMomentumChart = ({ data }) => {
 
   if (!chartData.length) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <div className="flex items-center justify-center text-gray-400 text-4xl mb-4">
+      <div className="bg-surface dark:bg-surface-highlight border border-border dark:border-gray-700 rounded-lg p-8 text-center">
+        <div className="flex items-center justify-center text-text-secondary text-4xl mb-4">
           <LineChart className="w-8 h-8" />
         </div>
-        <h3 className="text-gray-600 font-medium mb-2">No Momentum Data Available</h3>
-        <p className="text-gray-500 text-sm">
+        <h3 className="text-neutral-dark dark:text-white font-medium mb-2">No Momentum Data Available</h3>
+        <p className="text-text-secondary text-sm">
           Team activity data will appear here once team members start generating signals.
         </p>
       </div>
@@ -175,10 +175,10 @@ const TeamMomentumChart = ({ data }) => {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
+    <div className="bg-surface dark:bg-surface-highlight border border-border dark:border-gray-700 rounded-lg p-6">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Team Momentum</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className="text-lg font-semibold text-neutral-dark dark:text-white mb-2">Team Momentum</h3>
+        <p className="text-sm text-text-secondary">
           Week-over-week growth trends and activity patterns
         </p>
       </div>
@@ -188,37 +188,37 @@ const TeamMomentumChart = ({ data }) => {
       </div>
 
       {growthInsights && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+        <div className="mt-6 p-4 bg-neutralLight dark:bg-gray-800/50 rounded-lg">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {growthInsights.totalSignals}
               </p>
-              <p className="text-xs text-gray-600">This Week's Signals</p>
+              <p className="text-xs text-text-secondary">This Week's Signals</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {growthInsights.totalWeight}
               </p>
-              <p className="text-xs text-gray-600">This Week's Weight</p>
+              <p className="text-xs text-text-secondary">This Week's Weight</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {growthInsights.activeUsers}
               </p>
-              <p className="text-xs text-gray-600">Active Users</p>
+              <p className="text-xs text-text-secondary">Active Users</p>
             </div>
             <div className="text-center">
-              <p className={`text-2xl font-bold ${growthInsights.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+              <p className={`text-2xl font-bold ${growthInsights.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                 {growthInsights.signalGrowth > 0 ? '+' : ''}{growthInsights.signalGrowth}%
               </p>
-              <p className="text-xs text-gray-600">Signal Growth</p>
+              <p className="text-xs text-text-secondary">Signal Growth</p>
             </div>
             <div className="text-center">
-              <p className={`text-2xl font-bold ${growthInsights.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+              <p className={`text-2xl font-bold ${growthInsights.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                 {growthInsights.weightGrowth > 0 ? '+' : ''}{growthInsights.weightGrowth}%
               </p>
-              <p className="text-xs text-gray-600">Weight Growth</p>
+              <p className="text-xs text-text-secondary">Weight Growth</p>
             </div>
           </div>
         </div>

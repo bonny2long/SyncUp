@@ -8,7 +8,6 @@ import {
   Code,
   MessageSquare,
   Rocket,
-  Download,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -18,7 +17,6 @@ import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { ChartError } from "../components/shared/ErrorBoundary";
 import SkillBadge from "../components/shared/SkillBadge";
 import { getErrorMessage } from "../utils/errorHandler";
-import { generateResumePDF } from "../utils/resumeExport";
 import {
   getUserSkillSignals,
   getUserValidatedSignals,
@@ -40,7 +38,6 @@ export default function UserProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [exporting, setExporting] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [skillsExpanded, setSkillsExpanded] = useState(true);
@@ -259,26 +256,6 @@ export default function UserProfile() {
     });
   };
 
-  // Handle PDF export
-  const handleExportResume = async () => {
-    if (!profile) return;
-    setExporting(true);
-    try {
-      const fileName = generateResumePDF(profile);
-      addToast({
-        type: "success",
-        message: `Resume exported: ${fileName}`,
-      });
-    } catch (err) {
-      addToast({
-        type: "error",
-        message: "Failed to export resume. Please try again.",
-      });
-    } finally {
-      setExporting(false);
-    }
-  };
-
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -315,20 +292,23 @@ export default function UserProfile() {
                       year: "numeric",
                     })}
                   </p>
+                  {user.bio && (
+                    <p className="text-text-secondary text-sm mt-3 max-w-2xl italic">
+                      "{user.bio}"
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3">
                   {activity_streak > 0 && (
-                    <div className="text-center bg-surface-highlight px-4 py-3 rounded-lg border border-accent">
-                      <div className="flex items-center gap-2 justify-center">
-                        <Flame className="w-5 h-5 text-accent" />
-                        <span className="text-2xl font-bold text-accent">
-                          {activity_streak}
-                        </span>
-                      </div>
-                      <p className="text-xs text-neutral-dark mt-1">
-                        day streak
-                      </p>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-accent bg-accent/10">
+                      <Flame className="w-4 h-4 text-accent" />
+                      <span className="text-sm font-semibold text-accent">
+                        {activity_streak}
+                      </span>
+                      <span className="text-xs text-text-secondary">
+                        day{activity_streak !== 1 ? 's' : ''} streak
+                      </span>
                     </div>
                   )}
 
@@ -351,21 +331,12 @@ export default function UserProfile() {
                       </button>
                     </>
                   )}
-
-                  <button
-                    onClick={handleExportResume}
-                    disabled={exporting}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50"
-                  >
-                    <Download className="w-4 h-4" />
-                    {exporting ? "Exporting..." : "Export Resume"}
-                  </button>
                 </div>
               </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 mt-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-surface p-4 rounded-lg border border-border">
                 <div className="flex items-center gap-2 mb-2">
                   <Code className="w-5 h-5 text-primary" />
@@ -389,7 +360,7 @@ export default function UserProfile() {
               <div className="bg-surface p-4 rounded-lg border border-border">
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-5 h-5 text-accent" />
-                  <p className="text-sm text-neutral-dark">Projects</p>
+                  <p className="text-sm text-neutral-dark">Recent Projects</p>
                 </div>
                 <p className="text-3xl font-bold text-neutral-dark">
                   {projects.length}
@@ -405,18 +376,16 @@ export default function UserProfile() {
                   {stats.days_active || 0}d
                 </p>
               </div>
+            </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Rocket className="w-5 h-5 text-accent" />
-                  <p className="text-sm text-neutral-dark">Growth Sources</p>
-                </div>
-                <p className="text-lg font-bold text-neutral-dark">
-                  {stats.project_count || 0} Projects •{" "}
-                  {stats.update_count || 0} Updates •{" "}
-                  {stats.mentorship_count || 0} Sessions
-                </p>
-              </div>
+            {/* Growth Sources */}
+            <div className="bg-surface rounded-lg border border-border p-4 mb-8">
+              <p className="text-sm text-text-secondary">
+                <span className="font-medium text-neutral-dark">Growth Sources:</span>{" "}
+                {stats.project_count || 0} Projects •{" "}
+                {stats.update_count || 0} Updates •{" "}
+                {stats.mentorship_count || 0} Sessions
+              </p>
             </div>
 
             {/* Badges Section - Interns only */}

@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "../../context/UserContext";
 import ToggleSwitch from "../shared/ToggleSwitch";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+
 export default function NotificationsSection() {
+  const { user, login } = useUser();
   const [settings, setSettings] = useState({
     emailNotifications: true,
     newJoinRequests: true,
@@ -13,20 +17,53 @@ export default function NotificationsSection() {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
 
-  const handleToggle = async (key) => {
-    const newSettings = { ...settings, [key]: !settings[key] };
-    setSettings(newSettings);
+  useEffect(() => {
+    if (user) {
+      setSettings({
+        emailNotifications: user.email_notifications ?? true,
+        newJoinRequests: user.notify_join_requests ?? true,
+        teamMentions: user.notify_mentions ?? true,
+        sessionReminders: user.notify_session_reminders ?? true,
+        projectUpdates: user.notify_project_updates ?? true,
+        weeklySummary: user.notify_weekly_summary ?? false,
+      });
+    }
+  }, [user]);
+
+  const saveSettings = async (newSettings) => {
+    if (!user?.id) return;
     
-    // Auto-save
     setSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setLastSaved(new Date());
+      const res = await fetch(`${API_BASE}/users/${user.id}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email_notifications: newSettings.emailNotifications,
+          notify_join_requests: newSettings.newJoinRequests,
+          notify_mentions: newSettings.teamMentions,
+          notify_session_reminders: newSettings.sessionReminders,
+          notify_project_updates: newSettings.projectUpdates,
+          notify_weekly_summary: newSettings.weeklySummary,
+        }),
+      });
+      
+      if (res.ok) {
+        const updatedUser = await res.json();
+        login(updatedUser);
+        setLastSaved(new Date());
+      }
     } catch (error) {
       console.error("Failed to save:", error);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleToggle = async (key) => {
+    const newSettings = { ...settings, [key]: !settings[key] };
+    setSettings(newSettings);
+    await saveSettings(newSettings);
   };
 
   const formatLastSaved = () => {
