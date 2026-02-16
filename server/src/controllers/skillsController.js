@@ -456,6 +456,7 @@ export const getUserSkillSignals = async (req, res) => {
   const { userId } = req.params;
 
   try {
+    // Optimized: Single query with JOIN instead of correlated subqueries
     const [signals] = await pool.query(
       `
       SELECT 
@@ -466,16 +467,17 @@ export const getUserSkillSignals = async (req, res) => {
         uss.source_type,
         uss.created_at,
         uss.weight,
-        (
-          SELECT COUNT(*) FROM skill_validations sv 
-          WHERE sv.signal_id = uss.id AND sv.validation_type = 'upvote'
-        ) as upvote_count,
-        (
-          SELECT COUNT(*) FROM skill_validations sv 
-          WHERE sv.signal_id = uss.id AND sv.validation_type = 'mentor_endorsement'
-        ) as endorsement_count
+        COALESCE(v.upvote_count, 0) as upvote_count,
+        COALESCE(v.endorsement_count, 0) as endorsement_count
       FROM user_skill_signals uss
-      JOIN skills s ON s.id = uss.skill_id
+      JOIN skills s ON uss.skill_id = s.id
+      LEFT JOIN (
+        SELECT signal_id,
+          SUM(CASE WHEN validation_type = 'upvote' THEN 1 ELSE 0 END) as upvote_count,
+          SUM(CASE WHEN validation_type = 'mentor_endorsement' THEN 1 ELSE 0 END) as endorsement_count
+        FROM skill_validations
+        GROUP BY signal_id
+      ) v ON v.signal_id = uss.id
       WHERE uss.user_id = ?
       ORDER BY uss.created_at DESC
       `,

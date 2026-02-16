@@ -4,37 +4,47 @@ import { emitSkillSignals } from "../services/skillSignalService.js";
 import { notifyProjectUpdate } from "../services/notificationService.js";
 import { checkBadges } from "../services/checkBadges.js";
 
-// Cache check for optional soft-delete column
-let hasSoftDeleteColumn;
+// Cache schema checks at module load time (computed once, not per-request)
+let schemaCache = null;
 
-async function ensureSoftDeleteSupport() {
-  if (hasSoftDeleteColumn !== undefined) return hasSoftDeleteColumn;
+getSchemaInfo(); // Initialize cache on module load
+
+async function getSchemaInfo() {
+  if (schemaCache) return schemaCache;
+  
   try {
-    const [rows] = await pool.query(
-      `
-      SELECT 1
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE TABLE_NAME = 'progress_updates'
-        AND COLUMN_NAME = 'is_deleted'
-      LIMIT 1;
-      `,
+    const [softDeleteCol] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'progress_updates' AND COLUMN_NAME = 'is_deleted'`
     );
-    hasSoftDeleteColumn = rows.length > 0;
+    
+    const [skillTable] = await pool.query(
+      `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'progress_update_skills'`
+    );
+    
+    schemaCache = {
+      hasSoftDelete: softDeleteCol.length > 0,
+      hasSkillTable: skillTable.length > 0
+    };
+    console.log(`[Schema] Cached: softDelete=${schemaCache.hasSoftDelete}, skillTable=${schemaCache.hasSkillTable}`);
   } catch (err) {
-    hasSoftDeleteColumn = false;
+    console.error("[Schema] Cache init failed:", err.message);
+    schemaCache = { hasSoftDelete: false, hasSkillTable: false };
   }
-  return hasSoftDeleteColumn;
+  
+  return schemaCache;
 }
 
 // GET /api/progress_updates
 export const getProgressUpdates = async (req, res) => {
   const { project_id: projectId } = req.query;
   try {
-    const softDelete = await ensureSoftDeleteSupport();
+    const schema = await getSchemaInfo();
     const conditions = [];
     const params = [];
 
-    if (softDelete) {
+    if (schema.hasSoftDelete) {
       conditions.push("(p.is_deleted IS NULL OR p.is_deleted = 0)");
     }
     if (projectId) {
@@ -69,7 +79,7 @@ export const getProgressUpdates = async (req, res) => {
       ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT 50
-    `,
+      `,
       params,
     );
     res.json(rows);
@@ -92,15 +102,15 @@ export const createProgressUpdate = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // 1. Insert progress update (existing behavior)
-    const softDelete = await ensureSoftDeleteSupport();
+    // 1. Insert progress update (use cached schema info)
+    const schema = await getSchemaInfo();
 
     const [result] = await connection.query(
       `
       INSERT INTO progress_updates (project_id, user_id, content, created_at${
-        softDelete ? ", is_deleted" : ""
+        schema.hasSoftDelete ? ", is_deleted" : ""
       })
-      VALUES (?, ?, ?, NOW()${softDelete ? ", 0" : ""})
+      VALUES (?, ?, ?, NOW()${schema.hasSoftDelete ? ", 0" : ""})
       `,
       [project_id, user_id, content],
     );
@@ -269,8 +279,8 @@ export const deleteProgressUpdate = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const softDelete = await ensureSoftDeleteSupport();
-    if (softDelete) {
+    const schema = await getSchemaInfo();
+    if (schema.hasSoftDelete) {
       const [result] = await pool.query(
         `UPDATE progress_updates SET is_deleted = 1 WHERE id = ?`,
         [id],
@@ -299,24 +309,13 @@ export const deleteProgressUpdate = async (req, res) => {
 export const getUpdatesByProject = async (req, res) => {
   const { projectId } = req.params;
   try {
-    // Check if is_deleted column exists
-    const [columns] = await pool.query(`
-      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_NAME = 'progress_updates' AND COLUMN_NAME = 'is_deleted'
-    `);
-    const hasSoftDelete = columns.length > 0;
-
-    // Check if progress_update_skills table exists
-    const [skillTable] = await pool.query(`
-      SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES 
-      WHERE TABLE_NAME = 'progress_update_skills'
-    `);
-    const hasSkillTable = skillTable.length > 0;
+    // Use cached schema info instead of checking on every request
+    const schema = await getSchemaInfo();
 
     let whereClause = "WHERE p.project_id = ?";
     const params = [projectId];
     
-    if (hasSoftDelete) {
+    if (schema.hasSoftDelete) {
       whereClause += " AND (p.is_deleted IS NULL OR p.is_deleted = 0)";
     }
 
@@ -336,7 +335,7 @@ export const getUpdatesByProject = async (req, res) => {
     );
 
     // Get skills for each update (if table exists)
-    if (rows.length > 0 && hasSkillTable) {
+    if (rows.length > 0 && schema.hasSkillTable) {
       const updateIds = rows.map(r => r.id);
       const [skillRows] = await pool.query(
         `SELECT pus.progress_update_id, s.skill_name 

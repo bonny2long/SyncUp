@@ -5,6 +5,7 @@ import { fetchUpdates } from "../../utils/api";
 import { getErrorMessage } from "../../utils/errorHandler";
 import { useProjects } from "../../hooks/useProjects"; // Custom hook integrated
 import { BarChart3 } from "lucide-react";
+import SkeletonLoader from "../../components/shared/SkeletonLoader";
 
 // Lazy load components
 const CreateProjectForm = lazy(() => import("./CreateProjectForm"));
@@ -17,6 +18,126 @@ const ProjectDetailModal = lazy(
   () => import("../../components/modals/ProjectDetailModal"),
 );
 const TeamDashboard = lazy(() => import("./TeamDashboard/TeamDashboard"));
+
+// Layout-specific skeleton components for better UX
+function DiscoverPanelSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="h-8 w-48 bg-gray-100 rounded animate-pulse" />
+      <div className="h-10 w-full bg-gray-100 rounded animate-pulse" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="h-10 bg-gray-100 rounded animate-pulse" />
+        <div className="h-10 bg-gray-100 rounded animate-pulse" />
+      </div>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-4 border border-border rounded-lg">
+            <div className="h-5 w-3/4 bg-gray-100 rounded animate-pulse mb-2" />
+            <div className="h-4 w-full bg-gray-100 rounded animate-pulse mb-3" />
+            <div className="flex gap-2">
+              <div className="h-5 w-16 bg-gray-100 rounded animate-pulse" />
+              <div className="h-5 w-16 bg-gray-100 rounded animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MyWorkPanelSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="h-8 w-48 bg-gray-100 rounded animate-pulse" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="p-4 border border-border rounded-lg">
+            <div className="h-5 w-3/4 bg-gray-100 rounded animate-pulse mb-2" />
+            <div className="h-4 w-full bg-gray-100 rounded animate-pulse mb-3" />
+            <div className="flex justify-between">
+              <div className="h-4 w-20 bg-gray-100 rounded animate-pulse" />
+              <div className="h-4 w-16 bg-gray-100 rounded animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RequestsPanelSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="h-8 w-48 bg-gray-100 rounded animate-pulse" />
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-4 border border-border rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-gray-100 rounded-full animate-pulse" />
+              <div className="flex-1">
+                <div className="h-5 w-3/4 bg-gray-100 rounded animate-pulse mb-2" />
+                <div className="h-4 w-1/2 bg-gray-100 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ActivityPanelSkeleton() {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="h-8 w-32 bg-gray-100 rounded animate-pulse" />
+      <div className="space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex gap-3 p-3">
+            <div className="h-10 w-10 bg-gray-100 rounded-full animate-pulse" />
+            <div className="flex-1">
+              <div className="h-4 w-3/4 bg-gray-100 rounded animate-pulse mb-2" />
+              <div className="h-3 w-1/2 bg-gray-100 rounded animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TeamAnalyticsSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Project Selector Skeleton */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface border border-border rounded-xl p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 bg-gray-100 rounded-lg animate-pulse" />
+          <div>
+            <div className="h-5 w-32 bg-gray-100 rounded animate-pulse mb-1" />
+            <div className="h-3 w-48 bg-gray-100 rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="h-10 w-64 bg-gray-100 rounded-lg animate-pulse" />
+      </div>
+      
+      {/* Overview Cards Skeleton */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+        ))}
+      </div>
+      
+      {/* Activity Feed Skeleton */}
+      <div className="h-48 bg-gray-100 rounded-lg animate-pulse" />
+      
+      {/* Insight Skeleton */}
+      <div className="h-32 bg-gray-100 rounded-lg animate-pulse" />
+      
+      {/* Charts Skeleton (hidden by default) */}
+      <div className="h-64 bg-gray-100 rounded-lg animate-pulse" />
+    </div>
+  );
+}
 
 export default function CollaborationHub() {
   const { user: currentUser } = useUser();
@@ -35,12 +156,33 @@ export default function CollaborationHub() {
     refresh: refreshProjects,
   } = useProjects(currentUser?.id);
 
+  // Cache for stable data - only refreshes on explicit refresh or first load
+  const [cachedProjects, setCachedProjects] = useState([]);
+  const [cachedDiscover, setCachedDiscover] = useState([]);
+  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  // Update cache when projects load
+  useEffect(() => {
+    if (!projectsLoading && userProjects.length > 0) {
+      if (cachedProjects.length === 0 || Date.now() - lastFetchTime > CACHE_DURATION) {
+        setCachedProjects(userProjects);
+        setCachedDiscover(discoverProjects);
+        setLastFetchTime(Date.now());
+      }
+    }
+  }, [projectsLoading, userProjects, discoverProjects]);
+
+  // Use cached data for initial render, but still show fresh data
+  const displayProjects = projectsLoading && cachedProjects.length > 0 ? cachedProjects : userProjects;
+  const displayDiscover = projectsLoading && cachedDiscover.length > 0 ? cachedDiscover : discoverProjects;
+
   const [allUpdates, setAllUpdates] = useState([]);
   const [updatesLoading, setUpdatesLoading] = useState(true);
   const [updatesError, setUpdatesError] = useState("");
 
-  // Combined status
-  const loading = projectsLoading || updatesLoading;
+  // Combined status - only show loading on first load
+  const loading = projectsLoading && cachedProjects.length === 0;
   const error = projectsError || updatesError;
 
   // --- UI STATE ---
@@ -137,12 +279,12 @@ export default function CollaborationHub() {
       [
         {
           label: "Projects You're On",
-          value: userProjects.length,
+          value: displayProjects.length,
           color: "text-primary",
         },
         {
           label: "Available Projects",
-          value: discoverProjects.length,
+          value: displayDiscover.length,
           color: "text-accent",
         },
         {
@@ -152,7 +294,7 @@ export default function CollaborationHub() {
         },
         {
           label: "Teams Helped",
-          value: userProjects.filter((p) => p.owner_id !== currentUser?.id)
+          value: displayProjects.filter((p) => p.owner_id !== currentUser?.id)
             .length,
           color: "text-green-600",
         },
@@ -160,12 +302,12 @@ export default function CollaborationHub() {
     : [
         {
           label: "Your Projects",
-          value: userProjects.length,
+          value: displayProjects.length,
           color: "text-primary",
         },
         {
           label: "Available to Join",
-          value: discoverProjects.length,
+          value: displayDiscover.length,
           color: "text-accent",
         },
         {
@@ -175,7 +317,7 @@ export default function CollaborationHub() {
         },
         {
           label: "Active",
-          value: userProjects.filter((p) => p.status === "active").length,
+          value: displayProjects.filter((p) => p.status === "active").length,
           color: "text-primary",
         },
       ];
@@ -234,7 +376,7 @@ export default function CollaborationHub() {
           }`}
         >
           {isMentor ? "Browse Projects" : "My Work"} (
-          {isMentor ? discoverProjects.length : userProjects.length})
+          {isMentor ? displayDiscover.length : displayProjects.length})
         </button>
 
         <button
@@ -246,7 +388,7 @@ export default function CollaborationHub() {
           }`}
         >
           {isMentor ? "My Projects" : "Discover"} (
-          {isMentor ? userProjects.length : discoverProjects.length})
+          {isMentor ? displayProjects.length : displayDiscover.length})
         </button>
 
         {(isIntern || mentorOwnsProjects) && (
@@ -266,13 +408,13 @@ export default function CollaborationHub() {
         </button>
 
         {/* Team Analytics Tab - Show for users with projects */}
-        {userProjects.length > 0 && (
+        {displayProjects.length > 0 && (
           <button
             onClick={() => {
               handleTabChange("team");
               // Set first project as default for team analytics
-              if (!teamAnalyticsProject && userProjects.length > 0) {
-                setTeamAnalyticsProject(userProjects[0]);
+              if (!teamAnalyticsProject && displayProjects.length > 0) {
+                setTeamAnalyticsProject(displayProjects[0]);
               }
             }}
             className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "team" ? "text-secondary border-b-2 border-secondary" : "text-text-secondary"}`}
@@ -285,106 +427,112 @@ export default function CollaborationHub() {
       {/* MAIN CONTENT AREA */}
       <div className="min-h-[600px]">
         {activeTab === "team" ?
-          <div className="w-full">
-            <Suspense
-              fallback={
-                <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-              }
-            >
-              {/* Project Selector for Team Analytics */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface border border-border rounded-xl p-4 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                    <BarChart3 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-neutral-dark leading-tight">
-                      Team Analytics
-                    </h3>
-                    <p className="text-xs text-text-secondary">
-                      View team-wide signal distribution and momentum
-                    </p>
-                  </div>
+          <div className="w-full animate-fade-in">
+            {/* Project Selector - Always visible */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface border border-border rounded-xl p-4 shadow-sm mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                  <BarChart3 className="w-5 h-5" />
                 </div>
-
-                <div className="w-full md:w-auto min-w-[240px]">
-                  <select
-                    value={teamAnalyticsProject?.id || ""}
-                    onChange={(e) => {
-                      const project = userProjects.find(
-                        (p) => p.id === parseInt(e.target.value),
-                      );
-                      setTeamAnalyticsProject(project);
-                    }}
-                    className="w-full px-3 py-2 bg-surface text-neutral-dark border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
-                  >
-                    <option value="">Choose a project...</option>
-                    {userProjects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.title}
-                      </option>
-                    ))}
-                  </select>
+                <div>
+                  <h3 className="font-semibold text-neutral-dark leading-tight">
+                    Team Analytics
+                  </h3>
+                  <p className="text-xs text-text-secondary">
+                    View team-wide signal distribution and momentum
+                  </p>
                 </div>
               </div>
 
-              {/* Team Dashboard */}
-              {teamAnalyticsProject ?
+              <div className="w-full md:w-auto min-w-[240px]">
+                <select
+                  value={teamAnalyticsProject?.id || ""}
+                  onChange={(e) => {
+                    const project = displayProjects.find(
+                      (p) => p.id === parseInt(e.target.value),
+                    );
+                    setTeamAnalyticsProject(project);
+                  }}
+                  className="w-full px-3 py-2 bg-surface text-neutral-dark border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
+                >
+                  <option value="">Choose a project...</option>
+                  {displayProjects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Team Dashboard with Suspense */}
+            {teamAnalyticsProject ?
+              <Suspense
+                fallback={
+                  <TeamAnalyticsSkeleton />
+                }
+              >
                 <TeamDashboard projectId={teamAnalyticsProject.id} />
-              : <div className="bg-surface border border-dashed border-border rounded-xl p-12 text-center">
-                  <p className="text-text-secondary">
-                    Please select a project to view team analytics
-                  </p>
-                </div>
-              }
-            </Suspense>
+              </Suspense>
+            : <div className="bg-surface border border-dashed border-border rounded-xl p-12 text-center">
+                <p className="text-text-secondary">
+                  Please select a project to view team analytics
+                </p>
+              </div>
+            }
           </div>
         : <div className="grid grid-cols-2 gap-6 text-left">
             {/* LEFT COLUMN: Panels */}
             <div className="text-left">
               {activeTab === (isMentor ? "browse" : "discover") && (
-                <Suspense
-                  fallback={
-                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-                  }
-                >
-                  <DiscoverPanel
-                    projects={discoverProjects}
-                    selectedProject={selectedProject}
-                    setSelectedProject={setSelectedProject}
-                    onJoinClick={handleJoinClick}
-                    onViewProject={handleViewProject}
-                    loading={loading}
-                  />
-                </Suspense>
+                <div className="animate-fade-in">
+                  <Suspense
+                    fallback={
+                      <DiscoverPanelSkeleton />
+                    }
+                  >
+                    <DiscoverPanel
+                      projects={displayDiscover}
+                      selectedProject={selectedProject}
+                      setSelectedProject={setSelectedProject}
+                      onJoinClick={handleJoinClick}
+                      onViewProject={handleViewProject}
+                      loading={loading}
+                    />
+                  </Suspense>
+                </div>
               )}
 
               {(activeTab === "mywork" || activeTab === "myprojects") && (
-                <Suspense
-                  fallback={
-                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-                  }
-                >
-                  <MyWorkPanel
-                    projects={userProjects}
-                    selectedProject={selectedProject}
-                    setSelectedProject={setSelectedProject}
-                    updatesData={allUpdates}
-                    loading={loading}
-                    isMentor={isMentor}
-                    onRefresh={loadData}
-                  />
-                </Suspense>
+                <div className="animate-fade-in">
+                  <Suspense
+                    fallback={
+                      <MyWorkPanelSkeleton />
+                    }
+                  >
+                    <MyWorkPanel
+                      projects={displayProjects}
+                      selectedProject={selectedProject}
+                      setSelectedProject={setSelectedProject}
+                      updatesData={allUpdates}
+                      loading={loading}
+                      isMentor={isMentor}
+                      onRefresh={loadData}
+                    />
+                  </Suspense>
+                </div>
               )}
 
               {activeTab === "requests" && (
-                <Suspense
-                  fallback={
-                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-                  }
-                >
-                  <RequestsPanel onRefresh={loadData} />
-                </Suspense>
+                <div className="animate-fade-in">
+                  <Suspense
+                    fallback={
+                      <RequestsPanelSkeleton />
+                    }
+                  >
+                    <RequestsPanel onRefresh={loadData} />
+                  </Suspense>
+                </div>
               )}
 
               {activeTab === "activity" && (
@@ -426,18 +574,20 @@ export default function CollaborationHub() {
               {(activeTab === "mywork" ||
                 activeTab === "myprojects" ||
                 activeTab === "activity") && (
-                <Suspense
-                  fallback={
-                    <div className="h-96 bg-gray-100 rounded-xl animate-pulse" />
-                  }
-                >
-                  <ActivityPanel
-                    selectedProject={selectedProject}
-                    allUpdates={allUpdates}
-                    currentUser={currentUser}
-                    projectId={selectedProject?.id}
-                  />
-                </Suspense>
+                <div className="animate-fade-in">
+                  <Suspense
+                    fallback={
+                      <ActivityPanelSkeleton />
+                    }
+                  >
+                    <ActivityPanel
+                      selectedProject={selectedProject}
+                      allUpdates={allUpdates}
+                      currentUser={currentUser}
+                      projectId={selectedProject?.id}
+                    />
+                  </Suspense>
+                </div>
               )}
             </div>
           </div>

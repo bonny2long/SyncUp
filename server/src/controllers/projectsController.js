@@ -1007,7 +1007,7 @@ export const getTeamMomentum = async (req, res) => {
         ) as active_this_week
       `,
       [
-        projectId, projectId, projectId, projectId,
+        projectId, projectId, projectId, projectId, projectId,
         projectId, projectId, projectId, projectId,
       ],
     );
