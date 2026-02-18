@@ -103,7 +103,7 @@ export default function InternView() {
       </div>
 
       {/* Tab Content */}
-      <div>
+      <div key={activeTab} className="animate-fade-in">
         {activeTab === "find" && (
           <FindMentors onSessionRequested={loadSessions} />
         )}

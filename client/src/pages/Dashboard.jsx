@@ -49,7 +49,10 @@ export default function Dashboard() {
             onToggleSidebar={() => setIsSidebarOpen(true)}
           />
           <main
-            className={activeTab === "chat" ? "h-full" : "max-w-7xl mx-auto"}
+            key={activeTab}
+            className={`${
+              activeTab === "chat" ? "h-full" : "max-w-7xl mx-auto"
+            } animate-fade-in`}
           >
             {renderContent()}
           </main>

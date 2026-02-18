@@ -4,6 +4,8 @@
 
 @layer base {
   :root {
+    --color-neutral-light: #f5f7fa; /* Ghost White */
+    --color-neutral-dark: #2b2d42; /* Graphite Gray */
     --color-surface: #ffffff;
     --color-surface-highlight: #f3f4f6;
     --color-border: #e5e7eb;
@@ -24,8 +26,8 @@
   --color-primary: #4c5fd5; /* Indigo Blue */
   --color-secondary: #9b5de5; /* Electric Purple */
   --color-accent: #00c2ba; /* Aqua Cyan */
-  --color-neutral-light: #f5f7fa; /* Ghost White */
-  --color-neutral-dark: #2b2d42; /* Graphite Gray */
+  --color-neutral-light: var(--color-neutral-light);
+  --color-neutral-dark: var(--color-neutral-dark);
 
   --color-surface: var(--color-surface);
   --color-surface-highlight: var(--color-surface-highlight);
@@ -113,8 +115,18 @@ body {
   animation: fadeIn 0.3s ease-out forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger-children > *:nth-child(2) {
+  animation-delay: 50ms;
+}
+.stagger-children > *:nth-child(3) {
+  animation-delay: 100ms;
+}
+.stagger-children > *:nth-child(4) {
+  animation-delay: 150ms;
+}
+.stagger-children > *:nth-child(5) {
+  animation-delay: 200ms;
+}

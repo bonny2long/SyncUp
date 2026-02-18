@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AgCharts } from "ag-charts-react";
 import { useUser } from "../../context/UserContext";
 import { getSkillSummary } from "../../utils/api";
+import { useChartTheme } from "./useChartTheme";
 
 const TREND_LABELS = {
   emerging: "Emerging strength",
@@ -17,6 +18,7 @@ const TREND_COLORS = {
 
 export default function SkillSummaryCard() {
   const { user } = useUser();
+  const chartTheme = useChartTheme();
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -30,16 +32,16 @@ export default function SkillSummaryCard() {
 
   if (loading) {
     return (
-      <div className="bg-white border rounded-lg p-5">
-        <p className="text-sm text-gray-500">Loading skill snapshot...</p>
+      <div className="bg-surface border border-border rounded-lg p-5">
+        <p className="text-sm text-text-secondary">Loading skill snapshot...</p>
       </div>
     );
   }
 
   if (!skills.length) {
     return (
-      <div className="bg-white border rounded-lg p-5">
-        <p className="text-sm text-gray-500">
+      <div className="bg-surface border border-border rounded-lg p-5">
+        <p className="text-sm text-text-secondary">
           Skill insights will appear as signals accumulate.
         </p>
       </div>
@@ -118,11 +120,11 @@ export default function SkillSummaryCard() {
                 nice: true,
                 label: {
                   fontSize: 11,
-                  color: "var(--color-text-secondary)",
+                  color: chartTheme.axisLabelColor,
                 },
                 title: {
                   text: "Skill Strength",
-                  color: "var(--color-text-secondary)",
+                  color: chartTheme.axisTitleColor,
                 },
               },
               y: {
@@ -131,7 +133,7 @@ export default function SkillSummaryCard() {
                 label: {
                   fontSize: 12,
                   wrapping: "on-space",
-                  color: "var(--color-text-secondary)",
+                  color: chartTheme.axisLabelColor,
                 },
               },
             },

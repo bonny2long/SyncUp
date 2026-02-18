@@ -6,6 +6,7 @@ import { useUser } from "../../context/UserContext";
 import SkeletonLoader from "../../components/shared/SkeletonLoader";
 import { ChartError } from "../../components/shared/ErrorBoundary";
 import { getErrorMessage } from "../../utils/errorHandler";
+import { useChartTheme } from "./useChartTheme";
 
 const COLORS = {
   project: "#4f46e5",
@@ -15,6 +16,7 @@ const COLORS = {
 
 export default function SkillActivityChart() {
   const { user } = useUser();
+  const chartTheme = useChartTheme();
   const [rawData, setRawData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -135,14 +137,14 @@ export default function SkillActivityChart() {
         label: {
           fontSize: 12,
           wrapping: "on-space",
-          color: "var(--color-text-secondary)",
+          color: chartTheme.axisLabelColor,
         },
       },
       y: {
         type: "number",
         position: "left",
         nice: true,
-        label: { fontSize: 11, color: "var(--color-text-secondary)" },
+        label: { fontSize: 11, color: chartTheme.axisLabelColor },
       },
     },
     padding: { top: 12, right: 24, bottom: 16, left: 18 },
@@ -150,7 +152,7 @@ export default function SkillActivityChart() {
       position: "bottom",
       item: {
         label: {
-          color: "var(--color-text-secondary)",
+          color: chartTheme.legendLabelColor,
         },
       },
     },

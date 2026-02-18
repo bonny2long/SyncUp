@@ -1,23 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { getSkillSummary } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 
+const MAX_MOMENTUM_ITEMS = 10;
+
 /**
  * SkillSignalsPanel - Read-only verification surface
- *
- * Purpose: Display transition + velocity data to verify
- * backend math is correct before wiring into charts.
  *
  * Shows:
  * - Skill name
  * - Direction arrow (↑ ↓ →)
  * - Velocity (per day)
+ *
+ * Scales by showing top N skills sorted by velocity,
+ * with an expand/collapse toggle for the full list.
  */
 export default function SkillSignalsPanel() {
   const { user } = useUser();
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -37,6 +40,56 @@ export default function SkillSignalsPanel() {
 
     load();
   }, [user?.id]);
+
+  // Sort by absolute velocity descending so most active skills are first
+  const {
+    visibleSkills,
+    hiddenCount,
+    inactiveCount,
+    totalCount,
+    needsTruncation,
+  } = useMemo(() => {
+    if (!skills.length) {
+      return {
+        visibleSkills: [],
+        hiddenCount: 0,
+        inactiveCount: 0,
+        totalCount: 0,
+        needsTruncation: false,
+      };
+    }
+
+    // Sort by absolute velocity (highest first), then by total_weight as tiebreaker
+    const sorted = [...skills].sort((a, b) => {
+      const aVel = Math.abs(a.velocity?.per_day || 0);
+      const bVel = Math.abs(b.velocity?.per_day || 0);
+      if (bVel !== aVel) return bVel - aVel;
+      return (b.total_weight || 0) - (a.total_weight || 0);
+    });
+
+    const needsTruncation = sorted.length > MAX_MOMENTUM_ITEMS;
+    const inactiveCount = sorted.filter(
+      (s) => (s.velocity?.per_day || 0) === 0,
+    ).length;
+
+    if (!expanded && needsTruncation) {
+      return {
+        visibleSkills: sorted.slice(0, MAX_MOMENTUM_ITEMS),
+        hiddenCount: sorted.length - MAX_MOMENTUM_ITEMS,
+        inactiveCount,
+        totalCount: sorted.length,
+        needsTruncation: true,
+      };
+    }
+
+    return {
+      visibleSkills: sorted,
+      hiddenCount: 0,
+      inactiveCount,
+      totalCount: sorted.length,
+      needsTruncation,
+    };
+  }, [skills, expanded]);
 
   if (loading) {
     return (
@@ -66,16 +119,40 @@ export default function SkillSignalsPanel() {
 
   return (
     <div className="flex flex-col gap-2">
-      {skills.map((skill) => (
-        <SkillRow key={skill.skill_id} skill={skill} />
-      ))}
+      <div
+        style={{
+          maxHeight: expanded ? "none" : `${MAX_MOMENTUM_ITEMS * 36 + 8}px`,
+          overflow: "hidden",
+          transition: "max-height 0.3s ease",
+        }}
+      >
+        {visibleSkills.map((skill) => (
+          <SkillRow key={skill.skill_id} skill={skill} />
+        ))}
+      </div>
+
+      {/* Hidden / inactive count */}
+      {!expanded && hiddenCount > 0 && (
+        <p className="text-xs text-text-secondary mt-1">
+          + {hiddenCount} more skill{hiddenCount !== 1 ? "s" : ""} not shown
+          {inactiveCount > 0 && (
+            <span> · {inactiveCount} with no recent activity</span>
+          )}
+        </p>
+      )}
+
+      {/* Expand/collapse toggle */}
+      {(needsTruncation || expanded) && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="mt-1 text-xs font-medium text-primary hover:text-primary-dark transition-colors cursor-pointer self-start"
+        >
+          {expanded ? "Show Less ↑" : `View All ${totalCount} Skills →`}
+        </button>
+      )}
     </div>
   );
 }
-
-/**
- * SkillRow - Visual display for a single skill's transition + velocity
- */
 
 /**
  * SkillRow - Visual display for a single skill's transition + velocity

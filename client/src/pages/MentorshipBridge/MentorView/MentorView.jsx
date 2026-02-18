@@ -108,7 +108,7 @@ export default function MentorView() {
       </div>
 
       {/* Tab Content */}
-      <div>
+      <div key={activeTab} className="animate-fade-in">
         {activeTab === "requests" && (
           <IncomingRequests
             sessions={pendingSessions}
