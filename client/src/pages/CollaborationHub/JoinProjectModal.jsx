@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { createJoinRequest } from "../../utils/api";
 import { useToast } from "../../context/ToastContext";
 import { getErrorMessage } from "../../utils/errorHandler";
@@ -14,29 +15,8 @@ export default function JoinProjectModal({
 
   if (!project) return null;
 
-  const handleSubmitRequest = async () => {
-    setLoading(true);
-    try {
-      // Import currentUser from context
-      const { user: currentUser } =
-        await import("../../context/UserContext").then((m) => ({ user: null }));
-
-      // Get user ID - need to pass it differently
-      // Will be called with onRequestSent callback
-      await onConfirm();
-    } catch (err) {
-      const { message } = getErrorMessage(err);
-      addToast({
-        type: "error",
-        message: message || "Failed to submit request",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-6 animate-in fade-in zoom-in duration-300">
         {/* Header */}
         <h2 className="text-2xl font-bold text-neutralDark mb-2">
@@ -138,6 +118,7 @@ export default function JoinProjectModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

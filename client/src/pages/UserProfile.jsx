@@ -46,6 +46,9 @@ export default function UserProfile() {
   const [allBadges, setAllBadges] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
   const [newBadge, setNewBadge] = useState(null);
+  const [showAllBadges, setShowAllBadges] = useState(false);
+
+  const BADGE_PREVIEW_COUNT = 6;
 
   // Skill validation state
   const [skillSignals, setSkillSignals] = useState([]);
@@ -307,7 +310,7 @@ export default function UserProfile() {
                         {activity_streak}
                       </span>
                       <span className="text-xs text-text-secondary">
-                        day{activity_streak !== 1 ? 's' : ''} streak
+                        day{activity_streak !== 1 ? "s" : ""} streak
                       </span>
                     </div>
                   )}
@@ -381,48 +384,82 @@ export default function UserProfile() {
             {/* Growth Sources */}
             <div className="bg-surface rounded-lg border border-border p-4 mb-8">
               <p className="text-sm text-text-secondary">
-                <span className="font-medium text-neutral-dark">Growth Sources:</span>{" "}
-                {stats.project_count || 0} Projects •{" "}
-                {stats.update_count || 0} Updates •{" "}
-                {stats.mentorship_count || 0} Sessions
+                <span className="font-medium text-neutral-dark">
+                  Growth Sources:
+                </span>{" "}
+                {stats.project_count || 0} Projects • {stats.update_count || 0}{" "}
+                Updates • {stats.mentorship_count || 0} Sessions
               </p>
             </div>
 
             {/* Badges Section - Interns only */}
             {user.role === "intern" && allBadges.length > 0 && (
               <section className="bg-surface rounded-lg border border-border p-6 mb-8">
-                {/* Unlocked - only earned badges (colored) */}
-                {userBadges.length > 0 && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-neutral-dark mb-3">
-                      Unlocked ({userBadges.length})
-                    </h2>
-                    <BadgeGrid
-                      allBadges={userBadges}
-                      earnedBadges={userBadges}
-                    />
-                  </div>
-                )}
+                {userBadges.length > 0 &&
+                  (() => {
+                    const previewBadges =
+                      showAllBadges ? userBadges : (
+                        userBadges.slice(0, BADGE_PREVIEW_COUNT)
+                      );
+                    const hiddenCount = userBadges.length - BADGE_PREVIEW_COUNT;
 
-                {/* Locked - badges not yet earned (grayed out) */}
-                {(() => {
-                  const earnedIds = new Set(
-                    userBadges.map((b) => b.badge_id || b.id),
-                  );
-                  const lockedBadges = allBadges.filter(
-                    (b) => !earnedIds.has(b.id),
-                  );
-                  if (lockedBadges.length === 0) return null;
+                    const earnedIds = new Set(
+                      userBadges.map((b) => b.badge_id || b.id),
+                    );
+                    const lockedBadges = allBadges.filter(
+                      (b) => !earnedIds.has(b.id),
+                    );
 
-                  return (
-                    <div className="mt-6 pt-6 border-t border-border">
-                      <h2 className="text-lg font-bold text-neutral-dark mb-3">
-                        Locked ({lockedBadges.length})
-                      </h2>
-                      <BadgeGrid allBadges={lockedBadges} earnedBadges={[]} />
-                    </div>
-                  );
-                })()}
+                    return (
+                      <>
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-3">
+                          <h2 className="text-lg font-bold text-neutral-dark">
+                            Unlocked ({userBadges.length})
+                          </h2>
+                        </div>
+
+                        {/* Badge grid - preview or all */}
+                        <BadgeGrid
+                          allBadges={previewBadges}
+                          earnedBadges={previewBadges}
+                        />
+
+                        {/* Locked badges - only shown when expanded */}
+                        {showAllBadges && lockedBadges.length > 0 && (
+                          <div className="mt-6 pt-6 border-t border-border">
+                            <h2 className="text-lg font-bold text-neutral-dark mb-3">
+                              Locked ({lockedBadges.length})
+                            </h2>
+                            <BadgeGrid
+                              allBadges={lockedBadges}
+                              earnedBadges={[]}
+                            />
+                          </div>
+                        )}
+
+                        {/* Toggle button */}
+                        <div className="mt-4">
+                          {!showAllBadges && hiddenCount > 0 && (
+                            <button
+                              onClick={() => setShowAllBadges(true)}
+                              className="text-sm text-primary hover:text-primary/80 font-medium"
+                            >
+                              View All {userBadges.length} Badges →
+                            </button>
+                          )}
+                          {showAllBadges && (
+                            <button
+                              onClick={() => setShowAllBadges(false)}
+                              className="text-sm text-primary hover:text-primary/80 font-medium"
+                            >
+                              Show Less ↑
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
               </section>
             )}
 

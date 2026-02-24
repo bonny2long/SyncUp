@@ -1,20 +1,30 @@
-import React from "react";
-import { Award, Calendar, Target, Zap } from "lucide-react";
-import SkillBadge from "../../../components/shared/SkillBadge";
+import React, { useState } from "react";
+import {
+  Award,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Target,
+  Zap,
+} from "lucide-react";
 
 export default function SessionHistory({ sessions, loading, error }) {
+  const [expandedId, setExpandedId] = useState(null);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-gray-500">Loading session history...</p>
+        <p className="text-sm text-text-secondary">
+          Loading session history...
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">{error}</p>
+      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+        <p className="text-red-400">{error}</p>
       </div>
     );
   }
@@ -34,11 +44,13 @@ export default function SessionHistory({ sessions, loading, error }) {
     );
   }
 
-  // Calculate stats
   const totalSessions = sessions.length;
   const technicalSessions = sessions.filter((s) =>
     ["project_support", "technical_guidance"].includes(s.session_focus),
   ).length;
+
+  const toggleExpand = (id) =>
+    setExpandedId((prev) => (prev === id ? null : id));
 
   return (
     <div className="space-y-6">
@@ -65,12 +77,17 @@ export default function SessionHistory({ sessions, loading, error }) {
       </div>
 
       {/* Session Timeline */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold text-neutral-dark">
           Learning Timeline
         </h2>
         {sessions.map((session) => (
-          <HistoryCard key={session.id} session={session} />
+          <HistoryCard
+            key={session.id}
+            session={session}
+            isExpanded={expandedId === session.id}
+            onToggle={() => toggleExpand(session.id)}
+          />
         ))}
       </div>
     </div>
@@ -84,12 +101,12 @@ function StatCard({ icon, label, value, color }) {
         {icon}
         <p className="text-sm text-text-secondary">{label}</p>
       </div>
-      <p className="text-3xl font-bold text-neural-dark">{value}</p>
+      <p className="text-3xl font-bold text-neutral-dark">{value}</p>
     </div>
   );
 }
 
-function HistoryCard({ session }) {
+function HistoryCard({ session, isExpanded, onToggle }) {
   const formatDate = (dateStr) => {
     if (!dateStr) return "Unknown date";
     const date = new Date(dateStr);
@@ -112,51 +129,69 @@ function HistoryCard({ session }) {
     session.session_focus,
   );
 
+  const hasDetails = session.details || session.notes;
+
   return (
-    <div className="bg-surface border border-border rounded-lg p-4 hover:shadow-md transition">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <h3 className="font-semibold text-neutral-dark mb-1">
-            {session.topic}
-          </h3>
-          <p className="text-sm text-text-secondary">
-            With:{" "}
+    <div className="bg-surface border border-border rounded-lg hover:border-primary/30 transition-colors">
+      {/* Collapsed header — always visible */}
+      <button
+        onClick={onToggle}
+        className="w-full text-left p-4 flex items-center justify-between gap-3"
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-neutral-dark truncate">
+              {session.topic}
+            </h3>
+            {isTechnical && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 flex items-center gap-1 whitespace-nowrap shrink-0">
+                <Zap className="w-3 h-3" />
+                3x Weight
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mt-1 text-sm text-text-secondary flex-wrap">
             <span className="font-medium text-primary">
               {session.mentor_name}
             </span>
-          </p>
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5" />
+              {formatDate(session.session_date)}
+            </span>
+            {session.session_focus && (
+              <span className="flex items-center gap-1">
+                <Target className="w-3.5 h-3.5" />
+                {formatFocus(session.session_focus)}
+              </span>
+            )}
+          </div>
         </div>
-        {isTechnical && (
-          <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-700 flex items-center gap-1 whitespace-nowrap">
-            <Zap className="w-3 h-3" />
-            3x Weight
-          </span>
+
+        {hasDetails && (
+          <div className="shrink-0 text-text-secondary">
+            {isExpanded ?
+              <ChevronUp className="w-4 h-4" />
+            : <ChevronDown className="w-4 h-4" />}
+          </div>
         )}
-      </div>
+      </button>
 
-      <div className="flex items-center gap-4 text-sm text-text-secondary mb-3">
-        <span className="flex items-center gap-1">
-          <Calendar className="w-4 h-4" />
-          {formatDate(session.session_date)}
-        </span>
-        <span className="flex items-center gap-1">
-          <Target className="w-4 h-4" />
-          {formatFocus(session.session_focus)}
-        </span>
-      </div>
-
-      {session.details && (
-        <p className="text-sm text-text-secondary bg-surface-highlight p-2 rounded mb-3">
-          {session.details}
-        </p>
-      )}
-
-      {session.notes && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <p className="text-xs font-semibold text-gray-700 mb-1">
-            Session Notes:
-          </p>
-          <p className="text-sm text-text-secondary">{session.notes}</p>
+      {/* Expanded details */}
+      {isExpanded && hasDetails && (
+        <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
+          {session.details && (
+            <p className="text-sm text-text-secondary bg-surface-highlight p-3 rounded">
+              {session.details}
+            </p>
+          )}
+          {session.notes && (
+            <div>
+              <p className="text-xs font-semibold text-text-secondary mb-1">
+                Session Notes:
+              </p>
+              <p className="text-sm text-text-secondary">{session.notes}</p>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { getSkillSummary } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 
@@ -161,10 +162,10 @@ function SkillRow({ skill }) {
   const { skill_name, transition, velocity } = skill;
 
   // Direction icon based on transition
-  const directionIcon =
-    transition?.direction === "up" ? "↑"
-    : transition?.direction === "down" ? "↓"
-    : "→";
+  const DirectionIcon =
+    transition?.direction === "up" ? TrendingUp
+    : transition?.direction === "down" ? TrendingDown
+    : Minus;
 
   // Color based on direction
   const directionColor =
@@ -172,9 +173,13 @@ function SkillRow({ skill }) {
     : transition?.direction === "down" ? "text-red-600"
     : "text-text-secondary";
 
-  // Format velocity (handle undefined/null)
+  // Format velocity (handle undefined/null/zero)
+  const isSteady = velocity?.per_day === 0;
   const velocityDisplay =
-    velocity?.per_day != null ? `${velocity.per_day.toFixed(2)} / day` : "—";
+    velocity?.per_day != null ?
+      isSteady ? "Steady"
+      : `${velocity.per_day.toFixed(2)} / day`
+    : "—";
 
   return (
     <div className="flex items-center justify-between text-sm py-1 border-b border-border last:border-b-0">
@@ -184,8 +189,11 @@ function SkillRow({ skill }) {
 
       <div className="flex items-center gap-3">
         {/* Direction arrow */}
-        <span className={`font-bold text-lg ${directionColor}`}>
-          {directionIcon}
+        <span className={`flex items-center ${directionColor}`}>
+          <DirectionIcon
+            className={isSteady ? "w-3 h-3" : "w-4 h-4"}
+            strokeWidth={isSteady ? 4 : 3}
+          />
         </span>
 
         {/* Velocity */}

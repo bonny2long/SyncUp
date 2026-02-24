@@ -4,7 +4,7 @@ import { useToast } from "../../context/ToastContext";
 import { fetchUpdates } from "../../utils/api";
 import { getErrorMessage } from "../../utils/errorHandler";
 import { useProjects } from "../../hooks/useProjects"; // Custom hook integrated
-import { BarChart3 } from "lucide-react";
+import { BarChart3, MousePointerClick } from "lucide-react";
 import SkeletonLoader from "../../components/shared/SkeletonLoader";
 
 // Lazy load components
@@ -119,20 +119,20 @@ function TeamAnalyticsSkeleton() {
         </div>
         <div className="h-10 w-64 bg-gray-100 rounded-lg animate-pulse" />
       </div>
-      
+
       {/* Overview Cards Skeleton */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
         ))}
       </div>
-      
+
       {/* Activity Feed Skeleton */}
       <div className="h-48 bg-gray-100 rounded-lg animate-pulse" />
-      
+
       {/* Insight Skeleton */}
       <div className="h-32 bg-gray-100 rounded-lg animate-pulse" />
-      
+
       {/* Charts Skeleton (hidden by default) */}
       <div className="h-64 bg-gray-100 rounded-lg animate-pulse" />
     </div>
@@ -165,7 +165,10 @@ export default function CollaborationHub() {
   // Update cache when projects load
   useEffect(() => {
     if (!projectsLoading && userProjects.length > 0) {
-      if (cachedProjects.length === 0 || Date.now() - lastFetchTime > CACHE_DURATION) {
+      if (
+        cachedProjects.length === 0 ||
+        Date.now() - lastFetchTime > CACHE_DURATION
+      ) {
         setCachedProjects(userProjects);
         setCachedDiscover(discoverProjects);
         setLastFetchTime(Date.now());
@@ -174,8 +177,14 @@ export default function CollaborationHub() {
   }, [projectsLoading, userProjects, discoverProjects]);
 
   // Use cached data for initial render, but still show fresh data
-  const displayProjects = projectsLoading && cachedProjects.length > 0 ? cachedProjects : userProjects;
-  const displayDiscover = projectsLoading && cachedDiscover.length > 0 ? cachedDiscover : discoverProjects;
+  const displayProjects =
+    projectsLoading && cachedProjects.length > 0 ?
+      cachedProjects
+    : userProjects;
+  const displayDiscover =
+    projectsLoading && cachedDiscover.length > 0 ?
+      cachedDiscover
+    : discoverProjects;
 
   const [allUpdates, setAllUpdates] = useState([]);
   const [updatesLoading, setUpdatesLoading] = useState(true);
@@ -467,11 +476,7 @@ export default function CollaborationHub() {
 
             {/* Team Dashboard with Suspense */}
             {teamAnalyticsProject ?
-              <Suspense
-                fallback={
-                  <TeamAnalyticsSkeleton />
-                }
-              >
+              <Suspense fallback={<TeamAnalyticsSkeleton />}>
                 <TeamDashboard projectId={teamAnalyticsProject.id} />
               </Suspense>
             : <div className="bg-surface border border-dashed border-border rounded-xl p-12 text-center">
@@ -486,11 +491,7 @@ export default function CollaborationHub() {
             <div className="text-left">
               {activeTab === (isMentor ? "browse" : "discover") && (
                 <div className="animate-fade-in">
-                  <Suspense
-                    fallback={
-                      <DiscoverPanelSkeleton />
-                    }
-                  >
+                  <Suspense fallback={<DiscoverPanelSkeleton />}>
                     <DiscoverPanel
                       projects={displayDiscover}
                       selectedProject={selectedProject}
@@ -505,11 +506,7 @@ export default function CollaborationHub() {
 
               {(activeTab === "mywork" || activeTab === "myprojects") && (
                 <div className="animate-fade-in">
-                  <Suspense
-                    fallback={
-                      <MyWorkPanelSkeleton />
-                    }
-                  >
+                  <Suspense fallback={<MyWorkPanelSkeleton />}>
                     <MyWorkPanel
                       projects={displayProjects}
                       selectedProject={selectedProject}
@@ -525,29 +522,80 @@ export default function CollaborationHub() {
 
               {activeTab === "requests" && (
                 <div className="animate-fade-in">
-                  <Suspense
-                    fallback={
-                      <RequestsPanelSkeleton />
-                    }
-                  >
+                  <Suspense fallback={<RequestsPanelSkeleton />}>
                     <RequestsPanel onRefresh={loadData} />
                   </Suspense>
                 </div>
               )}
 
               {activeTab === "activity" && (
-                <div>
-                  <h2 className="text-lg font-bold text-secondary mb-3">
-                    {isMentor ? "Your Contributions" : "Your Updates"}
-                  </h2>
-                  {/* Filter clear button logic remains same... */}
+                <div className="space-y-4">
+                  <div className="bg-surface rounded-lg border border-border p-5">
+                    <h2 className="text-lg font-bold text-secondary mb-1">
+                      {isMentor ? "Your Contributions" : "Your Updates"}
+                    </h2>
+                    <p className="text-sm text-text-secondary">
+                      Activity summary and filter controls
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 mt-6">
+                      <div className="p-3 bg-surface-highlight rounded-xl border border-border">
+                        <p className="text-2xl font-bold text-secondary">
+                          {
+                            allUpdates.filter(
+                              (u) => u.user_id === currentUser?.id,
+                            ).length
+                          }
+                        </p>
+                        <p className="text-[10px] uppercase tracking-wider text-text-secondary font-medium mt-1">
+                          Total Updates
+                        </p>
+                      </div>
+                      <div className="p-3 bg-surface-highlight rounded-xl border border-border">
+                        <p className="text-2xl font-bold text-primary">
+                          {displayProjects.length}
+                        </p>
+                        <p className="text-[10px] uppercase tracking-wider text-text-secondary font-medium mt-1">
+                          Active Projects
+                        </p>
+                      </div>
+                    </div>
+
+                    {selectedProject && (
+                      <div className="mt-6 pt-6 border-t border-border">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs font-medium text-text-secondary">
+                            Active Filter:
+                          </span>
+                          <button
+                            onClick={() => setSelectedProject(null)}
+                            className="text-[10px] px-2 py-1 bg-secondary/10 text-secondary hover:bg-secondary/20 rounded-md transition"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                        <div className="p-3 bg-secondary/5 border border-secondary/20 rounded-lg">
+                          <p className="text-xs font-semibold text-secondary truncate">
+                            {selectedProject.title}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!selectedProject && (
+                      <div className="mt-6 p-4 bg-accent/5 border border-dashed border-accent/20 rounded-xl text-center">
+                        <p className="text-xs text-text-secondary">
+                          Tip: Click a project in "My Work" to filter this feed
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
             {/* RIGHT COLUMN: Previews / Activity Feed */}
             <div className="text-left">
-              {/* Detailed Project Preview (shared by Discover/Browse) */}
               {(activeTab === "discover" || activeTab === "browse") && (
                 <div className="bg-surface rounded-lg border border-border p-6">
                   <h2 className="text-lg font-bold text-neutral-dark mb-4">
@@ -555,17 +603,49 @@ export default function CollaborationHub() {
                   </h2>
                   {selectedProject ?
                     <div className="space-y-4">
-                      {/* ... Preview content ... */}
-                      <button
-                        onClick={() => handleJoinClick(selectedProject)}
-                        className="w-full mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
-                      >
-                        Request to Join {isMentor && "as Mentor"}
-                      </button>
+                      <div>
+                        <h3 className="font-semibold text-neutral-dark mb-1">
+                          {selectedProject.title}
+                        </h3>
+                        <p className="text-sm text-text-secondary">
+                          {selectedProject.description}
+                        </p>
+                      </div>
+                      <div className="flex gap-4 text-xs text-text-secondary">
+                        <span>{selectedProject.team_count ?? 0} members</span>
+                        <span>{selectedProject.skill_count ?? 0} skills</span>
+                        <span className="capitalize">
+                          {selectedProject.status}
+                        </span>
+                      </div>
+                      {selectedProject.visibility === "seeking" && (
+                        <button
+                          onClick={() => handleJoinClick(selectedProject)}
+                          className="w-full mt-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium text-sm"
+                        >
+                          Request to Join{isMentor && " as Mentor"}
+                        </button>
+                      )}
+                      {selectedProject.visibility === "public" && (
+                        <button
+                          onClick={() => handleViewProject(selectedProject)}
+                          className="w-full mt-2 px-4 py-2 bg-surface-highlight text-text-secondary rounded-lg hover:bg-border transition font-medium text-sm"
+                        >
+                          View Project Details
+                        </button>
+                      )}
                     </div>
-                  : <p className="text-gray-500 text-center py-8">
-                      Select a project to see details
-                    </p>
+                  : <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                        <MousePointerClick className="w-6 h-6 text-accent" />
+                      </div>
+                      <p className="text-sm font-medium text-neutral-dark">
+                        Select a project
+                      </p>
+                      <p className="text-xs text-text-secondary">
+                        Click any project on the left to preview it here
+                      </p>
+                    </div>
                   }
                 </div>
               )}
@@ -575,11 +655,7 @@ export default function CollaborationHub() {
                 activeTab === "myprojects" ||
                 activeTab === "activity") && (
                 <div className="animate-fade-in">
-                  <Suspense
-                    fallback={
-                      <ActivityPanelSkeleton />
-                    }
-                  >
+                  <Suspense fallback={<ActivityPanelSkeleton />}>
                     <ActivityPanel
                       selectedProject={selectedProject}
                       allUpdates={allUpdates}

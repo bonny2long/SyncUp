@@ -112,7 +112,7 @@ const TeamDashboard = ({ projectId }) => {
           <div className="flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-text-secondary" />
             <span className="font-medium text-neutral-dark dark:text-white">
-              {showCharts ? "Hide Charts" : "View Charts"}
+              {showCharts ? "Hide Team Analytics" : "View Team Analytics"}
             </span>
           </div>
           {showCharts ?
