@@ -322,21 +322,25 @@ export default function UserProfile() {
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="bg-surface border-b border-border rounded-t-lg p-6">
+            <div className="bg-surface border-border rounded-lg p-6 mb-6">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  {isEditingProfile ? (
+                  {isEditingProfile ?
                     <div className="space-y-3">
                       <input
                         type="text"
                         value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, name: e.target.value })
+                        }
                         className="text-4xl font-bold text-neutral-dark bg-transparent border-b-2 border-primary focus:outline-none w-full"
                         placeholder="Your name"
                       />
                       <textarea
                         value={editForm.bio}
-                        onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, bio: e.target.value })
+                        }
                         maxLength={200}
                         placeholder="Tell us about yourself..."
                         className="w-full text-text-secondary text-sm mt-3 bg-surface-highlight border border-border rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -346,13 +350,13 @@ export default function UserProfile() {
                         {editForm.bio?.length || 0}/200 characters
                       </p>
                     </div>
-                  ) : (
-                    <>
+                  : <>
                       <h1 className="text-4xl font-bold text-neutral-dark">
                         {user.name}
                       </h1>
                       <p className="text-text-secondary mt-1">
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)} •{" "}
+                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}{" "}
+                        •{" "}
                         {new Date(user.join_date).toLocaleDateString("en-US", {
                           month: "long",
                           year: "numeric",
@@ -363,13 +367,15 @@ export default function UserProfile() {
                           "{user.bio}"
                         </p>
                       )}
-                      {!user.bio && currentUser && currentUser.id === user.id && (
-                        <p className="text-text-secondary text-sm mt-3 italic">
-                          Click edit to add a bio
-                        </p>
-                      )}
+                      {!user.bio &&
+                        currentUser &&
+                        currentUser.id === user.id && (
+                          <p className="text-text-secondary text-sm mt-3 italic">
+                            Click edit to add a bio
+                          </p>
+                        )}
                     </>
-                  )}
+                  }
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -385,8 +391,8 @@ export default function UserProfile() {
                     </div>
                   )}
 
-                  {currentUser && currentUser.id === user.id ? (
-                    isEditingProfile ? (
+                  {currentUser && currentUser.id === user.id ?
+                    isEditingProfile ?
                       <div className="flex items-center gap-2">
                         <button
                           onClick={handleCancelEdit}
@@ -404,16 +410,15 @@ export default function UserProfile() {
                           {savingProfile ? "Saving..." : "Save"}
                         </button>
                       </div>
-                    ) : (
-                      <button
+                    : <button
                         onClick={handleEditProfile}
                         className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-neutral-dark rounded-lg hover:bg-border transition font-medium border border-border"
                       >
                         <Edit2 className="w-4 h-4" />
                         Edit Profile
                       </button>
-                    )
-                  ) : currentUser && currentUser.id !== user.id ? (
+
+                  : currentUser && currentUser.id !== user.id ?
                     <>
                       {user.role === "mentor" && (
                         <button
@@ -431,14 +436,17 @@ export default function UserProfile() {
                         Message
                       </button>
                     </>
-                  ) : null}
+                  : null}
                 </div>
               </div>
             </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all" title="Total unique skills you've practiced across all projects">
+              <div
+                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                title="Total unique skills you've practiced across all projects"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <Code className="w-5 h-5 text-primary" />
                   <p className="text-sm text-neutral-dark">Skills</p>
@@ -448,7 +456,10 @@ export default function UserProfile() {
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all" title="Total skill points from all activities and validations">
+              <div
+                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                title="Total skill points from all activities and validations"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <Award className="w-5 h-5 text-secondary" />
                   <p className="text-sm text-neutral-dark">Growth</p>
@@ -458,7 +469,10 @@ export default function UserProfile() {
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all" title="Projects you own or are a member of">
+              <div
+                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                title="Projects you own or are a member of"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-5 h-5 text-accent" />
                   <p className="text-sm text-neutral-dark">Recent Projects</p>
@@ -468,7 +482,10 @@ export default function UserProfile() {
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all" title="Days you've been active in the last 30 days">
+              <div
+                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                title="Days you've been active in the last 30 days"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <BookOpen className="w-5 h-5 text-primary" />
                   <p className="text-sm text-neutral-dark">Active</p>
@@ -480,8 +497,8 @@ export default function UserProfile() {
             </div>
 
             {/* Growth Sources */}
-            <div className="bg-surface rounded-lg border border-border p-4 mb-8">
-              <p className="text-sm text-text-secondary">
+            <div className="bg-surface rounded-lg border border-border p-4 mb-6">
+              <p className="text-sm text-text-secondary text-center">
                 <span className="font-medium text-neutral-dark">
                   Growth Sources:
                 </span>{" "}
@@ -518,10 +535,12 @@ export default function UserProfile() {
                         </div>
 
                         {/* Badge grid - preview or all */}
-                        <BadgeGrid
-                          allBadges={previewBadges}
-                          earnedBadges={previewBadges}
-                        />
+                        <div className="flex justify-center">
+                          <BadgeGrid
+                            allBadges={previewBadges}
+                            earnedBadges={previewBadges}
+                          />
+                        </div>
 
                         {/* Locked badges - only shown when expanded */}
                         {showAllBadges && lockedBadges.length > 0 && (
@@ -529,29 +548,24 @@ export default function UserProfile() {
                             <h2 className="text-lg font-bold text-neutral-dark mb-3">
                               Locked ({lockedBadges.length})
                             </h2>
-                            <BadgeGrid
-                              allBadges={lockedBadges}
-                              earnedBadges={[]}
-                            />
+                            <div className="flex justify-center">
+                              <BadgeGrid
+                                allBadges={lockedBadges}
+                                earnedBadges={[]}
+                              />
+                            </div>
                           </div>
                         )}
 
                         {/* Toggle button */}
-                        <div className="mt-4">
-                          {!showAllBadges && hiddenCount > 0 && (
+                        <div className="mt-5 flex justify-center">
+                          {(hiddenCount > 0 || showAllBadges) && (
                             <button
-                              onClick={() => setShowAllBadges(true)}
-                              className="text-sm text-primary hover:text-primary/80 font-medium"
+                              onClick={() => setShowAllBadges(!showAllBadges)}
+                              className="flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 hover:border-primary transition-all duration-200 group"
                             >
-                              View All {userBadges.length} Badges →
-                            </button>
-                          )}
-                          {showAllBadges && (
-                            <button
-                              onClick={() => setShowAllBadges(false)}
-                              className="text-sm text-primary hover:text-primary/80 font-medium"
-                            >
-                              Show Less ↑
+                              {showAllBadges ? "Show Less" : `View All ${userBadges.length} Badges`}
+                              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllBadges ? "rotate-180" : "group-hover:translate-y-0.5"}`} />
                             </button>
                           )}
                         </div>
@@ -588,7 +602,7 @@ export default function UserProfile() {
 
                       return (
                         <>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 justify-center">
                             {displayedSkills.map((skill) => {
                               const canValidate =
                                 currentUser &&
@@ -649,22 +663,16 @@ export default function UserProfile() {
                           </div>
 
                           {/* Show More / Show Less button */}
-                          {!showAllSkills && remainingCount > 0 && (
-                            <button
-                              onClick={() => setShowAllSkills(true)}
-                              className="mt-4 text-sm text-primary hover:text-primary/80 font-medium"
-                            >
-                              Show {remainingCount} more skill
-                              {remainingCount !== 1 ? "s" : ""} →
-                            </button>
-                          )}
-                          {showAllSkills && skills.length > 6 && (
-                            <button
-                              onClick={() => setShowAllSkills(false)}
-                              className="mt-4 text-sm text-primary hover:text-primary/80 font-medium"
-                            >
-                              Show less ↑
-                            </button>
+                          {(remainingCount > 0 || showAllSkills) && skills.length > 6 && (
+                            <div className="mt-5 flex justify-center">
+                              <button
+                                onClick={() => setShowAllSkills(!showAllSkills)}
+                                className="flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 hover:border-primary transition-all duration-200 group"
+                              >
+                                {showAllSkills ? "Show Less" : `Show ${remainingCount} More Skill${remainingCount !== 1 ? "s" : ""}`}
+                                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllSkills ? "rotate-180" : "group-hover:translate-y-0.5"}`} />
+                              </button>
+                            </div>
                           )}
                         </>
                       );
