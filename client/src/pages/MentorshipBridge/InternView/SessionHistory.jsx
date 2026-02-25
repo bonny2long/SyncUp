@@ -205,9 +205,9 @@ export default function SessionHistory({ sessions, loading, error }) {
                 <option value="all">All Time</option>
                 <option value="30days">Last 30 Days</option>
                 <option value="90days">Last 90 Days</option>
-                <option value="year">Last Year</select>
-            </option>
-              </div>
+                <option value="year">Last Year</option>
+              </select>
+            </div>
           </div>
         </div>
       )}

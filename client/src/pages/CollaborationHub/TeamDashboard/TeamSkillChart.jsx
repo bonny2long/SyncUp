@@ -4,7 +4,7 @@ import { AgCharts } from "ag-charts-react";
 
 const SKILL_COLORS = {
   react: "#4f46e5",
-  "node.js": "#16a34a", 
+  "node.js": "#16a34a",
   sql: "#dc2626",
   "api design": "#ea580c",
   "system design": "#0f766e",
@@ -22,7 +22,7 @@ const SKILL_COLORS = {
   postgresql: "#3b82f6",
   docker: "#2493ef",
   aws: "#ff9900",
-  testing: "#8b5cf6"
+  testing: "#8b5cf6",
 };
 
 const getColorForSkill = (skillName) => {
@@ -36,19 +36,19 @@ const TeamSkillChart = ({ data }) => {
 
     // Aggregate skill data across all team members
     const skillAggregates = {};
-    
-    data.forEach(item => {
+
+    data.forEach((item) => {
       if (!item.skill_name || !item.signal_count) return;
-      
+
       if (!skillAggregates[item.skill_name]) {
         skillAggregates[item.skill_name] = {
           skill_name: item.skill_name,
           total_signals: 0,
           total_weight: 0,
-          members: new Set()
+          members: new Set(),
         };
       }
-      
+
       skillAggregates[item.skill_name].total_signals += item.signal_count;
       skillAggregates[item.skill_name].total_weight += item.total_weight || 0;
       if (item.signal_count > 0) {
@@ -57,87 +57,90 @@ const TeamSkillChart = ({ data }) => {
     });
 
     return Object.values(skillAggregates)
-      .filter(skill => skill.total_signals > 0)
+      .filter((skill) => skill.total_signals > 0)
       .sort((a, b) => b.total_weight - a.total_weight)
-      .map(skill => ({
+      .map((skill) => ({
         skill: skill.skill_name,
         signals: skill.total_signals,
         weight: skill.total_weight,
         members: skill.members.size,
-        fill: getColorForSkill(skill.skill_name)
+        fill: getColorForSkill(skill.skill_name),
       }));
   }, [data]);
 
-  const options = useMemo(() => ({
-    data: chartData,
-    title: {
-      text: "Team Skill Distribution",
-      fontSize: 18,
-      fontWeight: "bold",
-      color: "#1f2937"
-    },
-    subtitle: {
-      text: "Most developed skills across the team",
-      fontSize: 14,
-      color: "#6b7280"
-    },
-    series: [
-      {
-        type: "bar",
-        xKey: "skill",
-        yKey: "weight",
-        yName: "Skill Weight",
-        fill: "#4f46e5",
-        cornerRadius: 4,
-        label: {
-          enabled: true,
-          position: "top",
-          formatter: (params) => params.weight.toString()
-        }
-      }
-    ],
-    axes: [
-      {
-        type: "category",
-        position: "bottom",
-        title: {
-          text: "Skills",
-          fontSize: 14,
-          color: "#374151"
-        },
-        label: {
-          rotation: -45,
-          fontSize: 12,
-          color: "#6b7280"
-        }
+  const options = useMemo(
+    () => ({
+      data: chartData,
+      title: {
+        text: "Team Skill Distribution",
+        fontSize: 18,
+        fontWeight: "bold",
+        color: "#1f2937",
       },
-      {
-        type: "number",
-        position: "left",
-        title: {
-          text: "Total Weight",
-          fontSize: 14,
-          color: "#374151"
+      subtitle: {
+        text: "Most developed skills across the team",
+        fontSize: 14,
+        color: "#6b7280",
+      },
+      series: [
+        {
+          type: "bar",
+          xKey: "skill",
+          yKey: "weight",
+          yName: "Skill Weight",
+          fill: "#4f46e5",
+          cornerRadius: 4,
+          label: {
+            enabled: true,
+            position: "top",
+            formatter: (params) => params.weight.toString(),
+          },
         },
-        label: {
-          fontSize: 12,
-          color: "#6b7280"
-        }
-      }
-    ],
-    legend: {
-      enabled: false
-    },
-    background: {
-      visible: false
-    },
-    padding: {
-      top: 20,
-      right: 20,
-      bottom: 80,
-      left: 60
-    }
-  }), [chartData]);
+      ],
+      axes: [
+        {
+          type: "category",
+          position: "bottom",
+          title: {
+            text: "Skills",
+            fontSize: 14,
+            color: "#374151",
+          },
+          label: {
+            rotation: -45,
+            fontSize: 12,
+            color: "#6b7280",
+          },
+        },
+        {
+          type: "number",
+          position: "left",
+          title: {
+            text: "Total Weight",
+            fontSize: 14,
+            color: "#374151",
+          },
+          label: {
+            fontSize: 12,
+            color: "#6b7280",
+          },
+        },
+      ],
+      legend: {
+        enabled: false,
+      },
+      background: {
+        visible: false,
+      },
+      padding: {
+        top: 20,
+        right: 20,
+        bottom: 80,
+        left: 60,
+      },
+    }),
+    [chartData],
+  );
 
   if (!chartData.length) {
     return (
@@ -145,9 +148,12 @@ const TeamSkillChart = ({ data }) => {
         <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-surface-highlight dark:bg-gray-800">
           <BarChart3 className="w-8 h-8 text-text-secondary" />
         </div>
-        <h3 className="text-neutral-dark dark:text-white font-semibold text-lg mb-2">No Skill Data Yet</h3>
+        <h3 className="text-neutral-dark dark:text-white font-semibold text-lg mb-2">
+          No Skill Data Yet
+        </h3>
         <p className="text-text-secondary text-sm max-w-md mx-auto mb-4">
-          Team members need to complete projects and post updates with skill tags to generate skill data.
+          Team members need to complete projects and post updates with skill
+          tags to generate skill data.
         </p>
         <div className="flex flex-col items-center gap-2 text-xs text-text-secondary">
           <div className="flex items-center gap-2">
@@ -166,7 +172,9 @@ const TeamSkillChart = ({ data }) => {
   return (
     <div className="bg-surface dark:bg-surface-highlight border border-border dark:border-gray-700 rounded-lg p-6">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-neutral-dark dark:text-white mb-2">Team Skill Distribution</h3>
+        <h3 className="text-lg font-semibold text-neutral-dark dark:text-white mb-2">
+          Team Skill Distribution
+        </h3>
         <p className="text-sm text-text-secondary">
           Most developed skills across your team based on accumulated signals
         </p>
@@ -177,7 +185,9 @@ const TeamSkillChart = ({ data }) => {
       {chartData.length > 0 && (
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{chartData.length}</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {chartData.length}
+            </p>
             <p className="text-xs text-text-secondary">Total Skills</p>
           </div>
           <div className="text-center">
@@ -188,7 +198,7 @@ const TeamSkillChart = ({ data }) => {
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              {Math.max(...chartData.map(s => s.weight))}
+              {Math.max(...chartData.map((s) => s.weight))}
             </p>
             <p className="text-xs text-text-secondary">Top Skill Weight</p>
           </div>
