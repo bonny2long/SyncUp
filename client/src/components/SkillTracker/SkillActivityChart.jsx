@@ -125,7 +125,11 @@ export default function SkillActivityChart() {
       x: {
         type: "category",
         position: "bottom",
-        label: { fontSize: 11, wrapping: "on-space", color: chartTheme.axisLabelColor },
+        label: {
+          fontSize: 11,
+          wrapping: "on-space",
+          color: chartTheme.axisLabelColor,
+        },
       },
       y: {
         type: "number",
@@ -134,7 +138,7 @@ export default function SkillActivityChart() {
         label: { fontSize: 11, color: chartTheme.axisLabelColor },
       },
     },
-    padding: { top: 6, right: 12, bottom: 8, left: 12 },
+    padding: { top: 10, right: 16, bottom: 45, left: 16 },
     legend: {
       position: "bottom",
       item: { label: { color: chartTheme.legendLabelColor } },
@@ -145,7 +149,7 @@ export default function SkillActivityChart() {
   return (
     <div className="w-full">
       {insight && <p className="text-xs text-text-secondary mb-2">{insight}</p>}
-      <div style={{ height: 200 }}>
+      <div style={{ height: 260 }}>
         <AgCharts options={options} />
       </div>
     </div>

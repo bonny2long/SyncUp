@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { TrendingUp, LineChart } from "lucide-react";
+import { TrendingUp, LineChart, FileText, Zap } from "lucide-react";
 import { AgCharts } from "ag-charts-react";
 
 // Helper function to format week numbers to readable dates
@@ -163,13 +163,23 @@ const TeamMomentumChart = ({ data }) => {
   if (!chartData.length) {
     return (
       <div className="bg-surface dark:bg-surface-highlight border border-border dark:border-gray-700 rounded-lg p-8 text-center">
-        <div className="flex items-center justify-center text-text-secondary text-4xl mb-4">
-          <LineChart className="w-8 h-8" />
+        <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-surface-highlight dark:bg-gray-800">
+          <LineChart className="w-8 h-8 text-text-secondary" />
         </div>
-        <h3 className="text-neutral-dark dark:text-white font-medium mb-2">No Momentum Data Available</h3>
-        <p className="text-text-secondary text-sm">
-          Team activity data will appear here once team members start generating signals.
+        <h3 className="text-neutral-dark dark:text-white font-semibold text-lg mb-2">No Momentum Data Yet</h3>
+        <p className="text-text-secondary text-sm max-w-md mx-auto mb-4">
+          Team activity and progress will be tracked here once members start posting updates.
         </p>
+        <div className="flex flex-col items-center gap-2 text-xs text-text-secondary">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            <span>Post regular project updates</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4" />
+            <span>Stay active to build momentum</span>
+          </div>
+        </div>
       </div>
     );
   }

@@ -10,6 +10,9 @@ import {
   Rocket,
   ChevronDown,
   ChevronUp,
+  Edit2,
+  Save,
+  X,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -47,6 +50,9 @@ export default function UserProfile() {
   const [userBadges, setUserBadges] = useState([]);
   const [newBadge, setNewBadge] = useState(null);
   const [showAllBadges, setShowAllBadges] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", bio: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const BADGE_PREVIEW_COUNT = 6;
 
@@ -259,6 +265,40 @@ export default function UserProfile() {
     });
   };
 
+  const handleEditProfile = () => {
+    setEditForm({ name: user.name, bio: user.bio || "" });
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+    setEditForm({ name: "", bio: "" });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!currentUser || currentUser.id !== user.id) return;
+
+    setSavingProfile(true);
+    try {
+      const res = await fetch(`${API_BASE}/users/${user.id}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!res.ok) throw new Error("Failed to save");
+
+      const updatedUser = await res.json();
+      setProfile((prev) => ({ ...prev, user: updatedUser }));
+      setIsEditingProfile(false);
+      addToast({ type: "success", message: "Profile updated successfully!" });
+    } catch (err) {
+      addToast({ type: "error", message: "Failed to update profile" });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -284,21 +324,51 @@ export default function UserProfile() {
             {/* Header */}
             <div className="bg-surface border-b border-border rounded-t-lg p-6">
               <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-4xl font-bold text-neutral-dark">
-                    {user.name}
-                  </h1>
-                  <p className="text-text-secondary mt-1">
-                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)} •{" "}
-                    {new Date(user.join_date).toLocaleDateString("en-US", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </p>
-                  {user.bio && (
-                    <p className="text-text-secondary text-sm mt-3 max-w-2xl italic">
-                      "{user.bio}"
-                    </p>
+                <div className="flex-1">
+                  {isEditingProfile ? (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="text-4xl font-bold text-neutral-dark bg-transparent border-b-2 border-primary focus:outline-none w-full"
+                        placeholder="Your name"
+                      />
+                      <textarea
+                        value={editForm.bio}
+                        onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
+                        maxLength={200}
+                        placeholder="Tell us about yourself..."
+                        className="w-full text-text-secondary text-sm mt-3 bg-surface-highlight border border-border rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        rows={2}
+                      />
+                      <p className="text-xs text-text-secondary">
+                        {editForm.bio?.length || 0}/200 characters
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <h1 className="text-4xl font-bold text-neutral-dark">
+                        {user.name}
+                      </h1>
+                      <p className="text-text-secondary mt-1">
+                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)} •{" "}
+                        {new Date(user.join_date).toLocaleDateString("en-US", {
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </p>
+                      {user.bio && (
+                        <p className="text-text-secondary text-sm mt-3 max-w-2xl italic">
+                          "{user.bio}"
+                        </p>
+                      )}
+                      {!user.bio && currentUser && currentUser.id === user.id && (
+                        <p className="text-text-secondary text-sm mt-3 italic">
+                          Click edit to add a bio
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -315,7 +385,35 @@ export default function UserProfile() {
                     </div>
                   )}
 
-                  {currentUser && currentUser.id !== user.id && (
+                  {currentUser && currentUser.id === user.id ? (
+                    isEditingProfile ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleCancelEdit}
+                          className="flex items-center gap-2 px-3 py-2 text-text-secondary hover:text-neutral-dark transition"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveProfile}
+                          disabled={savingProfile}
+                          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50"
+                        >
+                          <Save className="w-4 h-4" />
+                          {savingProfile ? "Saving..." : "Save"}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleEditProfile}
+                        className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-neutral-dark rounded-lg hover:bg-border transition font-medium border border-border"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                        Edit Profile
+                      </button>
+                    )
+                  ) : currentUser && currentUser.id !== user.id ? (
                     <>
                       {user.role === "mentor" && (
                         <button
@@ -333,14 +431,14 @@ export default function UserProfile() {
                         Message
                       </button>
                     </>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-surface p-4 rounded-lg border border-border">
+              <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all" title="Total unique skills you've practiced across all projects">
                 <div className="flex items-center gap-2 mb-2">
                   <Code className="w-5 h-5 text-primary" />
                   <p className="text-sm text-neutral-dark">Skills</p>
@@ -350,7 +448,7 @@ export default function UserProfile() {
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border">
+              <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all" title="Total skill points from all activities and validations">
                 <div className="flex items-center gap-2 mb-2">
                   <Award className="w-5 h-5 text-secondary" />
                   <p className="text-sm text-neutral-dark">Growth</p>
@@ -360,7 +458,7 @@ export default function UserProfile() {
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border">
+              <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all" title="Projects you own or are a member of">
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-5 h-5 text-accent" />
                   <p className="text-sm text-neutral-dark">Recent Projects</p>
@@ -370,7 +468,7 @@ export default function UserProfile() {
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border">
+              <div className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all" title="Days you've been active in the last 30 days">
                 <div className="flex items-center gap-2 mb-2">
                   <BookOpen className="w-5 h-5 text-primary" />
                   <p className="text-sm text-neutral-dark">Active</p>

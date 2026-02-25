@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3, Users, FileText } from "lucide-react";
 import { AgCharts } from "ag-charts-react";
 
 const SKILL_COLORS = {
@@ -142,13 +142,23 @@ const TeamSkillChart = ({ data }) => {
   if (!chartData.length) {
     return (
       <div className="bg-surface dark:bg-surface-highlight border border-border dark:border-gray-700 rounded-lg p-8 text-center">
-        <div className="flex items-center justify-center text-text-secondary text-4xl mb-4">
-          <BarChart3 className="w-8 h-8" />
+        <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-surface-highlight dark:bg-gray-800">
+          <BarChart3 className="w-8 h-8 text-text-secondary" />
         </div>
-        <h3 className="text-neutral-dark dark:text-white font-medium mb-2">No Skill Data Available</h3>
-        <p className="text-text-secondary text-sm">
-          Team members haven't generated any skill signals yet. Start collaborating on projects to see skill distribution.
+        <h3 className="text-neutral-dark dark:text-white font-semibold text-lg mb-2">No Skill Data Yet</h3>
+        <p className="text-text-secondary text-sm max-w-md mx-auto mb-4">
+          Team members need to complete projects and post updates with skill tags to generate skill data.
         </p>
+        <div className="flex flex-col items-center gap-2 text-xs text-text-secondary">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            <span>Post project updates</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            <span>Add skill tags to updates</span>
+          </div>
+        </div>
       </div>
     );
   }

@@ -116,6 +116,7 @@ export default function InternView() {
             loading={loading}
             error={error}
             onRefresh={loadSessions}
+            onFindMentors={() => setActiveTab("find")}
           />
         )}
 

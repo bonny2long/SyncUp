@@ -6,6 +6,7 @@ import {
   fetchSkills,
 } from "../../utils/api";
 import SkillMultiSelect from "../../components/shared/SkillMultiSelect";
+import { FileText, ArrowLeft } from "lucide-react";
 
 import AddUpdateForm from "./AddUpdateForm";
 import UpdateCard from "./UpdateCard";
@@ -150,9 +151,15 @@ export default function ProgressFeed({
           projectSkills={projectSkills}
           loadingSkills={loadingSkills}
         />
-      : <div className="bg-surface border border-border rounded-xl p-4 text-center">
-          <p className="text-text-secondary text-sm">
+      : <div className="bg-surface-highlight border border-dashed border-border rounded-xl p-6 text-center">
+          <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10">
+            <FileText className="w-6 h-6 text-primary" />
+          </div>
+          <p className="text-text-secondary text-sm mb-2">
             Select a project from "My Work" to post an update
+          </p>
+          <p className="text-xs text-text-secondary">
+            Your project updates will appear here
           </p>
         </div>
       }
