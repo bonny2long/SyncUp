@@ -18,6 +18,12 @@ export default function Login() {
   }, []);
 
   const handleContinue = () => {
+    if (selected === "admin") {
+      login({ id: 0, name: "Admin User", role: "admin" });
+      navigate("/admin");
+      return;
+    }
+
     const user = users.find((u) => u.id === Number(selected));
     if (!user) return;
 
@@ -48,7 +54,8 @@ export default function Login() {
         onChange={(e) => setSelected(e.target.value)}
       >
         <option value="">Select a user...</option>
-        {users.map((u) => (
+        <option value="admin">Admin User (admin)</option>
+        {users.filter(u => u.role !== 'admin').map((u) => (
           <option key={u.id} value={u.id}>
             {u.name} ({u.role})
           </option>

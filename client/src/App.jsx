@@ -7,13 +7,19 @@ import { ToastProvider } from "./context/ToastContext";
 import ProjectPortfolio from "./pages/ProjectPortfolio";
 import UserProfile from "./pages/UserProfile";
 import Chat from "./pages/Chat/Chat";
+import AdminDashboard from "./pages/AdminDashboard";
 
-function ProtectedRoute({ children, requireIntern = false }) {
-  const { user, loading } = useUser();
+function ProtectedRoute({ children, requireIntern = false, requireAdmin = false }) {
+  const { user, originalUser, loading } = useUser();
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (requireIntern && user.role !== "intern")
+  
+  // Check if admin (either directly logged in as admin, or original user was admin)
+  const isAdmin = user.role === 'admin' || (originalUser && originalUser.role === 'admin');
+  
+  if (requireAdmin && !isAdmin) return <Navigate to="/" replace />;
+  if (requireIntern && user.role !== "intern" && user.role !== "admin")
     return <Navigate to="/collaboration" replace />;
 
   return children;
@@ -86,6 +92,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin={true}>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
