@@ -4,19 +4,20 @@ import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import { useUser } from "./context/UserContext";
 import { ToastProvider } from "./context/ToastContext";
+import { OnboardingProvider } from "./context/OnboardingContext";
+import OnboardingTour from "./components/shared/OnboardingTour";
 import ProjectPortfolio from "./pages/ProjectPortfolio";
 import UserProfile from "./pages/UserProfile";
 import Chat from "./pages/Chat/Chat";
 import AdminDashboard from "./pages/AdminDashboard";
 
 function ProtectedRoute({ children, requireIntern = false, requireAdmin = false }) {
-  const { user, originalUser, loading } = useUser();
+  const { user, loading } = useUser();
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   
-  // Check if admin (either directly logged in as admin, or original user was admin)
-  const isAdmin = user.role === 'admin' || (originalUser && originalUser.role === 'admin');
+  const isAdmin = user.role === 'admin';
   
   if (requireAdmin && !isAdmin) return <Navigate to="/" replace />;
   if (requireIntern && user.role !== "intern" && user.role !== "admin")
@@ -28,7 +29,9 @@ function ProtectedRoute({ children, requireIntern = false, requireAdmin = false 
 export default function App() {
   return (
     <ToastProvider>
-      <Routes>
+      <OnboardingProvider>
+        <OnboardingTour />
+        <Routes>
         <Route path="/" element={<Navigate to="/collaboration" replace />} />
         <Route
           path="/collaboration"
@@ -105,6 +108,7 @@ export default function App() {
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </OnboardingProvider>
     </ToastProvider>
   );
 }

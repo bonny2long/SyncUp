@@ -13,6 +13,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import badgeRoutes from "./routes/badgeRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import errorsRoutes from "./routes/errorsRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -43,6 +44,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/badges", badgeRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/errors", errorsRoutes);
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

@@ -40,7 +40,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
     <div className="w-64 bg-primary text-white flex flex-col p-6 rounded-r-2xl shadow-lg h-full">
       <h2 className="text-3xl font-bold mb-8 text-accent">SyncUp</h2>
 
-      <nav className="flex flex-col gap-3">
+      <nav data-onboarding="sidebar" className="flex flex-col gap-3">
         {tabs.map((tab) => (
           <button
             key={tab.id}

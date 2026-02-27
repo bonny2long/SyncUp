@@ -3,6 +3,47 @@
 export const API_BASE =
   import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
+// Error reporting function (defined first so handleApiError can use it)
+export async function reportError(errorType, message, details = {}) {
+  const payload = {
+    error_type: errorType,
+    message: message,
+    stack: details.stack || null,
+    user_id: details.userId || null,
+    page_url: details.pageUrl || (typeof window !== "undefined" ? window.location.pathname : ""),
+    user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+  };
+  
+  try {
+    await fetch(`${API_BASE}/errors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    // Silent fail - don't break the app
+  }
+}
+
+// Auto-report errors helper (doesn't block the call)
+async function handleApiError(res, endpoint, errorType = "api") {
+  if (!res.ok) {
+    const errorMsg = `API Error ${res.status}: ${endpoint} failed`;
+    try {
+      const errorData = await res.clone().json();
+      reportError(errorType, errorMsg, {
+        pageUrl: window.location.pathname,
+        details: JSON.stringify(errorData),
+      });
+    } catch {
+      reportError(errorType, errorMsg, {
+        pageUrl: window.location.pathname,
+      });
+    }
+  }
+  return res;
+}
+
 // ----------------------------------------------------
 // PROJECTS
 // ----------------------------------------------------
@@ -10,6 +51,7 @@ export async function fetchProjects(userId) {
   const url =
     userId ? `${API_BASE}/projects?user_id=${userId}` : `${API_BASE}/projects`;
   const res = await fetch(url);
+  await handleApiError(res, "/projects");
   return res.json();
 }
 
@@ -97,6 +139,7 @@ export async function fetchEngagementLoops() {
 // ----------------------------------------------------
 export async function fetchUsers() {
   const res = await fetch(`${API_BASE}/users`);
+  await handleApiError(res, "/users");
   if (!res.ok) throw new Error("Failed to fetch users");
   return res.json();
 }
@@ -110,6 +153,7 @@ export async function fetchUpdates(projectId) {
       `${API_BASE}/progress_updates?project_id=${projectId}`
     : `${API_BASE}/progress_updates`;
   const res = await fetch(url);
+  await handleApiError(res, "/progress_updates");
   return res.json();
 }
 
@@ -137,6 +181,7 @@ export async function fetchSessions(mentorId) {
     : `${API_BASE}/mentorship/sessions`;
 
   const res = await fetch(url);
+  await handleApiError(res, "/mentorship/sessions");
   if (!res.ok) throw new Error("Failed to fetch sessions");
   return res.json();
 }
@@ -659,5 +704,87 @@ export async function uploadFile(file) {
     throw new Error(error.error || "Failed to upload file");
   }
 
+  return res.json();
+}
+
+// ============================================================
+// ADMIN
+// ============================================================
+
+export async function deleteUser(userId) {
+  const res = await fetch(`${API_BASE}/users/${userId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete user");
+  return res.json();
+}
+
+export async function updateUser(userId, data) {
+  const res = await fetch(`${API_BASE}/users/${userId}/profile`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update user");
+  return res.json();
+}
+
+export async function deleteProject(projectId) {
+  const res = await fetch(`${API_BASE}/projects/${projectId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete project");
+  return res.json();
+}
+
+export async function fetchHealth() {
+  const res = await fetch(`${API_BASE}/health`);
+  if (!res.ok) throw new Error("Failed to fetch health");
+  return res.json();
+}
+
+// ============================================================
+// ERROR REPORTING
+// ============================================================
+
+export async function fetchErrors(status = "all", type = "all", page = 1, limit = 20) {
+  const params = new URLSearchParams();
+  if (status !== "all") params.append("status", status);
+  if (type !== "all") params.append("type", type);
+  params.append("page", page);
+  params.append("limit", limit);
+  
+  const res = await fetch(`${API_BASE}/errors?${params}`);
+  if (!res.ok) throw new Error("Failed to fetch errors");
+  return res.json();
+}
+
+export async function fetchErrorStats() {
+  const res = await fetch(`${API_BASE}/errors/stats`);
+  if (!res.ok) throw new Error("Failed to fetch error stats");
+  return res.json();
+}
+
+export async function fetchRecentErrors() {
+  const res = await fetch(`${API_BASE}/errors/recent`);
+  if (!res.ok) throw new Error("Failed to fetch recent errors");
+  return res.json();
+}
+
+export async function updateErrorStatus(errorId, status, resolvedBy = null) {
+  const res = await fetch(`${API_BASE}/errors/${errorId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, resolved_by: resolvedBy }),
+  });
+  if (!res.ok) throw new Error("Failed to update error status");
+  return res.json();
+}
+
+export async function deleteError(errorId) {
+  const res = await fetch(`${API_BASE}/errors/${errorId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete error");
   return res.json();
 }
