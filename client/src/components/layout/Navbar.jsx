@@ -113,7 +113,6 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     mentorship: "Mentorship Bridge",
     skills: "Skill Tracker",
     portfolio: "Project Portfolio",
-    health: "System Health",
     chat: "Team Chat",
     settings: "Settings",
   };
@@ -121,7 +120,7 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
 
   return (
     <div className="w-full">
-      <header className="flex justify-between items-start bg-surface rounded-2xl shadow-md px-4 md:px-6 py-3 transition-all duration-300">
+      <header className="flex justify-between items-start bg-surface shadow-md px-4 md:px-6 py-3 transition-all duration-300">
         <div className="flex items-start gap-3">
           <button
             type="button"
@@ -132,7 +131,7 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
             <Menu className="w-5 h-5 text-neutral-dark" />
           </button>
           <div className="flex flex-col gap-1">
-              {user ?
+            {user ?
               <div className="flex items-center gap-2">
                 <button
                   data-onboarding="profile"
@@ -143,19 +142,22 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
                   {user.name.charAt(0)}
                 </button>
                 <div>
-                  <p className="text-sm font-medium text-neutral-dark">
-                    Welcome,{" "}
-                    <span className="text-primary font-semibold">
-                      {user.name.split(" ")[0]}
-                    </span>
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-neutral-dark">
+                      Welcome,{" "}
+                      <span className="text-primary font-semibold">
+                        {user.name.split(" ")[0]}
+                      </span>
+                    </p>
+                    <span className="text-gray-400 text-sm">·</span>
+                    <h1 className="text-sm font-semibold text-primary">{pageTitle}</h1>
+                  </div>
                   <p className="text-[11px] text-gray-500 capitalize">
                     {user.role}
                   </p>
                 </div>
               </div>
             : <div className="text-gray-400 text-sm">Loading user...</div>}
-            <h1 className="text-lg font-semibold text-primary">{pageTitle}</h1>
           </div>
         </div>
 

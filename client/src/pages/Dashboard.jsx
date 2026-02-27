@@ -43,13 +43,16 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="p-4 md:p-8 overflow-y-auto h-full">
-          <Navbar
-            activeTab={activeTab}
-            onToggleSidebar={() => setIsSidebarOpen(true)}
-          />
+        
+        {/* Navbar - flush to top */}
+        <Navbar
+          activeTab={activeTab}
+          onToggleSidebar={() => setIsSidebarOpen(true)}
+        />
+
+        {/* Scrollable content below */}
+        <div key={activeTab} className="p-4 md:p-6 overflow-y-auto h-full">
           <main
-            key={activeTab}
             className={`${
               activeTab === "chat" ? "h-full" : "max-w-7xl mx-auto"
             } animate-fade-in`}

@@ -4,7 +4,7 @@ import SkillSnapshotList from "./SkillSnapshotList";
 
 export default function SkillTrackerSection() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* HEADER */}
       <div className="mb-2">
         <h2 className="text-xl font-bold text-neutral-dark tracking-tight">

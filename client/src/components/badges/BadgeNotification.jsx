@@ -16,7 +16,7 @@ export default function BadgeNotification({ badge, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -38,19 +38,13 @@ export default function BadgeNotification({ badge, onClose }) {
           <h2 className="text-2xl font-bold text-gray-900 mb-1">
             Badge Unlocked!
           </h2>
-          <p className="text-gray-500">
-            You've earned a new achievement
-          </p>
+          <p className="text-gray-500">You've earned a new achievement</p>
         </div>
 
         {/* Badge Display */}
         <div className="flex justify-center mb-6">
           <div className="scale-125">
-            <BadgeCard 
-              badge={badge} 
-              earned={true} 
-              showDescription={true}
-            />
+            <BadgeCard badge={badge} earned={true} showDescription={true} />
           </div>
         </div>
 

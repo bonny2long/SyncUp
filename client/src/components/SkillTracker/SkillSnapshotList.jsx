@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { getSkillSummary } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 
-const MAX_DEFAULT = 6;
+const MAX_DEFAULT = 5;
 
 const TREND_CONFIG = {
   strong: {

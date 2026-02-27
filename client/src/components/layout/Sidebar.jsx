@@ -14,7 +14,6 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
       { id: "chat", label: "Team Chat", path: "/chat" },
       { id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" },
       { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
-      { id: "health", label: "System Health", path: "/health" },
     ];
 
     // Only show Skill Tracker for interns

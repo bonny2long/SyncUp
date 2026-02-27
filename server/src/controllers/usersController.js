@@ -19,7 +19,7 @@ export const getUserProfile = async (req, res) => {
   try {
     // Get basic user info
     const [users] = await pool.query(
-      `SELECT id, name, email, role, join_date, bio,
+      `SELECT id, name, email, role, join_date, bio, profile_pic,
         email_notifications, notify_join_requests, notify_mentions,
         notify_session_reminders, notify_project_updates, notify_weekly_summary,
         profile_visibility, show_email, show_projects, show_skills,
@@ -238,6 +238,7 @@ export const updateUserProfile = async (req, res) => {
     name, 
     email, 
     bio,
+    profile_pic,
     email_notifications,
     notify_join_requests,
     notify_mentions,
@@ -255,14 +256,14 @@ export const updateUserProfile = async (req, res) => {
   try {
     await pool.query(
       `UPDATE users SET 
-        name = ?, email = ?, bio = ?,
+        name = ?, email = ?, bio = ?, profile_pic = ?,
         email_notifications = ?, notify_join_requests = ?, notify_mentions = ?,
         notify_session_reminders = ?, notify_project_updates = ?, notify_weekly_summary = ?,
         profile_visibility = ?, show_email = ?, show_projects = ?, show_skills = ?,
         accept_mentorship = ?, auto_accept_teammates = ?
       WHERE id = ?`,
       [
-        name, email, bio || null,
+        name, email, bio || null, profile_pic || null,
         email_notifications ?? true, notify_join_requests ?? true, notify_mentions ?? true,
         notify_session_reminders ?? true, notify_project_updates ?? true, notify_weekly_summary ?? false,
         profile_visibility ?? 'team', show_email ?? false, show_projects ?? true, show_skills ?? true,
@@ -272,7 +273,7 @@ export const updateUserProfile = async (req, res) => {
     );
 
     const [users] = await pool.query(
-      `SELECT id, name, email, role, join_date, bio,
+      `SELECT id, name, email, role, join_date, bio, profile_pic,
         email_notifications, notify_join_requests, notify_mentions,
         notify_session_reminders, notify_project_updates, notify_weekly_summary,
         profile_visibility, show_email, show_projects, show_skills,

@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
-  Flame,
   Award,
   BookOpen,
   Users,
@@ -13,6 +12,7 @@ import {
   Edit2,
   Save,
   X,
+  Camera,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -25,6 +25,8 @@ import {
   getUserValidatedSignals,
   addSkillValidation,
   removeSkillValidation,
+  uploadAvatar,
+  getAvatarUrl,
 } from "../utils/api";
 import Sidebar from "../components/layout/Sidebar";
 import Navbar from "../components/layout/Navbar";
@@ -53,6 +55,9 @@ export default function UserProfile() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", bio: "" });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarKey, setAvatarKey] = useState(0);
+  const avatarInputRef = useRef(null);
 
   const BADGE_PREVIEW_COUNT = 6;
 
@@ -299,6 +304,34 @@ export default function UserProfile() {
     }
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser || currentUser.id !== user.id) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast({ type: "error", message: "Image must be less than 5MB" });
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      addToast({ type: "error", message: "Only JPG, PNG, GIF, WebP allowed" });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      await uploadAvatar(currentUser.id, file);
+      setAvatarKey((k) => k + 1);
+      await loadProfile();
+      addToast({ type: "success", message: "Avatar updated!" });
+    } catch (err) {
+      addToast({ type: "error", message: err.message || "Failed to upload avatar" });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -322,8 +355,47 @@ export default function UserProfile() {
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="bg-surface border-border rounded-lg p-6 mb-6">
-              <div className="flex items-start justify-between">
+            <div className="bg-surface border border-border rounded-lg p-6 mb-6 relative">
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  {user.profile_pic ? (
+                    <img
+                      key={avatarKey}
+                      src={getAvatarUrl(user.id)}
+                      alt={user.name}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center">
+                      <span className="text-secondary text-2xl font-bold">
+                        {user.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  {currentUser && currentUser.id === user.id && (
+                    <button
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                      className="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition shadow-md"
+                      title="Change avatar"
+                    >
+                      {uploadingAvatar ? (
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Camera className="w-3 h-3 text-white" />
+                      )}
+                    </button>
+                  )}
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </div>
+
                 <div className="flex-1">
                   {isEditingProfile ?
                     <div className="space-y-3">
@@ -361,6 +433,11 @@ export default function UserProfile() {
                           month: "long",
                           year: "numeric",
                         })}
+                        {activity_streak > 0 && (
+                          <span className="ml-2 text-gray-400">
+                            🔥 {activity_streak} day{activity_streak !== 1 ? "s" : ""} streak
+                          </span>
+                        )}
                       </p>
                       {user.bio && (
                         <p className="text-text-secondary text-sm mt-3 max-w-2xl italic">
@@ -379,18 +456,6 @@ export default function UserProfile() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {activity_streak > 0 && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-accent bg-accent/10">
-                      <Flame className="w-4 h-4 text-accent" />
-                      <span className="text-sm font-semibold text-accent">
-                        {activity_streak}
-                      </span>
-                      <span className="text-xs text-text-secondary">
-                        day{activity_streak !== 1 ? "s" : ""} streak
-                      </span>
-                    </div>
-                  )}
-
                   {currentUser && currentUser.id === user.id ?
                     isEditingProfile ?
                       <div className="flex items-center gap-2">
@@ -412,31 +477,30 @@ export default function UserProfile() {
                       </div>
                     : <button
                         onClick={handleEditProfile}
-                        className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-neutral-dark rounded-lg hover:bg-border transition font-medium border border-border"
+                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-highlight text-gray-400 hover:text-primary transition"
+                        title="Edit Profile"
                       >
                         <Edit2 className="w-4 h-4" />
-                        Edit Profile
                       </button>
-
                   : currentUser && currentUser.id !== user.id ?
-                    <>
-                      {user.role === "mentor" && (
+                      <>
+                        {user.role === "mentor" && (
+                          <button
+                            onClick={handleMentorshipRequest}
+                            className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition font-medium"
+                          >
+                            Request Session
+                          </button>
+                        )}
                         <button
-                          onClick={handleMentorshipRequest}
-                          className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition font-medium"
+                          onClick={handleContact}
+                          className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-neutral-dark rounded-lg hover:bg-border transition font-medium border border-border"
                         >
-                          Request Session
+                          <MessageSquare className="w-4 h-4" />
+                          Message
                         </button>
-                      )}
-                      <button
-                        onClick={handleContact}
-                        className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-neutral-dark rounded-lg hover:bg-border transition font-medium border border-border"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        Message
-                      </button>
-                    </>
-                  : null}
+                      </>
+                    : null}
                 </div>
               </div>
             </div>

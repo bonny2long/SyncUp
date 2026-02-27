@@ -149,7 +149,7 @@ export default function SkillActivityChart() {
   return (
     <div className="w-full">
       {insight && <p className="text-xs text-text-secondary mb-2">{insight}</p>}
-      <div style={{ height: 260 }}>
+      <div style={{ height: 200 }}>
         <AgCharts options={options} />
       </div>
     </div>

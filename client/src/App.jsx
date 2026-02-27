@@ -66,14 +66,6 @@ export default function App() {
           }
         />
         <Route
-          path="/health"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/profile/:userId"
           element={
             <ProtectedRoute>

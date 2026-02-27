@@ -707,6 +707,44 @@ export async function uploadFile(file) {
   return res.json();
 }
 
+// AVATAR UPLOAD
+// ============================================================
+
+export async function uploadAvatar(userId, file) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  formData.append("user_id", userId);
+
+  const res = await fetch(`${API_BASE}/upload/avatar`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to upload avatar");
+  }
+
+  return res.json();
+}
+
+export function getAvatarUrl(userId) {
+  return `${API_BASE}/upload/avatar/${userId}`;
+}
+
+export async function deleteAvatar(userId) {
+  const res = await fetch(`${API_BASE}/upload/avatar/${userId}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to delete avatar");
+  }
+
+  return res.json();
+}
+
 // ============================================================
 // ADMIN
 // ============================================================
