@@ -18,12 +18,12 @@ export default function ConfirmModal({
   const getColors = () => {
     switch (confirmColor) {
       case "red":
-        return "bg-red-600 hover:bg-red-700 shadow-red-200";
+        return "bg-red-600 hover:bg-red-700";
       case "green":
-        return "bg-green-600 hover:bg-green-700 shadow-green-200";
+        return "bg-green-600 hover:bg-green-700";
       case "blue":
       default:
-        return "bg-blue-600 hover:bg-blue-700 shadow-blue-200";
+        return "bg-blue-600 hover:bg-blue-700";
     }
   };
 
@@ -69,7 +69,7 @@ export default function ConfirmModal({
             </button>
             <button
               onClick={onConfirm}
-              className={`flex-1 px-4 py-2.5 rounded-xl text-white font-medium shadow-lg hover:shadow-xl focus:ring-4 focus:ring-opacity-50 transition-all ${getColors()}`}
+              className={`flex-1 px-4 py-2.5 rounded-xl text-white font-medium hover:opacity-90 transition-all ${getColors()}`}
               disabled={loading}
             >
               {loading ? "Processing..." : confirmText}

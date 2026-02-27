@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { AgCharts } from "ag-charts-react";
+import { useToast } from "../context/ToastContext";
 import {
   fetchUsers,
   fetchProjects,
@@ -13,12 +15,18 @@ import {
   fetchActiveProjectsAnalytics,
   fetchErrors,
   fetchErrorStats,
+  fetchRecentErrors,
   updateErrorStatus,
   deleteError,
+  fetchAdminStats,
+  fetchActiveSessions,
+  fetchPlatformStats,
+  fetchGrowthStats,
 } from "../utils/api";
 import { useUser } from "../context/UserContext";
 import { useTheme } from "../context/ThemeContext";
 import HelpModal from "../components/shared/HelpModal";
+import ConfirmModal from "../components/shared/ConfirmModal";
 import {
   Users,
   FolderKanban,
@@ -38,7 +46,6 @@ import {
   Server,
   Database,
   Clock,
-  Cpu,
   Check,
   MoreHorizontal,
   Search,
@@ -54,6 +61,14 @@ import {
   Download,
   ChevronRight,
   HelpCircle,
+  Info,
+  ExternalLink,
+  Calendar,
+  RefreshCw,
+  FileSpreadsheet,
+  File,
+  Archive,
+  Medal,
 } from "lucide-react";
 
 function StatCard({ icon: Icon, label, value, subtext, color }) {
@@ -159,6 +174,7 @@ function ActionMenu({ isOpen, onClose, actions }) {
 
 export default function AdminDashboard() {
   const { user, logout } = useUser();
+  const { addToast } = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
@@ -186,19 +202,35 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedError, setSelectedError] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: () => {} });
   const [sessionsExpanded, setSessionsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [userFilters, setUserFilters] = useState({ role: "all", status: "all" });
+  const [userPagination, setUserPagination] = useState({ page: 1, perPage: 10 });
+  const [projectFilters, setProjectFilters] = useState({ status: "all" });
+  const [projectPagination, setProjectPagination] = useState({ page: 1, perPage: 10 });
   const [healthData, setHealthData] = useState(null);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [errorStats, setErrorStats] = useState({ total: 0, open: 0, byType: [] });
   const [errors, setErrors] = useState([]);
   const [errorsPagination, setErrorsPagination] = useState({ page: 1, total: 0, pages: 0 });
   const [errorFilter, setErrorFilter] = useState({ status: "all", type: "all" });
+  const [activeSessions, setActiveSessions] = useState(0);
+  const [adminStats, setAdminStats] = useState({ inactiveUsers: 0 });
+  const [platformStats, setPlatformStats] = useState(null);
+  const [recentErrors, setRecentErrors] = useState([]);
+  const [growthData, setGrowthData] = useState([]);
   const [settings, setSettings] = useState({
     platformName: "SyncUp",
     supportEmail: "support@syncup.com",
     timezone: "UTC",
     allowRegistrations: true,
+  });
+  const [featureFlags, setFeatureFlags] = useState({
+    enableMentorship: true,
+    enableProjectDiscovery: true,
+    maintenanceMode: false,
+    showLeaderboards: true,
   });
 
   useEffect(() => {
@@ -212,6 +244,11 @@ export default function AdminDashboard() {
           health,
           analytics,
           errorStatsData,
+          adminStatsData,
+          activeSessionsData,
+          platformStatsData,
+          recentErrorsData,
+          growthDataResult,
         ] = await Promise.all([
           fetchUsers(),
           fetchProjects(),
@@ -220,6 +257,11 @@ export default function AdminDashboard() {
           fetchHealth().catch(() => null),
           fetchActiveProjectsAnalytics().catch(() => null),
           fetchErrorStats().catch(() => ({ total: 0, open: 0, byType: [] })),
+          fetchAdminStats().catch(() => ({ inactiveUsers: 0 })),
+          fetchActiveSessions().catch(() => ({ activeSessions: 0 })),
+          fetchPlatformStats().catch(() => null),
+          fetchRecentErrors().catch(() => []),
+          fetchGrowthStats().catch(() => []),
         ]);
         setUsers(usersData);
         setProjects(projectsData);
@@ -228,6 +270,11 @@ export default function AdminDashboard() {
         setHealthData(health);
         setAnalyticsData(analytics);
         setErrorStats(errorStatsData);
+        setAdminStats(adminStatsData);
+        setActiveSessions(activeSessionsData?.activeSessions || 0);
+        setPlatformStats(platformStatsData);
+        setRecentErrors(recentErrorsData || []);
+        setGrowthData(growthDataResult || []);
 
         // Calculate real stats
         const mentors = usersData.filter((u) => u.role === "mentor").length;
@@ -251,7 +298,7 @@ export default function AdminDashboard() {
           activeProjects,
           completedProjects,
           seekingMembers,
-          inactive: 0,
+          inactive: adminStatsData?.inactiveUsers || 0,
         });
       } catch (err) {
         console.error("Failed to load admin data:", err);
@@ -301,32 +348,65 @@ export default function AdminDashboard() {
     }
   }, [activeTab, errorFilter]);
 
-  // Filter users based on search query
-  const filteredUsers = users.filter(
-    (user) =>
+  // Filter users based on search and filters
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = 
       user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.role?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      user.role?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesRole = userFilters.role === "all" || user.role === userFilters.role;
+    const matchesStatus = userFilters.status === "all" || 
+      (userFilters.status === "active" && user.is_active !== false) ||
+      (userFilters.status === "inactive" && user.is_active === false);
+    
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
-  // Filter projects based on search query
-  const filteredProjects = projects.filter(
-    (project) =>
+  // Paginate users
+  const paginatedUsers = filteredUsers.slice(
+    (userPagination.page - 1) * userPagination.perPage,
+    userPagination.page * userPagination.perPage
+  );
+  const totalUserPages = Math.ceil(filteredUsers.length / userPagination.perPage);
+
+  // Filter projects based on search and filters
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch = 
       project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       String(project.owner_id)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.status?.toLowerCase().includes(searchQuery.toLowerCase())
+      project.status?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = projectFilters.status === "all" || project.status === projectFilters.status;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Paginate projects
+  const paginatedProjects = filteredProjects.slice(
+    (projectPagination.page - 1) * projectPagination.perPage,
+    projectPagination.page * projectPagination.perPage
   );
+  const totalProjectPages = Math.ceil(filteredProjects.length / projectPagination.perPage);
 
   // Handle delete user
   const handleDeleteUser = async (userId) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-    try {
-      await deleteUser(userId);
-      setUsers(users.filter((u) => u.id !== userId));
-    } catch (err) {
-      console.error("Failed to delete user:", err);
-      alert("Failed to delete user. Please try again.");
-    }
+    setConfirmModal({
+      open: true,
+      title: "Delete User",
+      message: "Are you sure you want to delete this user? This action cannot be undone.",
+      onConfirm: async () => {
+        try {
+          await deleteUser(userId);
+          setUsers(users.filter((u) => u.id !== userId));
+          addToast("User deleted successfully", "success");
+        } catch (err) {
+          console.error("Failed to delete user:", err);
+          addToast("Failed to delete user. Please try again.", "error");
+        }
+        setConfirmModal({ ...confirmModal, open: false });
+      },
+    });
   };
 
   // Handle update user
@@ -335,22 +415,31 @@ export default function AdminDashboard() {
       await updateUser(userId, data);
       setUsers(users.map((u) => (u.id === userId ? { ...u, ...data } : u)));
       setSelectedUser(null);
+      addToast("User updated successfully", "success");
     } catch (err) {
       console.error("Failed to update user:", err);
-      alert("Failed to update user. Please try again.");
+      addToast("Failed to update user. Please try again.", "error");
     }
   };
 
   // Handle delete project
   const handleDeleteProject = async (projectId) => {
-    if (!confirm("Are you sure you want to delete this project?")) return;
-    try {
-      await deleteProject(projectId);
-      setProjects(projects.filter((p) => p.id !== projectId));
-    } catch (err) {
-      console.error("Failed to delete project:", err);
-      alert("Failed to delete project. Please try again.");
-    }
+    setConfirmModal({
+      open: true,
+      title: "Delete Project",
+      message: "Are you sure you want to delete this project? This action cannot be undone.",
+      onConfirm: async () => {
+        try {
+          await deleteProject(projectId);
+          setProjects(projects.filter((p) => p.id !== projectId));
+          addToast("Project deleted successfully", "success");
+        } catch (err) {
+          console.error("Failed to delete project:", err);
+          addToast("Failed to delete project. Please try again.", "error");
+        }
+        setConfirmModal({ ...confirmModal, open: false });
+      },
+    });
   };
 
   // Handle update project status
@@ -361,19 +450,20 @@ export default function AdminDashboard() {
         projects.map((p) => (p.id === projectId ? { ...p, status } : p))
       );
       setSelectedProject(null);
+      addToast(`Project status updated to ${status}`, "success");
     } catch (err) {
       console.error("Failed to update project:", err);
-      alert("Failed to update project. Please try again.");
+      addToast("Failed to update project. Please try again.", "error");
     }
   };
 
   // Handle settings save
   const handleSaveSettings = async () => {
     try {
-      alert("Settings saved successfully!");
+      addToast("Settings saved successfully", "success");
     } catch (err) {
       console.error("Failed to save settings:", err);
-      alert("Failed to save settings. Please try again.");
+      addToast("Failed to save settings. Please try again.", "error");
     }
   };
 
@@ -385,25 +475,87 @@ export default function AdminDashboard() {
       // Refresh error stats
       const stats = await fetchErrorStats();
       setErrorStats(stats);
+      addToast(`Error marked as ${status}`, "success");
     } catch (err) {
       console.error("Failed to update error:", err);
-      alert("Failed to update error. Please try again.");
+      addToast("Failed to update error. Please try again.", "error");
     }
   };
 
   // Handle error delete
   const handleErrorDelete = async (errorId) => {
-    if (!confirm("Are you sure you want to delete this error?")) return;
-    try {
-      await deleteError(errorId);
-      loadErrors(errorsPagination.page);
-      // Refresh error stats
-      const stats = await fetchErrorStats();
-      setErrorStats(stats);
-    } catch (err) {
-      console.error("Failed to delete error:", err);
-      alert("Failed to delete error. Please try again.");
+    setConfirmModal({
+      open: true,
+      title: "Delete Error",
+      message: "Are you sure you want to delete this error? This action cannot be undone.",
+      onConfirm: async () => {
+        try {
+          await deleteError(errorId);
+          loadErrors(errorsPagination.page);
+          const stats = await fetchErrorStats();
+          setErrorStats(stats);
+          addToast("Error deleted successfully", "success");
+        } catch (err) {
+          console.error("Failed to delete error:", err);
+          addToast("Failed to delete error. Please try again.", "error");
+        }
+        setConfirmModal({ ...confirmModal, open: false });
+      },
+    });
+  };
+
+  // Export errors to CSV
+  const exportErrorsToCSV = () => {
+    if (errors.length === 0) {
+      addToast("No errors to export", "warning");
+      return;
     }
+    const headers = ["ID", "Type", "Message", "Page URL", "Status", "Created At", "Resolved At"];
+    const csvContent = [
+      headers.join(","),
+      ...errors.map(e => [
+        e.id,
+        e.error_type || "",
+        `"${(e.message || "").replace(/"/g, '""')}"`,
+        e.page_url || "",
+        e.status || "",
+        e.created_at ? new Date(e.created_at).toISOString() : "",
+        e.resolved_at ? new Date(e.resolved_at).toISOString() : ""
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `errors_export_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    addToast("Errors exported to CSV", "success");
+  };
+
+  // Export errors to JSON
+  const exportErrorsToJSON = () => {
+    if (errors.length === 0) {
+      addToast("No errors to export", "warning");
+      return;
+    }
+    const exportData = errors.map(e => ({
+      id: e.id,
+      type: e.error_type,
+      message: e.message,
+      pageUrl: e.page_url,
+      status: e.status,
+      createdAt: e.created_at,
+      resolvedAt: e.resolved_at,
+      stack: e.stack,
+      userAgent: e.user_agent
+    }));
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `errors_export_${new Date().toISOString().split("T")[0]}.json`;
+    link.click();
+    addToast("Errors exported to JSON", "success");
   };
 
   // Mentorship analytics
@@ -424,12 +576,19 @@ export default function AdminDashboard() {
     return acc;
   }, {});
   
-  const mentorPerformance = Object.values(mentorStats).map((m) => ({
-    name: m.name,
-    sessions: m.total,
-    completed: m.completed,
-    rate: m.total > 0 ? Math.round((m.completed / m.total) * 100) : 0,
-  }));
+  const mentorPerformance = Object.values(mentorStats)
+    .map((m) => ({
+      name: m.name,
+      sessions: m.total,
+      completed: m.completed,
+      rate: m.total > 0 ? Math.round((m.completed / m.total) * 100) : 0,
+    }))
+    .sort((a, b) => b.sessions - a.sessions)
+    .map((mentor, idx) => ({
+      ...mentor,
+      rank: idx + 1,
+      medalColor: idx === 0 ? "text-yellow-400" : idx === 1 ? "text-gray-300" : idx === 2 ? "text-amber-600" : null,
+    }));
 
   // Build activity from real updates data
   const recentActivity = updates.slice(0, 5).map((update) => ({
@@ -549,6 +708,15 @@ export default function AdminDashboard() {
       </header>
 
       <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+      <ConfirmModal
+        isOpen={confirmModal.open}
+        onClose={() => setConfirmModal({ ...confirmModal, open: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Delete"
+        confirmColor="red"
+      />
 
       {/* Navigation Tabs */}
       <nav className="bg-surface border-b border-border px-6">
@@ -607,6 +775,68 @@ export default function AdminDashboard() {
                 color="yellow"
               />
             </div>
+
+            {/* Platform Activity Chart */}
+            {growthData.length > 0 && (
+              <div className="bg-surface rounded-xl p-5 border border-border">
+                <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+                  <BarChart3 className="text-accent" size={20} /> Platform Activity (Last 30 Days)
+                </h3>
+                <div className="h-80">
+                  <AgCharts
+                    options={{
+                      data: growthData,
+                      theme: {
+                        palette: {
+                          fills: ["#3b82f6", "#22c55e"],
+                          strokes: ["#3b82f6", "#22c55e"],
+                        },
+                      },
+                      axes: [
+                        {
+                          type: "category",
+                          position: "bottom",
+                          label: {
+                            formatter: ({ value }) => {
+                              const date = new Date(value);
+                              return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                            },
+                          },
+                        },
+                        {
+                          type: "number",
+                          position: "left",
+                          label: {},
+                        },
+                      ],
+                      series: [
+                        {
+                          type: "line",
+                          xKey: "date",
+                          yKey: "users",
+                          yName: "New Users",
+                          stroke: "#3b82f6",
+                          strokeWidth: 2,
+                          marker: { enabled: false },
+                        },
+                        {
+                          type: "line",
+                          xKey: "date",
+                          yKey: "projects",
+                          yName: "New Projects",
+                          stroke: "#22c55e",
+                          strokeWidth: 2,
+                          marker: { enabled: false },
+                        },
+                      ],
+                      legend: {
+                        position: "top",
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -713,24 +943,45 @@ export default function AdminDashboard() {
               />
               <StatCard
                 icon={Users2}
-                label="Total"
-                value={stats.users}
+                label="Inactive Users"
+                value={stats.inactive}
                 color="yellow"
               />
             </div>
 
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
-              <div className="p-4 border-b border-border flex justify-between items-center">
+              <div className="p-4 border-b border-border flex justify-between items-center flex-wrap gap-4">
                 <h3 className="font-semibold text-primary">All Users</h3>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search users..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-primary placeholder-gray-500"
-                  />
+                <div className="flex gap-3 items-center">
+                  <select
+                    value={userFilters.role}
+                    onChange={(e) => setUserFilters({ ...userFilters, role: e.target.value })}
+                    className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-primary"
+                  >
+                    <option value="all">All Roles</option>
+                    <option value="intern">Intern</option>
+                    <option value="mentor">Mentor</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <select
+                    value={userFilters.status}
+                    onChange={(e) => setUserFilters({ ...userFilters, status: e.target.value })}
+                    className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-primary"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search users..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-primary placeholder-gray-500"
+                    />
+                  </div>
                 </div>
               </div>
               <table className="w-full">
@@ -752,13 +1003,16 @@ export default function AdminDashboard() {
                       Status
                     </th>
                     <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                      Joined
+                    </th>
+                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.length > 0 ?
-                    filteredUsers.slice(0, 10).map((user) => (
+                  {paginatedUsers.length > 0 ?
+                    paginatedUsers.map((user) => (
                       <tr
                         key={user.id}
                         className="border-t border-border hover:bg-surface-highlight/50 transition cursor-pointer"
@@ -785,9 +1039,15 @@ export default function AdminDashboard() {
                           </span>
                         </td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded text-xs bg-green-500/20 text-green-400 flex items-center gap-1 w-fit">
-                            <Check size={12} /> Active
+                          <span className={`px-2 py-0.5 rounded text-xs flex items-center gap-1 w-fit ${
+                            user.is_active === false ? "bg-gray-500/20 text-gray-400" : "bg-green-500/20 text-green-400"
+                          }`}>
+                            <Check size={12} /> {user.is_active === false ? "Inactive" : "Active"}
                           </span>
+                        </td>
+                        <td className="p-3 text-sm text-gray-400">
+                          {user.created_at ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : 
+                           user.join_date ? new Date(user.join_date).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "N/A"}
                         </td>
                         <td className="p-3 relative">
                           <button
@@ -829,13 +1089,40 @@ export default function AdminDashboard() {
                       </tr>
                     ))
                   : <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                      <td colSpan={7} className="p-8 text-center text-gray-500">
                         No users found
                       </td>
                     </tr>
                   }
                 </tbody>
               </table>
+              {/* Pagination */}
+              {totalUserPages > 1 && (
+                <div className="flex justify-between items-center p-4 border-t border-border">
+                  <span className="text-sm text-gray-400">
+                    Showing {(userPagination.page - 1) * userPagination.perPage + 1} to {Math.min(userPagination.page * userPagination.perPage, filteredUsers.length)} of {filteredUsers.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setUserPagination({ ...userPagination, page: userPagination.page - 1 })}
+                      disabled={userPagination.page === 1}
+                      className="px-3 py-1 rounded bg-surface border border-border disabled:opacity-50 text-sm"
+                    >
+                      Previous
+                    </button>
+                    <span className="px-3 py-1 text-sm text-gray-400">
+                      Page {userPagination.page} of {totalUserPages}
+                    </span>
+                    <button
+                      onClick={() => setUserPagination({ ...userPagination, page: userPagination.page + 1 })}
+                      disabled={userPagination.page === totalUserPages}
+                      className="px-3 py-1 rounded bg-surface border border-border disabled:opacity-50 text-sm"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -870,17 +1157,34 @@ export default function AdminDashboard() {
             </div>
 
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
-              <div className="p-4 border-b border-border flex justify-between items-center">
+              <div className="p-4 border-b border-border flex justify-between items-center flex-wrap gap-4">
                 <h3 className="font-semibold text-primary">All Projects</h3>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search projects..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-primary placeholder-gray-500"
-                  />
+                <div className="flex gap-3 items-center">
+                  <select
+                    value={projectFilters.status}
+                    onChange={(e) => {
+                      setProjectFilters({ ...projectFilters, status: e.target.value });
+                      setProjectPagination({ ...projectPagination, page: 1 });
+                    }}
+                    className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-primary"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="planned">Planned</option>
+                    <option value="seeking_members">Seeking Members</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search projects..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-primary placeholder-gray-500"
+                    />
+                  </div>
                 </div>
               </div>
               <table className="w-full">
@@ -907,8 +1211,8 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProjects.length > 0 ?
-                    filteredProjects.slice(0, 10).map((project) => (
+                  {paginatedProjects.length > 0 ?
+                    paginatedProjects.map((project) => (
                       <tr
                         key={project.id}
                         className="border-t border-border hover:bg-surface-highlight/50 transition cursor-pointer"
@@ -921,7 +1225,7 @@ export default function AdminDashboard() {
                           {project.title}
                         </td>
                         <td className="p-3 text-sm text-gray-400">
-                          {project.owner_id || "N/A"}
+                          {project.owner_name || "Unknown"}
                         </td>
                         <td className="p-3 text-sm text-gray-400">
                           {project.team_count || 1}
@@ -964,6 +1268,11 @@ export default function AdminDashboard() {
                                     onClick: () => setSelectedProject(project),
                                   },
                                   {
+                                    icon: <Archive size={14} />,
+                                    label: "Archive",
+                                    onClick: () => handleUpdateProjectStatus(project.id, "archived"),
+                                  },
+                                  {
                                     icon: <Trash2 size={14} />,
                                     label: "Delete Project",
                                     danger: true,
@@ -983,6 +1292,33 @@ export default function AdminDashboard() {
                   }
                 </tbody>
               </table>
+              {/* Pagination */}
+              {totalProjectPages > 1 && (
+                <div className="flex justify-between items-center p-4 border-t border-border">
+                  <span className="text-sm text-gray-400">
+                    Showing {(projectPagination.page - 1) * projectPagination.perPage + 1} to {Math.min(projectPagination.page * projectPagination.perPage, filteredProjects.length)} of {filteredProjects.length}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setProjectPagination({ ...projectPagination, page: projectPagination.page - 1 })}
+                      disabled={projectPagination.page === 1}
+                      className="px-3 py-1 rounded bg-surface border border-border disabled:opacity-50 text-sm"
+                    >
+                      Previous
+                    </button>
+                    <span className="px-3 py-1 text-sm text-gray-400">
+                      Page {projectPagination.page} of {totalProjectPages}
+                    </span>
+                    <button
+                      onClick={() => setProjectPagination({ ...projectPagination, page: projectPagination.page + 1 })}
+                      disabled={projectPagination.page === totalProjectPages}
+                      className="px-3 py-1 rounded bg-surface border border-border disabled:opacity-50 text-sm"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1054,9 +1390,12 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mentorPerformance.map((mentor, idx) => (
-                        <tr key={idx} className="border-t border-border hover:bg-surface-highlight/50">
-                          <td className="p-3 text-sm text-primary font-medium">{mentor.name}</td>
+                      {mentorPerformance.map((mentor) => (
+                        <tr key={mentor.rank} className="border-t border-border hover:bg-surface-highlight/50">
+                          <td className="p-3 text-sm text-primary font-medium">
+                            {mentor.rank <= 3 && <Medal className={`inline w-4 h-4 mr-1 ${mentor.medalColor}`} />}
+                            {mentor.name}
+                          </td>
                           <td className="p-3 text-sm text-gray-400">{mentor.sessions}</td>
                           <td className="p-3 text-sm text-gray-400">{mentor.completed}</td>
                           <td className="p-3">
@@ -1104,6 +1443,7 @@ export default function AdminDashboard() {
                         <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Mentor</th>
                         <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Mentee</th>
                         <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Topic</th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Date</th>
                         <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Status</th>
                       </tr>
                     </thead>
@@ -1114,6 +1454,10 @@ export default function AdminDashboard() {
                             <td className="p-3 text-sm text-primary font-medium">{session.mentor || "N/A"}</td>
                             <td className="p-3 text-sm text-gray-400">{session.intern || "N/A"}</td>
                             <td className="p-3 text-sm text-gray-400 max-w-xs truncate">{session.topic || "N/A"}</td>
+                            <td className="p-3 text-sm text-gray-400">
+                              {session.session_date ? new Date(session.session_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : 
+                               session.scheduled_at ? new Date(session.scheduled_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A"}
+                            </td>
                             <td className="p-3">
                               <span className={`px-2 py-0.5 rounded text-xs ${
                                 session.status === "completed" ? "bg-green-500/20 text-green-400" :
@@ -1126,7 +1470,7 @@ export default function AdminDashboard() {
                           </tr>
                         ))
                       : <tr>
-                          <td colSpan={4} className="p-8 text-center text-gray-500">No sessions found</td>
+                          <td colSpan={5} className="p-8 text-center text-gray-500">No sessions found</td>
                         </tr>
                       }
                     </tbody>
@@ -1170,28 +1514,46 @@ export default function AdminDashboard() {
             </div>
 
             {/* Filters */}
-            <div className="flex gap-4 items-center bg-surface rounded-xl p-4 border border-border">
-              <select
-                value={errorFilter.status}
-                onChange={(e) => setErrorFilter({ ...errorFilter, status: e.target.value })}
-                className="bg-background border border-border rounded-lg px-3 py-2 text-primary"
-              >
-                <option value="all">All Status</option>
-                <option value="open">Open</option>
-                <option value="resolved">Resolved</option>
-                <option value="ignored">Ignored</option>
-              </select>
-              <select
-                value={errorFilter.type}
-                onChange={(e) => setErrorFilter({ ...errorFilter, type: e.target.value })}
-                className="bg-background border border-border rounded-lg px-3 py-2 text-primary"
-              >
-                <option value="all">All Types</option>
-                <option value="javascript">JavaScript</option>
-                <option value="api">API</option>
-                <option value="server">Server</option>
-                <option value="validation">Validation</option>
-              </select>
+            <div className="flex gap-4 items-center justify-between bg-surface rounded-xl p-4 border border-border">
+              <div className="flex gap-4 items-center">
+                <select
+                  value={errorFilter.status}
+                  onChange={(e) => setErrorFilter({ ...errorFilter, status: e.target.value })}
+                  className="bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                >
+                  <option value="all">All Status</option>
+                  <option value="open">Open</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="ignored">Ignored</option>
+                </select>
+                <select
+                  value={errorFilter.type}
+                  onChange={(e) => setErrorFilter({ ...errorFilter, type: e.target.value })}
+                  className="bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                >
+                  <option value="all">All Types</option>
+                  <option value="javascript">JavaScript</option>
+                  <option value="api">API</option>
+                  <option value="server">Server</option>
+                  <option value="validation">Validation</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={exportErrorsToCSV}
+                  className="flex items-center gap-2 px-3 py-2 bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/30 transition text-sm"
+                  title="Export to CSV"
+                >
+                  <FileSpreadsheet size={16} /> CSV
+                </button>
+                <button
+                  onClick={exportErrorsToJSON}
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition text-sm"
+                  title="Export to JSON"
+                >
+                  <File size={16} /> JSON
+                </button>
+              </div>
             </div>
 
             {/* Errors Table */}
@@ -1308,11 +1670,11 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <StatCard
-                icon={Cpu}
-                label="Server CPU"
-                value={healthData ? "N/A" : "..."}
-                subtext="Requires monitoring setup"
-                color="yellow"
+                icon={Users}
+                label="Active Sessions"
+                value={activeSessions}
+                subtext="Currently online"
+                color="green"
               />
               <StatCard
                 icon={Database}
@@ -1369,79 +1731,281 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+
+            {/* Recent Error Summary */}
+            <div className="bg-surface rounded-xl border border-border p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+                  <AlertTriangle className="text-yellow-500" size={20} /> Recent Errors
+                </h3>
+                <button 
+                  onClick={() => setActiveTab("errors")}
+                  className="text-sm text-accent hover:underline flex items-center gap-1"
+                >
+                  View All <ExternalLink size={14} />
+                </button>
+              </div>
+              {recentErrors.length > 0 ? (
+                <div className="space-y-2">
+                  {recentErrors.slice(0, 5).map((error) => (
+                    <div 
+                      key={error.id}
+                      className="p-3 bg-surface-highlight/30 rounded-lg flex items-center justify-between hover:bg-surface-highlight/50 cursor-pointer"
+                      onClick={() => setActiveTab("errors")}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          error.error_type === "javascript" ? "bg-yellow-500/20 text-yellow-400" :
+                          error.error_type === "api" ? "bg-red-500/20 text-red-400" :
+                          error.error_type === "server" ? "bg-purple-500/20 text-purple-400" :
+                          "bg-blue-500/20 text-blue-400"
+                        }`}>
+                          {error.error_type}
+                        </span>
+                        <span className="text-sm text-primary truncate max-w-md">
+                          {error.message?.substring(0, 60)}...
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {error.created_at ? new Date(error.created_at).toLocaleDateString() : ""}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="h-24 bg-surface-highlight/30 rounded flex items-center justify-center text-gray-500">
+                  No recent errors
+                </div>
+              )}
+            </div>
+
+            {/* Platform Stats */}
+            <div className="bg-surface rounded-xl border border-border p-5">
+              <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+                <Info className="text-blue-500" size={20} /> Platform Stats
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-3 bg-surface-highlight/30 rounded-lg">
+                  <p className="text-2xl font-bold text-primary">{platformStats?.totalUsers || 0}</p>
+                  <p className="text-sm text-gray-400">Total Users</p>
+                </div>
+                <div className="p-3 bg-surface-highlight/30 rounded-lg">
+                  <p className="text-2xl font-bold text-primary">{platformStats?.totalProjects || 0}</p>
+                  <p className="text-sm text-gray-400">Total Projects</p>
+                </div>
+                <div className="p-3 bg-surface-highlight/30 rounded-lg">
+                  <p className="text-2xl font-bold text-primary">{platformStats?.totalSessions || 0}</p>
+                  <p className="text-sm text-gray-400">Total Sessions</p>
+                </div>
+                <div className="p-3 bg-surface-highlight/30 rounded-lg">
+                  <p className="text-2xl font-bold text-primary">{platformStats?.appVersion || "1.0.0"}</p>
+                  <p className="text-sm text-gray-400">App Version</p>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Clock size={14} />
+                  <span>Server Timezone: {platformStats?.timezone || "UTC"}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Database size={14} />
+                  <span>DB Records: {(platformStats?.totalUsers || 0) + (platformStats?.totalProjects || 0) + (platformStats?.totalSessions || 0)}</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
         {activeTab === "settings" && (
-          <div className="bg-surface rounded-xl border border-border p-6 max-w-2xl">
-            <h3 className="text-lg font-semibold text-primary mb-6 flex items-center gap-2">
-              <Settings className="text-accent" size={20} /> General Settings
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  Platform Name
-                </label>
-                <input
-                  type="text"
-                  value={settings.platformName}
-                  onChange={(e) => setSettings({ ...settings, platformName: e.target.value })}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  Support Email
-                </label>
-                <input
-                  type="email"
-                  value={settings.supportEmail}
-                  onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  Timezone
-                </label>
-                <select 
-                  value={settings.timezone}
-                  onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
-                >
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">America/New York</option>
-                  <option value="America/Los_Angeles">America/Los Angeles</option>
-                  <option value="Europe/London">Europe/London</option>
-                  <option value="Europe/Paris">Europe/Paris</option>
-                  <option value="Asia/Tokyo">Asia/Tokyo</option>
-                </select>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+          <div className="space-y-6">
+            {/* General Settings - Left Column */}
+            <div className="bg-surface rounded-xl border border-border p-6">
+              <h3 className="text-lg font-semibold text-primary mb-6 flex items-center gap-2">
+                <Settings className="text-accent" size={20} /> General Settings
+              </h3>
+              <div className="space-y-4">
                 <div>
-                  <span className="text-primary font-medium">Allow User Registrations</span>
-                  <p className="text-xs text-gray-400">Allow new users to sign up</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSettings({ ...settings, allowRegistrations: !settings.allowRegistrations })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    settings.allowRegistrations ? "bg-green-500" : "bg-gray-400"
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      settings.allowRegistrations ? "translate-x-6" : "translate-x-1"
-                    }`}
+                  <label className="block text-sm text-gray-400 mb-2">
+                    Platform Name
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.platformName}
+                    onChange={(e) => setSettings({ ...settings, platformName: e.target.value })}
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    Support Email
+                  </label>
+                  <input
+                    type="email"
+                    value={settings.supportEmail}
+                    onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">
+                    Timezone
+                  </label>
+                  <select 
+                    value={settings.timezone}
+                    onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                  >
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">America/New York</option>
+                    <option value="America/Los_Angeles">America/Los Angeles</option>
+                    <option value="Europe/London">Europe/London</option>
+                    <option value="Europe/Paris">Europe/Paris</option>
+                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+                  <div>
+                    <span className="text-primary font-medium">Allow User Registrations</span>
+                    <p className="text-xs text-gray-400">Allow new users to sign up</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, allowRegistrations: !settings.allowRegistrations })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      settings.allowRegistrations ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settings.allowRegistrations ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <button 
+                  onClick={handleSaveSettings}
+                  className="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition flex items-center gap-2"
+                >
+                  <Check size={18} /> Save Changes
                 </button>
               </div>
-              <button 
-                onClick={handleSaveSettings}
-                className="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition flex items-center gap-2"
-              >
-                <Check size={18} /> Save Changes
-              </button>
+            </div>
+
+            {/* Feature Flags - Right Column */}
+            <div className="bg-surface rounded-xl border border-border p-6">
+              <h3 className="text-lg font-semibold text-primary mb-6 flex items-center gap-2">
+                <Zap className="text-yellow-500" size={20} /> Feature Flags
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+                  <div>
+                    <span className="text-primary font-medium">Enable Mentorship</span>
+                    <p className="text-xs text-gray-400">Allow mentorship sessions</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFeatureFlags({ ...featureFlags, enableMentorship: !featureFlags.enableMentorship })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      featureFlags.enableMentorship ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        featureFlags.enableMentorship ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+                  <div>
+                    <span className="text-primary font-medium">Enable Project Discovery</span>
+                    <p className="text-xs text-gray-400">Show projects to all users</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFeatureFlags({ ...featureFlags, enableProjectDiscovery: !featureFlags.enableProjectDiscovery })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      featureFlags.enableProjectDiscovery ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        featureFlags.enableProjectDiscovery ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+                  <div>
+                    <span className="text-primary font-medium">Maintenance Mode</span>
+                    <p className="text-xs text-gray-400">Restrict access to admins</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFeatureFlags({ ...featureFlags, maintenanceMode: !featureFlags.maintenanceMode })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      featureFlags.maintenanceMode ? "bg-red-500" : "bg-gray-400"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        featureFlags.maintenanceMode ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+                  <div>
+                    <span className="text-primary font-medium">Show Leaderboards</span>
+                    <p className="text-xs text-gray-400">Display mentor/intern rankings</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFeatureFlags({ ...featureFlags, showLeaderboards: !featureFlags.showLeaderboards })}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      featureFlags.showLeaderboards ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        featureFlags.showLeaderboards ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="bg-surface rounded-xl border-2 border-red-500/30 p-6">
+              <h3 className="text-lg font-semibold text-red-500 mb-4 flex items-center gap-2">
+                <AlertTriangle size={20} /> Danger Zone
+              </h3>
+              <p className="text-sm text-gray-400 mb-4">
+                These actions are irreversible. Please proceed with caution.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={() => {
+                    if (confirm("Are you sure you want to clear all error logs? This cannot be undone.")) {
+                      alert("Error logs cleared (demo)");
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition flex items-center gap-2"
+                >
+                  <Trash2 size={18} /> Clear All Error Logs
+                </button>
+                <button 
+                  onClick={() => {
+                    if (confirm("Are you sure you want to reset all demo data? This will delete all users, projects, and sessions.")) {
+                      alert("Demo data reset (demo)");
+                    }
+                  }}
+                  className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition flex items-center gap-2"
+                >
+                  <RefreshCw size={18} /> Reset Demo Data
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1487,6 +2051,43 @@ export default function AdminDashboard() {
                     <option value="admin">Admin</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Notes</label>
+                  <textarea
+                    defaultValue={selectedUser.notes || ""}
+                    id="editUserNotes"
+                    rows={3}
+                    placeholder="Admin notes..."
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary placeholder-gray-500 resize-none"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+                  <div>
+                    <span className="text-primary font-medium">Ban User</span>
+                    <p className="text-xs text-gray-400">Set user as inactive</p>
+                  </div>
+                  <button
+                    type="button"
+                    id="editUserBanned"
+                    onClick={(e) => {
+                      const btn = e.currentTarget;
+                      btn.classList.toggle("bg-red-500");
+                      btn.classList.toggle("bg-gray-400");
+                      const span = btn.querySelector("span");
+                      span.classList.toggle("translate-x-6");
+                      span.classList.toggle("translate-x-1");
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      selectedUser.is_active === false ? "bg-red-500" : "bg-gray-400"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        selectedUser.is_active === false ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
                 <div className="flex gap-2 mt-6">
                   <button
                     onClick={() => setSelectedUser(null)}
@@ -1499,7 +2100,10 @@ export default function AdminDashboard() {
                       const name = document.getElementById("editUserName").value;
                       const email = document.getElementById("editUserEmail").value;
                       const role = document.getElementById("editUserRole").value;
-                      handleUpdateUser(selectedUser.id, { name, email, role });
+                      const notes = document.getElementById("editUserNotes").value;
+                      const isActiveToggle = document.getElementById("editUserBanned");
+                      const isBanned = isActiveToggle.classList.contains("bg-red-500");
+                      handleUpdateUser(selectedUser.id, { name, email, role, notes, is_active: !isBanned });
                     }}
                     className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80"
                   >
@@ -1532,6 +2136,16 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm text-gray-400 mb-1">Description</label>
+                  <textarea
+                    defaultValue={selectedProject.description || ""}
+                    id="editProjectDescription"
+                    rows={3}
+                    placeholder="Project description..."
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary placeholder-gray-500 resize-none"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm text-gray-400 mb-1">Status</label>
                   <select
                     defaultValue={selectedProject.status}
@@ -1544,6 +2158,25 @@ export default function AdminDashboard() {
                     <option value="completed">Completed</option>
                     <option value="archived">Archived</option>
                   </select>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+                  <div>
+                    <span className="text-primary font-medium">Featured</span>
+                    <p className="text-xs text-gray-400">Show on homepage</p>
+                  </div>
+                  <button
+                    type="button"
+                    id="editProjectFeatured"
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      selectedProject.is_featured ? "bg-yellow-500" : "bg-gray-400"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        selectedProject.is_featured ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
                 </div>
                 <div className="flex gap-2 mt-6">
                   <button

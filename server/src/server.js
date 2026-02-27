@@ -14,6 +14,7 @@ import badgeRoutes from "./routes/badgeRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import errorsRoutes from "./routes/errorsRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -45,6 +46,7 @@ app.use("/api/badges", badgeRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/errors", errorsRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

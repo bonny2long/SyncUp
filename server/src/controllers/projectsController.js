@@ -21,6 +21,7 @@ export const getProjects = async (req, res) => {
         p.status,
         p.owner_id,
         p.visibility,
+        owner.name AS owner_name,
         MAX(p.metadata) AS metadata,
         ${
           userId ?
@@ -32,9 +33,9 @@ export const getProjects = async (req, res) => {
         -- how many skills are on this project
         COUNT(DISTINCT ps.skill_id) AS skill_count,
         -- how many updates exist
-        COUNT(DISTINCT u.id) AS update_count,
+        COUNT(DISTINCT upd.id) AS update_count,
         -- most recent update timestamp
-        MAX(u.created_at) AS last_update,
+        MAX(upd.created_at) AS last_update,
         -- comma-separated member names for UI
         GROUP_CONCAT(DISTINCT usr.name ORDER BY usr.name SEPARATOR ', ') AS team_members,
         GROUP_CONCAT(DISTINCT ps.skill_id) AS skill_ids,
@@ -48,11 +49,12 @@ export const getProjects = async (req, res) => {
           )
         ) AS team_member_details
       FROM projects p
+      LEFT JOIN users owner ON p.owner_id = owner.id
       LEFT JOIN project_members pm ON pm.project_id = p.id
       LEFT JOIN users usr ON pm.user_id = usr.id
       LEFT JOIN project_skills ps ON ps.project_id = p.id
-      LEFT JOIN progress_updates u ON u.project_id = p.id
-      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.metadata
+      LEFT JOIN progress_updates upd ON upd.project_id = p.id
+      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.metadata, owner.name
       ORDER BY p.id ASC;
     `,
       userId ? [userId] : params,

@@ -826,3 +826,31 @@ export async function deleteError(errorId) {
   if (!res.ok) throw new Error("Failed to delete error");
   return res.json();
 }
+
+// ============================================================
+// ADMIN
+// ============================================================
+
+export async function fetchAdminStats() {
+  const res = await fetch(`${API_BASE}/admin/stats`);
+  if (!res.ok) throw new Error("Failed to fetch admin stats");
+  return res.json();
+}
+
+export async function fetchActiveSessions() {
+  const res = await fetch(`${API_BASE}/admin/active-sessions`);
+  if (!res.ok) throw new Error("Failed to fetch active sessions");
+  return res.json();
+}
+
+export async function fetchPlatformStats() {
+  const res = await fetch(`${API_BASE}/admin/platform-stats`);
+  if (!res.ok) throw new Error("Failed to fetch platform stats");
+  return res.json();
+}
+
+export async function fetchGrowthStats() {
+  const res = await fetch(`${API_BASE}/admin/growth-stats`);
+  if (!res.ok) throw new Error("Failed to fetch growth stats");
+  return res.json();
+}
