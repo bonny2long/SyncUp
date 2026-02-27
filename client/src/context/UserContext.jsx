@@ -24,6 +24,13 @@ export function UserProvider({ children }) {
     setUser(user);
   };
 
+  const updateUser = (updates) => {
+    if (!user) return;
+    const updated = { ...user, ...updates };
+    localStorage.setItem("syncup_user", JSON.stringify(updated));
+    setUser(updated);
+  };
+
   const logout = async () => {
     if (user?.id) {
       await updatePresence(user.id, "offline", null).catch(console.error);
@@ -39,6 +46,7 @@ export function UserProvider({ children }) {
         login,
         logout,
         loading,
+        updateUser,
       }}
     >
       {children}

@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AgCharts } from "ag-charts-react";
 import { useToast } from "../context/ToastContext";
+import { useUser } from "../context/UserContext";
+import { useTheme } from "../context/ThemeContext";
 import {
   fetchUsers,
   fetchProjects,
@@ -23,8 +25,6 @@ import {
   fetchPlatformStats,
   fetchGrowthStats,
 } from "../utils/api";
-import { useUser } from "../context/UserContext";
-import { useTheme } from "../context/ThemeContext";
 import HelpModal from "../components/shared/HelpModal";
 import ConfirmModal from "../components/shared/ConfirmModal";
 import {
@@ -71,7 +71,13 @@ import {
   Medal,
 } from "lucide-react";
 
-function StatCard({ icon: Icon, label, value, subtext, color }) {
+const StatCard = memo(function StatCard({
+  icon: Icon,
+  label,
+  value,
+  subtext,
+  color,
+}) {
   const colorClasses = {
     blue: "text-blue-500",
     green: "text-green-500",
@@ -98,9 +104,14 @@ function StatCard({ icon: Icon, label, value, subtext, color }) {
       {subtext && <p className="text-xs text-green-500 mt-1">{subtext}</p>}
     </div>
   );
-}
+});
 
-function ActivityItem({ icon: Icon, text, time, color }) {
+const ActivityItem = memo(function ActivityItem({
+  icon: Icon,
+  text,
+  time,
+  color,
+}) {
   return (
     <div className="py-3 border-b border-border last:border-0 hover:bg-surface-highlight/30 px-2 rounded transition">
       <div className="flex items-center gap-3">
@@ -114,9 +125,15 @@ function ActivityItem({ icon: Icon, text, time, color }) {
       </div>
     </div>
   );
-}
+});
 
-function AlertItem({ icon: Icon, text, count, severity, onClick }) {
+const AlertItem = memo(function AlertItem({
+  icon: Icon,
+  text,
+  count,
+  severity,
+  onClick,
+}) {
   const severityColors = {
     critical: "border-l-red-500 bg-red-500/10",
     warning: "border-l-yellow-500 bg-yellow-500/10",
@@ -131,7 +148,7 @@ function AlertItem({ icon: Icon, text, count, severity, onClick }) {
   };
   return (
     <div
-      className={`p-3 rounded-r border-l-4 ${severityColors[severity]} mb-2 ${onClick ? 'cursor-pointer hover:opacity-80' : ''}`}
+      className={`p-3 rounded-r border-l-4 ${severityColors[severity]} mb-2 ${onClick ? "cursor-pointer hover:opacity-80" : ""}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
@@ -149,9 +166,9 @@ function AlertItem({ icon: Icon, text, count, severity, onClick }) {
       </div>
     </div>
   );
-}
+});
 
-function ActionMenu({ isOpen, onClose, actions }) {
+const ActionMenu = memo(function ActionMenu({ isOpen, onClose, actions }) {
   if (!isOpen) return null;
   return (
     <div className="absolute right-0 top-8 bg-surface border border-border rounded-lg shadow-lg z-10 py-1 min-w-[150px]">
@@ -170,7 +187,7 @@ function ActionMenu({ isOpen, onClose, actions }) {
       ))}
     </div>
   );
-}
+});
 
 export default function AdminDashboard() {
   const { user, logout } = useUser();
@@ -202,19 +219,44 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedError, setSelectedError] = useState(null);
-  const [confirmModal, setConfirmModal] = useState({ open: false, title: "", message: "", onConfirm: () => {} });
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
   const [sessionsExpanded, setSessionsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [userFilters, setUserFilters] = useState({ role: "all", status: "all" });
-  const [userPagination, setUserPagination] = useState({ page: 1, perPage: 10 });
+  const [userFilters, setUserFilters] = useState({
+    role: "all",
+    status: "all",
+  });
+  const [userPagination, setUserPagination] = useState({
+    page: 1,
+    perPage: 10,
+  });
   const [projectFilters, setProjectFilters] = useState({ status: "all" });
-  const [projectPagination, setProjectPagination] = useState({ page: 1, perPage: 10 });
+  const [projectPagination, setProjectPagination] = useState({
+    page: 1,
+    perPage: 10,
+  });
   const [healthData, setHealthData] = useState(null);
   const [analyticsData, setAnalyticsData] = useState(null);
-  const [errorStats, setErrorStats] = useState({ total: 0, open: 0, byType: [] });
+  const [errorStats, setErrorStats] = useState({
+    total: 0,
+    open: 0,
+    byType: [],
+  });
   const [errors, setErrors] = useState([]);
-  const [errorsPagination, setErrorsPagination] = useState({ page: 1, total: 0, pages: 0 });
-  const [errorFilter, setErrorFilter] = useState({ status: "all", type: "all" });
+  const [errorsPagination, setErrorsPagination] = useState({
+    page: 1,
+    total: 0,
+    pages: 0,
+  });
+  const [errorFilter, setErrorFilter] = useState({
+    status: "all",
+    type: "all",
+  });
   const [activeSessions, setActiveSessions] = useState(0);
   const [adminStats, setAdminStats] = useState({ inactiveUsers: 0 });
   const [platformStats, setPlatformStats] = useState(null);
@@ -233,50 +275,23 @@ export default function AdminDashboard() {
     showLeaderboards: true,
   });
 
+  // Phase 1: Load critical data needed for initial overview render
   useEffect(() => {
-    async function loadData() {
+    async function loadCriticalData() {
       try {
-        const [
-          usersData,
-          projectsData,
-          sessionsData,
-          updatesData,
-          health,
-          analytics,
-          errorStatsData,
-          adminStatsData,
-          activeSessionsData,
-          platformStatsData,
-          recentErrorsData,
-          growthDataResult,
-        ] = await Promise.all([
-          fetchUsers(),
-          fetchProjects(),
-          fetchSessions(),
-          fetchUpdates(),
-          fetchHealth().catch(() => null),
-          fetchActiveProjectsAnalytics().catch(() => null),
-          fetchErrorStats().catch(() => ({ total: 0, open: 0, byType: [] })),
-          fetchAdminStats().catch(() => ({ inactiveUsers: 0 })),
-          fetchActiveSessions().catch(() => ({ activeSessions: 0 })),
-          fetchPlatformStats().catch(() => null),
-          fetchRecentErrors().catch(() => []),
-          fetchGrowthStats().catch(() => []),
-        ]);
+        const [usersData, projectsData, sessionsData, updatesData] =
+          await Promise.all([
+            fetchUsers(),
+            fetchProjects(),
+            fetchSessions(),
+            fetchUpdates(),
+          ]);
         setUsers(usersData);
         setProjects(projectsData);
         setSessions(sessionsData);
         setUpdates(updatesData);
-        setHealthData(health);
-        setAnalyticsData(analytics);
-        setErrorStats(errorStatsData);
-        setAdminStats(adminStatsData);
-        setActiveSessions(activeSessionsData?.activeSessions || 0);
-        setPlatformStats(platformStatsData);
-        setRecentErrors(recentErrorsData || []);
-        setGrowthData(growthDataResult || []);
 
-        // Calculate real stats
+        // Calculate real stats from critical data
         const mentors = usersData.filter((u) => u.role === "mentor").length;
         const interns = usersData.filter((u) => u.role === "intern").length;
         const activeProjects = projectsData.filter(
@@ -298,7 +313,7 @@ export default function AdminDashboard() {
           activeProjects,
           completedProjects,
           seekingMembers,
-          inactive: adminStatsData?.inactiveUsers || 0,
+          inactive: 0,
         });
       } catch (err) {
         console.error("Failed to load admin data:", err);
@@ -306,8 +321,53 @@ export default function AdminDashboard() {
         setLoading(false);
       }
     }
-    loadData();
+    loadCriticalData();
   }, []);
+
+  // Phase 2: Load deferred/secondary data after initial render
+  useEffect(() => {
+    if (loading) return; // Wait until critical data is loaded
+    async function loadDeferredData() {
+      try {
+        const [
+          health,
+          analytics,
+          errorStatsData,
+          adminStatsData,
+          activeSessionsData,
+          platformStatsData,
+          recentErrorsData,
+          growthDataResult,
+        ] = await Promise.all([
+          fetchHealth().catch(() => null),
+          fetchActiveProjectsAnalytics().catch(() => null),
+          fetchErrorStats().catch(() => ({ total: 0, open: 0, byType: [] })),
+          fetchAdminStats().catch(() => ({ inactiveUsers: 0 })),
+          fetchActiveSessions().catch(() => ({ activeSessions: 0 })),
+          fetchPlatformStats().catch(() => null),
+          fetchRecentErrors().catch(() => []),
+          fetchGrowthStats().catch(() => []),
+        ]);
+        setHealthData(health);
+        setAnalyticsData(analytics);
+        setErrorStats(errorStatsData);
+        setAdminStats(adminStatsData);
+        setActiveSessions(activeSessionsData?.activeSessions || 0);
+        setPlatformStats(platformStatsData);
+        setRecentErrors(recentErrorsData || []);
+        setGrowthData(growthDataResult || []);
+
+        // Update inactive count now that we have admin stats
+        setStats((prev) => ({
+          ...prev,
+          inactive: adminStatsData?.inactiveUsers || 0,
+        }));
+      } catch (err) {
+        console.error("Failed to load deferred admin data:", err);
+      }
+    }
+    loadDeferredData();
+  }, [loading]);
 
   // Handle click outside for menu
   useEffect(() => {
@@ -334,7 +394,12 @@ export default function AdminDashboard() {
   // Load errors when Errors tab is active
   const loadErrors = async (page = 1) => {
     try {
-      const data = await fetchErrors(errorFilter.status, errorFilter.type, page, 15);
+      const data = await fetchErrors(
+        errorFilter.status,
+        errorFilter.type,
+        page,
+        15,
+      );
       setErrors(data.errors || []);
       setErrorsPagination(data.pagination || { page: 1, total: 0, pages: 0 });
     } catch (err) {
@@ -349,52 +414,71 @@ export default function AdminDashboard() {
   }, [activeTab, errorFilter]);
 
   // Filter users based on search and filters
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
-      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.role?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRole = userFilters.role === "all" || user.role === userFilters.role;
-    const matchesStatus = userFilters.status === "all" || 
-      (userFilters.status === "active" && user.is_active !== false) ||
-      (userFilters.status === "inactive" && user.is_active === false);
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  const filteredUsers = useMemo(
+    () =>
+      users.filter((user) => {
+        const matchesSearch =
+          user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.role?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesRole =
+          userFilters.role === "all" || user.role === userFilters.role;
+        const matchesStatus =
+          userFilters.status === "all" ||
+          (userFilters.status === "active" && user.is_active !== false) ||
+          (userFilters.status === "inactive" && user.is_active === false);
+
+        return matchesSearch && matchesRole && matchesStatus;
+      }),
+    [users, searchQuery, userFilters],
+  );
 
   // Paginate users
   const paginatedUsers = filteredUsers.slice(
     (userPagination.page - 1) * userPagination.perPage,
-    userPagination.page * userPagination.perPage
+    userPagination.page * userPagination.perPage,
   );
-  const totalUserPages = Math.ceil(filteredUsers.length / userPagination.perPage);
+  const totalUserPages = Math.ceil(
+    filteredUsers.length / userPagination.perPage,
+  );
 
   // Filter projects based on search and filters
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch = 
-      project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      String(project.owner_id)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.status?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = projectFilters.status === "all" || project.status === projectFilters.status;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredProjects = useMemo(
+    () =>
+      projects.filter((project) => {
+        const matchesSearch =
+          project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          String(project.owner_id)
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          project.status?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesStatus =
+          projectFilters.status === "all" ||
+          project.status === projectFilters.status;
+
+        return matchesSearch && matchesStatus;
+      }),
+    [projects, searchQuery, projectFilters],
+  );
 
   // Paginate projects
   const paginatedProjects = filteredProjects.slice(
     (projectPagination.page - 1) * projectPagination.perPage,
-    projectPagination.page * projectPagination.perPage
+    projectPagination.page * projectPagination.perPage,
   );
-  const totalProjectPages = Math.ceil(filteredProjects.length / projectPagination.perPage);
+  const totalProjectPages = Math.ceil(
+    filteredProjects.length / projectPagination.perPage,
+  );
 
   // Handle delete user
   const handleDeleteUser = async (userId) => {
     setConfirmModal({
       open: true,
       title: "Delete User",
-      message: "Are you sure you want to delete this user? This action cannot be undone.",
+      message:
+        "Are you sure you want to delete this user? This action cannot be undone.",
       onConfirm: async () => {
         try {
           await deleteUser(userId);
@@ -427,7 +511,8 @@ export default function AdminDashboard() {
     setConfirmModal({
       open: true,
       title: "Delete Project",
-      message: "Are you sure you want to delete this project? This action cannot be undone.",
+      message:
+        "Are you sure you want to delete this project? This action cannot be undone.",
       onConfirm: async () => {
         try {
           await deleteProject(projectId);
@@ -447,7 +532,7 @@ export default function AdminDashboard() {
     try {
       await updateProjectStatus(projectId, status);
       setProjects(
-        projects.map((p) => (p.id === projectId ? { ...p, status } : p))
+        projects.map((p) => (p.id === projectId ? { ...p, status } : p)),
       );
       setSelectedProject(null);
       addToast(`Project status updated to ${status}`, "success");
@@ -487,7 +572,8 @@ export default function AdminDashboard() {
     setConfirmModal({
       open: true,
       title: "Delete Error",
-      message: "Are you sure you want to delete this error? This action cannot be undone.",
+      message:
+        "Are you sure you want to delete this error? This action cannot be undone.",
       onConfirm: async () => {
         try {
           await deleteError(errorId);
@@ -510,18 +596,28 @@ export default function AdminDashboard() {
       addToast("No errors to export", "warning");
       return;
     }
-    const headers = ["ID", "Type", "Message", "Page URL", "Status", "Created At", "Resolved At"];
+    const headers = [
+      "ID",
+      "Type",
+      "Message",
+      "Page URL",
+      "Status",
+      "Created At",
+      "Resolved At",
+    ];
     const csvContent = [
       headers.join(","),
-      ...errors.map(e => [
-        e.id,
-        e.error_type || "",
-        `"${(e.message || "").replace(/"/g, '""')}"`,
-        e.page_url || "",
-        e.status || "",
-        e.created_at ? new Date(e.created_at).toISOString() : "",
-        e.resolved_at ? new Date(e.resolved_at).toISOString() : ""
-      ].join(","))
+      ...errors.map((e) =>
+        [
+          e.id,
+          e.error_type || "",
+          `"${(e.message || "").replace(/"/g, '""')}"`,
+          e.page_url || "",
+          e.status || "",
+          e.created_at ? new Date(e.created_at).toISOString() : "",
+          e.resolved_at ? new Date(e.resolved_at).toISOString() : "",
+        ].join(","),
+      ),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -538,7 +634,7 @@ export default function AdminDashboard() {
       addToast("No errors to export", "warning");
       return;
     }
-    const exportData = errors.map(e => ({
+    const exportData = errors.map((e) => ({
       id: e.id,
       type: e.error_type,
       message: e.message,
@@ -547,10 +643,12 @@ export default function AdminDashboard() {
       createdAt: e.created_at,
       resolvedAt: e.resolved_at,
       stack: e.stack,
-      userAgent: e.user_agent
+      userAgent: e.user_agent,
     }));
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `errors_export_${new Date().toISOString().split("T")[0]}.json`;
@@ -558,37 +656,56 @@ export default function AdminDashboard() {
     addToast("Errors exported to JSON", "success");
   };
 
-  // Mentorship analytics
-  const completedSessions = sessions.filter((s) => s.status === "completed").length;
-  const pendingSessions = sessions.filter((s) => s.status === "pending").length;
-  const completionRate = sessions.length > 0 ? Math.round((completedSessions / sessions.length) * 100) : 0;
-  
-  // Calculate mentor performance
-  const mentorStats = sessions.reduce((acc, session) => {
-    if (!session.mentor) return acc;
-    if (!acc[session.mentor]) {
-      acc[session.mentor] = { name: session.mentor, total: 0, completed: 0 };
-    }
-    acc[session.mentor].total++;
-    if (session.status === "completed") {
-      acc[session.mentor].completed++;
-    }
-    return acc;
-  }, {});
-  
-  const mentorPerformance = Object.values(mentorStats)
-    .map((m) => ({
-      name: m.name,
-      sessions: m.total,
-      completed: m.completed,
-      rate: m.total > 0 ? Math.round((m.completed / m.total) * 100) : 0,
-    }))
-    .sort((a, b) => b.sessions - a.sessions)
-    .map((mentor, idx) => ({
-      ...mentor,
-      rank: idx + 1,
-      medalColor: idx === 0 ? "text-yellow-400" : idx === 1 ? "text-gray-300" : idx === 2 ? "text-amber-600" : null,
-    }));
+  // Mentorship analytics (memoized)
+  const {
+    completedSessions,
+    pendingSessions,
+    completionRate,
+    mentorPerformance,
+  } = useMemo(() => {
+    const completed = sessions.filter((s) => s.status === "completed").length;
+    const pending = sessions.filter((s) => s.status === "pending").length;
+    const rate =
+      sessions.length > 0 ? Math.round((completed / sessions.length) * 100) : 0;
+
+    // Calculate mentor performance
+    const mStats = sessions.reduce((acc, session) => {
+      if (!session.mentor) return acc;
+      if (!acc[session.mentor]) {
+        acc[session.mentor] = { name: session.mentor, total: 0, completed: 0 };
+      }
+      acc[session.mentor].total++;
+      if (session.status === "completed") {
+        acc[session.mentor].completed++;
+      }
+      return acc;
+    }, {});
+
+    const perf = Object.values(mStats)
+      .map((m) => ({
+        name: m.name,
+        sessions: m.total,
+        completed: m.completed,
+        rate: m.total > 0 ? Math.round((m.completed / m.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.sessions - a.sessions)
+      .map((mentor, idx) => ({
+        ...mentor,
+        rank: idx + 1,
+        medalColor:
+          idx === 0 ? "text-yellow-400"
+          : idx === 1 ? "text-gray-300"
+          : idx === 2 ? "text-amber-600"
+          : null,
+      }));
+
+    return {
+      completedSessions: completed,
+      pendingSessions: pending,
+      completionRate: rate,
+      mentorPerformance: perf,
+    };
+  }, [sessions]);
 
   // Build activity from real updates data
   const recentActivity = updates.slice(0, 5).map((update) => ({
@@ -625,7 +742,10 @@ export default function AdminDashboard() {
   ];
 
   // System status based on health data
-  const systemStatus = healthData?.status === "ok" ? "All systems operational" : healthData?.status === "error" ? "System error detected" : "Checking system status...";
+  const systemStatus =
+    healthData?.status === "ok" ? "All systems operational"
+    : healthData?.status === "error" ? "System error detected"
+    : "Checking system status...";
 
   if (loading) {
     return (
@@ -650,8 +770,7 @@ export default function AdminDashboard() {
             >
               {menuOpen ?
                 <X className="w-5 h-5 text-neutral-dark" />
-              : <Menu className="w-5 h-5 text-neutral-dark" />
-              }
+              : <Menu className="w-5 h-5 text-neutral-dark" />}
             </button>
 
             {/* Hamburger Menu */}
@@ -719,16 +838,19 @@ export default function AdminDashboard() {
       />
 
       {/* Navigation Tabs */}
-      <nav className="bg-surface border-b border-border px-6">
-        <div className="flex gap-1">
+      <nav className="bg-surface border-b border-border px-6" aria-label="Admin tabs">
+        <div className="flex gap-1" role="tablist">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              aria-label={tab.label}
               className={`px-4 py-3 text-sm font-medium transition-all relative ${
                 activeTab === tab.id ?
                   "text-accent"
-                : "text-gray-400 hover:text-gray-200"
+                : "text-gray-300 hover:text-white"
               }`}
             >
               {tab.label}
@@ -780,11 +902,12 @@ export default function AdminDashboard() {
             {growthData.length > 0 && (
               <div className="bg-surface rounded-xl p-5 border border-border">
                 <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
-                  <BarChart3 className="text-accent" size={20} /> Platform Activity (Last 30 Days)
+                  <BarChart3 className="text-accent" size={20} /> Platform
+                  Activity (Last 30 Days)
                 </h3>
                 <div className="h-80">
-                  <AgCharts
-                    options={{
+                    <AgCharts
+                      options={{
                       data: growthData,
                       theme: {
                         palette: {
@@ -792,23 +915,18 @@ export default function AdminDashboard() {
                           strokes: ["#3b82f6", "#22c55e"],
                         },
                       },
-                      axes: [
-                        {
+                      axes: {
+                        x: {
                           type: "category",
                           position: "bottom",
-                          label: {
-                            formatter: ({ value }) => {
-                              const date = new Date(value);
-                              return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                            },
-                          },
+                          label: { enabled: false },
+                          tick: { enabled: false },
                         },
-                        {
+                        y: {
                           type: "number",
                           position: "left",
-                          label: {},
                         },
-                      ],
+                      },
                       series: [
                         {
                           type: "line",
@@ -817,7 +935,7 @@ export default function AdminDashboard() {
                           yName: "New Users",
                           stroke: "#3b82f6",
                           strokeWidth: 2,
-                          marker: { enabled: false },
+                          marker: { enabled: true },
                         },
                         {
                           type: "line",
@@ -826,7 +944,7 @@ export default function AdminDashboard() {
                           yName: "New Projects",
                           stroke: "#22c55e",
                           strokeWidth: 2,
-                          marker: { enabled: false },
+                          marker: { enabled: true },
                         },
                       ],
                       legend: {
@@ -884,9 +1002,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="mt-4 p-3 rounded bg-green-500/10 border-l-4 border-green-500 flex items-center gap-2">
                   <CheckCircle className="text-green-500 w-4 h-4" />
-                  <p className="text-sm text-green-400">
-                    {systemStatus}
-                  </p>
+                  <p className="text-sm text-green-400">{systemStatus}</p>
                 </div>
               </div>
             </div>
@@ -899,21 +1015,24 @@ export default function AdminDashboard() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setActiveTab("users")}
+                  aria-label="Manage Users"
                   className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition flex items-center gap-2"
                 >
-                  <Users size={18} /> Manage Users
+                  <Users size={18} aria-hidden="true" /> Manage Users
                 </button>
                 <button
                   onClick={() => setActiveTab("projects")}
+                  aria-label="View Projects"
                   className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition flex items-center gap-2"
                 >
-                  <FolderKanban size={18} /> View Projects
+                  <FolderKanban size={18} aria-hidden="true" /> View Projects
                 </button>
                 <button
                   onClick={() => setActiveTab("system")}
+                  aria-label="System Health"
                   className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition flex items-center gap-2"
                 >
-                  <BarChart3 size={18} /> System Health
+                  <BarChart3 size={18} aria-hidden="true" /> System Health
                 </button>
               </div>
             </div>
@@ -955,7 +1074,9 @@ export default function AdminDashboard() {
                 <div className="flex gap-3 items-center">
                   <select
                     value={userFilters.role}
-                    onChange={(e) => setUserFilters({ ...userFilters, role: e.target.value })}
+                    onChange={(e) =>
+                      setUserFilters({ ...userFilters, role: e.target.value })
+                    }
                     className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-primary"
                   >
                     <option value="all">All Roles</option>
@@ -965,7 +1086,9 @@ export default function AdminDashboard() {
                   </select>
                   <select
                     value={userFilters.status}
-                    onChange={(e) => setUserFilters({ ...userFilters, status: e.target.value })}
+                    onChange={(e) =>
+                      setUserFilters({ ...userFilters, status: e.target.value })
+                    }
                     className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-primary"
                   >
                     <option value="all">All Status</option>
@@ -1039,15 +1162,29 @@ export default function AdminDashboard() {
                           </span>
                         </td>
                         <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded text-xs flex items-center gap-1 w-fit ${
-                            user.is_active === false ? "bg-gray-500/20 text-gray-400" : "bg-green-500/20 text-green-400"
-                          }`}>
-                            <Check size={12} /> {user.is_active === false ? "Inactive" : "Active"}
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs flex items-center gap-1 w-fit ${
+                              user.is_active === false ?
+                                "bg-gray-500/20 text-gray-400"
+                              : "bg-green-500/20 text-green-400"
+                            }`}
+                          >
+                            <Check size={12} />{" "}
+                            {user.is_active === false ? "Inactive" : "Active"}
                           </span>
                         </td>
                         <td className="p-3 text-sm text-gray-400">
-                          {user.created_at ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : 
-                           user.join_date ? new Date(user.join_date).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "N/A"}
+                          {user.created_at ?
+                            new Date(user.created_at).toLocaleDateString(
+                              "en-US",
+                              { month: "short", year: "numeric" },
+                            )
+                          : user.join_date ?
+                            new Date(user.join_date).toLocaleDateString(
+                              "en-US",
+                              { month: "short", year: "numeric" },
+                            )
+                          : "N/A"}
                         </td>
                         <td className="p-3 relative">
                           <button
@@ -1063,7 +1200,7 @@ export default function AdminDashboard() {
                               )
                             }
                           >
-                            <MoreHorizontal size={18} />
+                            <MoreHorizontal size={18} aria-label="More options" />
                           </button>
                           {openMenu?.type === "user" &&
                             openMenu?.id === user.id && (
@@ -1100,11 +1237,22 @@ export default function AdminDashboard() {
               {totalUserPages > 1 && (
                 <div className="flex justify-between items-center p-4 border-t border-border">
                   <span className="text-sm text-gray-400">
-                    Showing {(userPagination.page - 1) * userPagination.perPage + 1} to {Math.min(userPagination.page * userPagination.perPage, filteredUsers.length)} of {filteredUsers.length}
+                    Showing{" "}
+                    {(userPagination.page - 1) * userPagination.perPage + 1} to{" "}
+                    {Math.min(
+                      userPagination.page * userPagination.perPage,
+                      filteredUsers.length,
+                    )}{" "}
+                    of {filteredUsers.length}
                   </span>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setUserPagination({ ...userPagination, page: userPagination.page - 1 })}
+                      onClick={() =>
+                        setUserPagination({
+                          ...userPagination,
+                          page: userPagination.page - 1,
+                        })
+                      }
                       disabled={userPagination.page === 1}
                       className="px-3 py-1 rounded bg-surface border border-border disabled:opacity-50 text-sm"
                     >
@@ -1114,7 +1262,12 @@ export default function AdminDashboard() {
                       Page {userPagination.page} of {totalUserPages}
                     </span>
                     <button
-                      onClick={() => setUserPagination({ ...userPagination, page: userPagination.page + 1 })}
+                      onClick={() =>
+                        setUserPagination({
+                          ...userPagination,
+                          page: userPagination.page + 1,
+                        })
+                      }
                       disabled={userPagination.page === totalUserPages}
                       className="px-3 py-1 rounded bg-surface border border-border disabled:opacity-50 text-sm"
                     >
@@ -1163,7 +1316,10 @@ export default function AdminDashboard() {
                   <select
                     value={projectFilters.status}
                     onChange={(e) => {
-                      setProjectFilters({ ...projectFilters, status: e.target.value });
+                      setProjectFilters({
+                        ...projectFilters,
+                        status: e.target.value,
+                      });
                       setProjectPagination({ ...projectPagination, page: 1 });
                     }}
                     className="bg-background border border-border rounded-lg px-3 py-1.5 text-sm text-primary"
@@ -1249,7 +1405,7 @@ export default function AdminDashboard() {
                               )
                             }
                           >
-                            <MoreHorizontal size={18} />
+                            <MoreHorizontal size={18} aria-label="More options" />
                           </button>
                           {openMenu?.type === "project" &&
                             openMenu?.id === project.id && (
@@ -1270,13 +1426,18 @@ export default function AdminDashboard() {
                                   {
                                     icon: <Archive size={14} />,
                                     label: "Archive",
-                                    onClick: () => handleUpdateProjectStatus(project.id, "archived"),
+                                    onClick: () =>
+                                      handleUpdateProjectStatus(
+                                        project.id,
+                                        "archived",
+                                      ),
                                   },
                                   {
                                     icon: <Trash2 size={14} />,
                                     label: "Delete Project",
                                     danger: true,
-                                    onClick: () => handleDeleteProject(project.id),
+                                    onClick: () =>
+                                      handleDeleteProject(project.id),
                                   },
                                 ]}
                               />
@@ -1296,11 +1457,24 @@ export default function AdminDashboard() {
               {totalProjectPages > 1 && (
                 <div className="flex justify-between items-center p-4 border-t border-border">
                   <span className="text-sm text-gray-400">
-                    Showing {(projectPagination.page - 1) * projectPagination.perPage + 1} to {Math.min(projectPagination.page * projectPagination.perPage, filteredProjects.length)} of {filteredProjects.length}
+                    Showing{" "}
+                    {(projectPagination.page - 1) * projectPagination.perPage +
+                      1}{" "}
+                    to{" "}
+                    {Math.min(
+                      projectPagination.page * projectPagination.perPage,
+                      filteredProjects.length,
+                    )}{" "}
+                    of {filteredProjects.length}
                   </span>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setProjectPagination({ ...projectPagination, page: projectPagination.page - 1 })}
+                      onClick={() =>
+                        setProjectPagination({
+                          ...projectPagination,
+                          page: projectPagination.page - 1,
+                        })
+                      }
                       disabled={projectPagination.page === 1}
                       className="px-3 py-1 rounded bg-surface border border-border disabled:opacity-50 text-sm"
                     >
@@ -1310,7 +1484,12 @@ export default function AdminDashboard() {
                       Page {projectPagination.page} of {totalProjectPages}
                     </span>
                     <button
-                      onClick={() => setProjectPagination({ ...projectPagination, page: projectPagination.page + 1 })}
+                      onClick={() =>
+                        setProjectPagination({
+                          ...projectPagination,
+                          page: projectPagination.page + 1,
+                        })
+                      }
                       disabled={projectPagination.page === totalProjectPages}
                       className="px-3 py-1 rounded bg-surface border border-border disabled:opacity-50 text-sm"
                     >
@@ -1357,18 +1536,32 @@ export default function AdminDashboard() {
             {pendingSessions > 0 && (
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
                 <h3 className="font-semibold text-yellow-500 mb-3 flex items-center gap-2">
-                  <AlertTriangle size={18} /> {pendingSessions} Pending Session{pendingSessions > 1 ? "s" : ""} Need Attention
+                  <AlertTriangle size={18} /> {pendingSessions} Pending Session
+                  {pendingSessions > 1 ? "s" : ""} Need Attention
                 </h3>
                 <div className="space-y-2">
-                  {sessions.filter((s) => s.status === "pending").slice(0, 3).map((session) => (
-                    <div key={session.id} className="flex items-center justify-between bg-surface p-3 rounded-lg">
-                      <div>
-                        <p className="text-primary font-medium">{session.mentor || "Unassigned"} → {session.intern || "Unknown"}</p>
-                        <p className="text-sm text-gray-400">{session.topic || "No topic"}</p>
+                  {sessions
+                    .filter((s) => s.status === "pending")
+                    .slice(0, 3)
+                    .map((session) => (
+                      <div
+                        key={session.id}
+                        className="flex items-center justify-between bg-surface p-3 rounded-lg"
+                      >
+                        <div>
+                          <p className="text-primary font-medium">
+                            {session.mentor || "Unassigned"} →{" "}
+                            {session.intern || "Unknown"}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            {session.topic || "No topic"}
+                          </p>
+                        </div>
+                        <span className="text-xs text-yellow-500">
+                          Needs review
+                        </span>
                       </div>
-                      <span className="text-xs text-yellow-500">Needs review</span>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             )}
@@ -1376,34 +1569,59 @@ export default function AdminDashboard() {
             {/* Mentor Performance */}
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
               <div className="p-4 border-b border-border">
-                <h3 className="font-semibold text-primary">Mentor Performance</h3>
+                <h3 className="font-semibold text-primary">
+                  Mentor Performance
+                </h3>
               </div>
-              {mentorPerformance.length > 0 ? (
+              {mentorPerformance.length > 0 ?
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-surface-highlight">
                       <tr>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Mentor</th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Sessions</th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Completed</th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Rate</th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Mentor
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Sessions
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Completed
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Rate
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {mentorPerformance.map((mentor) => (
-                        <tr key={mentor.rank} className="border-t border-border hover:bg-surface-highlight/50">
+                        <tr
+                          key={mentor.rank}
+                          className="border-t border-border hover:bg-surface-highlight/50"
+                        >
                           <td className="p-3 text-sm text-primary font-medium">
-                            {mentor.rank <= 3 && <Medal className={`inline w-4 h-4 mr-1 ${mentor.medalColor}`} />}
+                            {mentor.rank <= 3 && (
+                              <Medal
+                                className={`inline w-4 h-4 mr-1 ${mentor.medalColor}`}
+                              />
+                            )}
                             {mentor.name}
                           </td>
-                          <td className="p-3 text-sm text-gray-400">{mentor.sessions}</td>
-                          <td className="p-3 text-sm text-gray-400">{mentor.completed}</td>
+                          <td className="p-3 text-sm text-gray-400">
+                            {mentor.sessions}
+                          </td>
+                          <td className="p-3 text-sm text-gray-400">
+                            {mentor.completed}
+                          </td>
                           <td className="p-3">
-                            <span className={`px-2 py-1 rounded text-xs ${
-                              mentor.rate >= 80 ? "bg-green-500/20 text-green-400" :
-                              mentor.rate >= 50 ? "bg-yellow-500/20 text-yellow-400" :
-                              "bg-red-500/20 text-red-400"
-                            }`}>
+                            <span
+                              className={`px-2 py-1 rounded text-xs ${
+                                mentor.rate >= 80 ?
+                                  "bg-green-500/20 text-green-400"
+                                : mentor.rate >= 50 ?
+                                  "bg-yellow-500/20 text-yellow-400"
+                                : "bg-red-500/20 text-red-400"
+                              }`}
+                            >
                               {mentor.rate}%
                             </span>
                           </td>
@@ -1412,65 +1630,115 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
-              ) : (
-                <div className="p-8 text-center text-gray-500">No mentor data available</div>
-              )}
+              : <div className="p-8 text-center text-gray-500">
+                  No mentor data available
+                </div>
+              }
             </div>
 
             {/* Recent Sessions - Collapsible */}
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
-              <div 
+              <div
                 className="p-4 border-b border-border flex justify-between items-center cursor-pointer hover:bg-surface-highlight/30"
                 onClick={() => setSessionsExpanded(!sessionsExpanded)}
               >
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-primary">Recent Sessions</h3>
-                  <span className="text-xs text-gray-400">({sessions.length} total)</span>
+                  <h3 className="font-semibold text-primary">
+                    Recent Sessions
+                  </h3>
+                  <span className="text-xs text-gray-400">
+                    ({sessions.length} total)
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-1 bg-surface-highlight text-xs text-gray-400 rounded-full">
                     {sessionsExpanded ? "Collapse" : "View all"}
                   </span>
-                  <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${sessionsExpanded ? "rotate-90" : ""}`} />
+                  <ChevronRight
+                    className={`w-5 h-5 text-gray-400 transition-transform ${sessionsExpanded ? "rotate-90" : ""}`}
+                  />
                 </div>
               </div>
-              
+
               {sessionsExpanded && (
                 <div className="overflow-x-auto max-h-96">
                   <table className="w-full">
                     <thead className="bg-surface-highlight sticky top-0">
                       <tr>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Mentor</th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Mentee</th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Topic</th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Date</th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Status</th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Mentor
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Mentee
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Topic
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Date
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Status
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {sessions.length > 0 ?
                         sessions.map((session) => (
-                          <tr key={session.id} className="border-t border-border hover:bg-surface-highlight/50">
-                            <td className="p-3 text-sm text-primary font-medium">{session.mentor || "N/A"}</td>
-                            <td className="p-3 text-sm text-gray-400">{session.intern || "N/A"}</td>
-                            <td className="p-3 text-sm text-gray-400 max-w-xs truncate">{session.topic || "N/A"}</td>
+                          <tr
+                            key={session.id}
+                            className="border-t border-border hover:bg-surface-highlight/50"
+                          >
+                            <td className="p-3 text-sm text-primary font-medium">
+                              {session.mentor || "N/A"}
+                            </td>
                             <td className="p-3 text-sm text-gray-400">
-                              {session.session_date ? new Date(session.session_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : 
-                               session.scheduled_at ? new Date(session.scheduled_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "N/A"}
+                              {session.intern || "N/A"}
+                            </td>
+                            <td className="p-3 text-sm text-gray-400 max-w-xs truncate">
+                              {session.topic || "N/A"}
+                            </td>
+                            <td className="p-3 text-sm text-gray-400">
+                              {session.session_date ?
+                                new Date(
+                                  session.session_date,
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })
+                              : session.scheduled_at ?
+                                new Date(
+                                  session.scheduled_at,
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })
+                              : "N/A"}
                             </td>
                             <td className="p-3">
-                              <span className={`px-2 py-0.5 rounded text-xs ${
-                                session.status === "completed" ? "bg-green-500/20 text-green-400" :
-                                session.status === "pending" ? "bg-yellow-500/20 text-yellow-400" :
-                                "bg-blue-500/20 text-blue-400"
-                              }`}>
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs ${
+                                  session.status === "completed" ?
+                                    "bg-green-500/20 text-green-400"
+                                  : session.status === "pending" ?
+                                    "bg-yellow-500/20 text-yellow-400"
+                                  : "bg-blue-500/20 text-blue-400"
+                                }`}
+                              >
                                 {session.status || "scheduled"}
                               </span>
                             </td>
                           </tr>
                         ))
                       : <tr>
-                          <td colSpan={5} className="p-8 text-center text-gray-500">No sessions found</td>
+                          <td
+                            colSpan={5}
+                            className="p-8 text-center text-gray-500"
+                          >
+                            No sessions found
+                          </td>
                         </tr>
                       }
                     </tbody>
@@ -1479,11 +1747,13 @@ export default function AdminDashboard() {
               )}
 
               {!sessionsExpanded && sessions.length > 0 && (
-                <div 
+                <div
                   className="p-3 border-t border-border cursor-pointer hover:bg-surface-highlight/30 flex items-center justify-center gap-2"
                   onClick={() => setSessionsExpanded(true)}
                 >
-                  <span className="text-xs text-gray-400">Click to view all {sessions.length} sessions</span>
+                  <span className="text-xs text-gray-400">
+                    Click to view all {sessions.length} sessions
+                  </span>
                   <ChevronRight className="w-4 h-4 text-gray-400 rotate-90" />
                 </div>
               )}
@@ -1497,19 +1767,29 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-surface rounded-xl p-5 border border-border">
                 <p className="text-sm text-gray-400">Total Errors</p>
-                <p className="text-2xl font-bold text-primary">{errorStats.total || 0}</p>
+                <p className="text-2xl font-bold text-primary">
+                  {errorStats.total || 0}
+                </p>
               </div>
               <div className="bg-surface rounded-xl p-5 border border-border">
                 <p className="text-sm text-gray-400">Open</p>
-                <p className="text-2xl font-bold text-red-500">{errorStats.open || 0}</p>
+                <p className="text-2xl font-bold text-red-500">
+                  {errorStats.open || 0}
+                </p>
               </div>
               <div className="bg-surface rounded-xl p-5 border border-border">
                 <p className="text-sm text-gray-400">Resolved</p>
-                <p className="text-2xl font-bold text-green-500">{errorStats.byType?.find(t => t.error_type === 'resolved')?.count || 0}</p>
+                <p className="text-2xl font-bold text-green-500">
+                  {errorStats.byType?.find((t) => t.error_type === "resolved")
+                    ?.count || 0}
+                </p>
               </div>
               <div className="bg-surface rounded-xl p-5 border border-border">
                 <p className="text-sm text-gray-400">Ignored</p>
-                <p className="text-2xl font-bold text-gray-500">{errorStats.byType?.find(t => t.error_type === 'ignored')?.count || 0}</p>
+                <p className="text-2xl font-bold text-gray-500">
+                  {errorStats.byType?.find((t) => t.error_type === "ignored")
+                    ?.count || 0}
+                </p>
               </div>
             </div>
 
@@ -1518,7 +1798,9 @@ export default function AdminDashboard() {
               <div className="flex gap-4 items-center">
                 <select
                   value={errorFilter.status}
-                  onChange={(e) => setErrorFilter({ ...errorFilter, status: e.target.value })}
+                  onChange={(e) =>
+                    setErrorFilter({ ...errorFilter, status: e.target.value })
+                  }
                   className="bg-background border border-border rounded-lg px-3 py-2 text-primary"
                 >
                   <option value="all">All Status</option>
@@ -1528,7 +1810,9 @@ export default function AdminDashboard() {
                 </select>
                 <select
                   value={errorFilter.type}
-                  onChange={(e) => setErrorFilter({ ...errorFilter, type: e.target.value })}
+                  onChange={(e) =>
+                    setErrorFilter({ ...errorFilter, type: e.target.value })
+                  }
                   className="bg-background border border-border rounded-lg px-3 py-2 text-primary"
                 >
                   <option value="all">All Types</option>
@@ -1561,60 +1845,95 @@ export default function AdminDashboard() {
               <table className="w-full">
                 <thead className="bg-surface-highlight">
                   <tr>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Type</th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Message</th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Page</th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Status</th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Date</th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">Actions</th>
+                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                      Type
+                    </th>
+                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                      Message
+                    </th>
+                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                      Page
+                    </th>
+                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                      Status
+                    </th>
+                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                      Date
+                    </th>
+                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {errors.length > 0 ?
                     errors.map((error) => (
-                      <tr key={error.id} className="border-t border-border hover:bg-surface-highlight/50">
+                      <tr
+                        key={error.id}
+                        className="border-t border-border hover:bg-surface-highlight/50"
+                      >
                         <td className="p-3">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            error.error_type === "javascript" ? "bg-yellow-500/20 text-yellow-400" :
-                            error.error_type === "api" ? "bg-red-500/20 text-red-400" :
-                            error.error_type === "server" ? "bg-purple-500/20 text-purple-400" :
-                            "bg-blue-500/20 text-blue-400"
-                          }`}>
+                          <span
+                            className={`px-2 py-1 rounded text-xs ${
+                              error.error_type === "javascript" ?
+                                "bg-yellow-500/20 text-yellow-400"
+                              : error.error_type === "api" ?
+                                "bg-red-500/20 text-red-400"
+                              : error.error_type === "server" ?
+                                "bg-purple-500/20 text-purple-400"
+                              : "bg-blue-500/20 text-blue-400"
+                            }`}
+                          >
                             {error.error_type}
                           </span>
                         </td>
-                        <td className="p-3 text-sm text-primary max-w-xs truncate cursor-pointer hover:text-accent" 
-                            title="Click to view full error"
-                            onClick={() => setSelectedError(error)}>
+                        <td
+                          className="p-3 text-sm text-primary max-w-xs truncate cursor-pointer hover:text-accent"
+                          title="Click to view full error"
+                          onClick={() => setSelectedError(error)}
+                        >
                           {error.message?.substring(0, 50)}...
                         </td>
                         <td className="p-3 text-sm text-gray-400">
                           {error.page_url || "N/A"}
                         </td>
                         <td className="p-3">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            error.status === "open" ? "bg-red-500/20 text-red-400" :
-                            error.status === "resolved" ? "bg-green-500/20 text-green-400" :
-                            "bg-gray-500/20 text-gray-400"
-                          }`}>
+                          <span
+                            className={`px-2 py-1 rounded text-xs ${
+                              error.status === "open" ?
+                                "bg-red-500/20 text-red-400"
+                              : error.status === "resolved" ?
+                                "bg-green-500/20 text-green-400"
+                              : "bg-gray-500/20 text-gray-400"
+                            }`}
+                          >
                             {error.status}
                           </span>
                         </td>
                         <td className="p-3 text-sm text-gray-400">
-                          {error.created_at ? new Date(error.created_at).toLocaleDateString() : "N/A"}
+                          {error.created_at ?
+                            new Date(error.created_at).toLocaleDateString()
+                          : "N/A"}
                         </td>
                         <td className="p-3">
                           <div className="flex gap-2">
                             {error.status === "open" && (
                               <>
                                 <button
-                                  onClick={() => handleErrorStatusUpdate(error.id, "resolved")}
+                                  onClick={() =>
+                                    handleErrorStatusUpdate(
+                                      error.id,
+                                      "resolved",
+                                    )
+                                  }
                                   className="text-xs text-green-500 hover:text-green-400"
                                 >
                                   Resolve
                                 </button>
                                 <button
-                                  onClick={() => handleErrorStatusUpdate(error.id, "ignored")}
+                                  onClick={() =>
+                                    handleErrorStatusUpdate(error.id, "ignored")
+                                  }
                                   className="text-xs text-gray-500 hover:text-gray-400"
                                 >
                                   Ignore
@@ -1679,19 +1998,33 @@ export default function AdminDashboard() {
               <StatCard
                 icon={Database}
                 label="Database"
-                value={healthData?.database === "connected" ? "Healthy" : healthData?.database === "disconnected" ? "Error" : "..."}
+                value={
+                  healthData?.database === "connected" ? "Healthy"
+                  : healthData?.database === "disconnected" ?
+                    "Error"
+                  : "..."
+                }
                 color={healthData?.database === "connected" ? "green" : "red"}
               />
               <StatCard
                 icon={Server}
                 label="API Status"
-                value={healthData?.status === "ok" ? "Operational" : healthData?.status === "error" ? "Error" : "..."}
+                value={
+                  healthData?.status === "ok" ? "Operational"
+                  : healthData?.status === "error" ?
+                    "Error"
+                  : "..."
+                }
                 color={healthData?.status === "ok" ? "green" : "red"}
               />
               <StatCard
                 icon={Settings}
                 label="Last Check"
-                value={healthData?.timestamp ? new Date(healthData.timestamp).toLocaleTimeString() : "..."}
+                value={
+                  healthData?.timestamp ?
+                    new Date(healthData.timestamp).toLocaleTimeString()
+                  : "..."
+                }
                 color="blue"
               />
             </div>
@@ -1700,66 +2033,81 @@ export default function AdminDashboard() {
               <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
                 <BarChart3 className="text-accent" size={20} /> System Status
               </h3>
-              {healthData ? (
+              {healthData ?
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                     <span className="text-primary">Database Connection</span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      healthData.database === "connected" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        healthData.database === "connected" ?
+                          "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                      }`}
+                    >
                       {healthData.database}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                     <span className="text-primary">API Status</span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      healthData.status === "ok" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        healthData.status === "ok" ?
+                          "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                      }`}
+                    >
                       {healthData.status}
                     </span>
                   </div>
                   {healthData.timestamp && (
                     <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                       <span className="text-primary">Last Checked</span>
-                      <span className="text-primary">{new Date(healthData.timestamp).toLocaleString()}</span>
+                      <span className="text-primary">
+                        {new Date(healthData.timestamp).toLocaleString()}
+                      </span>
                     </div>
                   )}
                 </div>
-              ) : (
-                <div className="h-32 bg-surface-highlight/30 rounded flex items-center justify-center text-gray-500">
+              : <div className="h-32 bg-surface-highlight/30 rounded flex items-center justify-center text-gray-500">
                   Loading system status...
                 </div>
-              )}
+              }
             </div>
 
             {/* Recent Error Summary */}
             <div className="bg-surface rounded-xl border border-border p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
-                  <AlertTriangle className="text-yellow-500" size={20} /> Recent Errors
+                  <AlertTriangle className="text-yellow-500" size={20} /> Recent
+                  Errors
                 </h3>
-                <button 
+                <button
                   onClick={() => setActiveTab("errors")}
                   className="text-sm text-accent hover:underline flex items-center gap-1"
                 >
                   View All <ExternalLink size={14} />
                 </button>
               </div>
-              {recentErrors.length > 0 ? (
+              {recentErrors.length > 0 ?
                 <div className="space-y-2">
                   {recentErrors.slice(0, 5).map((error) => (
-                    <div 
+                    <div
                       key={error.id}
                       className="p-3 bg-surface-highlight/30 rounded-lg flex items-center justify-between hover:bg-surface-highlight/50 cursor-pointer"
                       onClick={() => setActiveTab("errors")}
                     >
                       <div className="flex items-center gap-3">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          error.error_type === "javascript" ? "bg-yellow-500/20 text-yellow-400" :
-                          error.error_type === "api" ? "bg-red-500/20 text-red-400" :
-                          error.error_type === "server" ? "bg-purple-500/20 text-purple-400" :
-                          "bg-blue-500/20 text-blue-400"
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            error.error_type === "javascript" ?
+                              "bg-yellow-500/20 text-yellow-400"
+                            : error.error_type === "api" ?
+                              "bg-red-500/20 text-red-400"
+                            : error.error_type === "server" ?
+                              "bg-purple-500/20 text-purple-400"
+                            : "bg-blue-500/20 text-blue-400"
+                          }`}
+                        >
                           {error.error_type}
                         </span>
                         <span className="text-sm text-primary truncate max-w-md">
@@ -1767,16 +2115,17 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                       <span className="text-xs text-gray-500">
-                        {error.created_at ? new Date(error.created_at).toLocaleDateString() : ""}
+                        {error.created_at ?
+                          new Date(error.created_at).toLocaleDateString()
+                        : ""}
                       </span>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="h-24 bg-surface-highlight/30 rounded flex items-center justify-center text-gray-500">
+              : <div className="h-24 bg-surface-highlight/30 rounded flex items-center justify-center text-gray-500">
                   No recent errors
                 </div>
-              )}
+              }
             </div>
 
             {/* Platform Stats */}
@@ -1786,30 +2135,45 @@ export default function AdminDashboard() {
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-surface-highlight/30 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">{platformStats?.totalUsers || 0}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {platformStats?.totalUsers || 0}
+                  </p>
                   <p className="text-sm text-gray-400">Total Users</p>
                 </div>
                 <div className="p-3 bg-surface-highlight/30 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">{platformStats?.totalProjects || 0}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {platformStats?.totalProjects || 0}
+                  </p>
                   <p className="text-sm text-gray-400">Total Projects</p>
                 </div>
                 <div className="p-3 bg-surface-highlight/30 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">{platformStats?.totalSessions || 0}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {platformStats?.totalSessions || 0}
+                  </p>
                   <p className="text-sm text-gray-400">Total Sessions</p>
                 </div>
                 <div className="p-3 bg-surface-highlight/30 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">{platformStats?.appVersion || "1.0.0"}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {platformStats?.appVersion || "1.0.0"}
+                  </p>
                   <p className="text-sm text-gray-400">App Version</p>
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <Clock size={14} />
-                  <span>Server Timezone: {platformStats?.timezone || "UTC"}</span>
+                  <span>
+                    Server Timezone: {platformStats?.timezone || "UTC"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <Database size={14} />
-                  <span>DB Records: {(platformStats?.totalUsers || 0) + (platformStats?.totalProjects || 0) + (platformStats?.totalSessions || 0)}</span>
+                  <span>
+                    DB Records:{" "}
+                    {(platformStats?.totalUsers || 0) +
+                      (platformStats?.totalProjects || 0) +
+                      (platformStats?.totalSessions || 0)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1831,7 +2195,9 @@ export default function AdminDashboard() {
                   <input
                     type="text"
                     value={settings.platformName}
-                    onChange={(e) => setSettings({ ...settings, platformName: e.target.value })}
+                    onChange={(e) =>
+                      setSettings({ ...settings, platformName: e.target.value })
+                    }
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
                   />
                 </div>
@@ -1842,7 +2208,9 @@ export default function AdminDashboard() {
                   <input
                     type="email"
                     value={settings.supportEmail}
-                    onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                    onChange={(e) =>
+                      setSettings({ ...settings, supportEmail: e.target.value })
+                    }
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
                   />
                 </div>
@@ -1850,14 +2218,18 @@ export default function AdminDashboard() {
                   <label className="block text-sm text-gray-400 mb-2">
                     Timezone
                   </label>
-                  <select 
+                  <select
                     value={settings.timezone}
-                    onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                    onChange={(e) =>
+                      setSettings({ ...settings, timezone: e.target.value })
+                    }
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
                   >
                     <option value="UTC">UTC</option>
                     <option value="America/New_York">America/New York</option>
-                    <option value="America/Los_Angeles">America/Los Angeles</option>
+                    <option value="America/Los_Angeles">
+                      America/Los Angeles
+                    </option>
                     <option value="Europe/London">Europe/London</option>
                     <option value="Europe/Paris">Europe/Paris</option>
                     <option value="Asia/Tokyo">Asia/Tokyo</option>
@@ -1865,24 +2237,37 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                   <div>
-                    <span className="text-primary font-medium">Allow User Registrations</span>
-                    <p className="text-xs text-gray-400">Allow new users to sign up</p>
+                    <span className="text-primary font-medium">
+                      Allow User Registrations
+                    </span>
+                    <p className="text-xs text-gray-400">
+                      Allow new users to sign up
+                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setSettings({ ...settings, allowRegistrations: !settings.allowRegistrations })}
+                    onClick={() =>
+                      setSettings({
+                        ...settings,
+                        allowRegistrations: !settings.allowRegistrations,
+                      })
+                    }
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      settings.allowRegistrations ? "bg-green-500" : "bg-gray-400"
+                      settings.allowRegistrations ? "bg-green-500" : (
+                        "bg-gray-400"
+                      )
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        settings.allowRegistrations ? "translate-x-6" : "translate-x-1"
+                        settings.allowRegistrations ? "translate-x-6" : (
+                          "translate-x-1"
+                        )
                       }`}
                     />
                   </button>
                 </div>
-                <button 
+                <button
                   onClick={handleSaveSettings}
                   className="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition flex items-center gap-2"
                 >
@@ -1899,76 +2284,128 @@ export default function AdminDashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                   <div>
-                    <span className="text-primary font-medium">Enable Mentorship</span>
-                    <p className="text-xs text-gray-400">Allow mentorship sessions</p>
+                    <span className="text-primary font-medium">
+                      Enable Mentorship
+                    </span>
+                    <p className="text-xs text-gray-400">
+                      Allow mentorship sessions
+                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFeatureFlags({ ...featureFlags, enableMentorship: !featureFlags.enableMentorship })}
+                    onClick={() =>
+                      setFeatureFlags({
+                        ...featureFlags,
+                        enableMentorship: !featureFlags.enableMentorship,
+                      })
+                    }
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      featureFlags.enableMentorship ? "bg-green-500" : "bg-gray-400"
+                      featureFlags.enableMentorship ? "bg-green-500" : (
+                        "bg-gray-400"
+                      )
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        featureFlags.enableMentorship ? "translate-x-6" : "translate-x-1"
+                        featureFlags.enableMentorship ? "translate-x-6" : (
+                          "translate-x-1"
+                        )
                       }`}
                     />
                   </button>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                   <div>
-                    <span className="text-primary font-medium">Enable Project Discovery</span>
-                    <p className="text-xs text-gray-400">Show projects to all users</p>
+                    <span className="text-primary font-medium">
+                      Enable Project Discovery
+                    </span>
+                    <p className="text-xs text-gray-400">
+                      Show projects to all users
+                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFeatureFlags({ ...featureFlags, enableProjectDiscovery: !featureFlags.enableProjectDiscovery })}
+                    onClick={() =>
+                      setFeatureFlags({
+                        ...featureFlags,
+                        enableProjectDiscovery:
+                          !featureFlags.enableProjectDiscovery,
+                      })
+                    }
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      featureFlags.enableProjectDiscovery ? "bg-green-500" : "bg-gray-400"
+                      featureFlags.enableProjectDiscovery ? "bg-green-500" : (
+                        "bg-gray-400"
+                      )
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        featureFlags.enableProjectDiscovery ? "translate-x-6" : "translate-x-1"
+                        featureFlags.enableProjectDiscovery ? "translate-x-6"
+                        : "translate-x-1"
                       }`}
                     />
                   </button>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                   <div>
-                    <span className="text-primary font-medium">Maintenance Mode</span>
-                    <p className="text-xs text-gray-400">Restrict access to admins</p>
+                    <span className="text-primary font-medium">
+                      Maintenance Mode
+                    </span>
+                    <p className="text-xs text-gray-400">
+                      Restrict access to admins
+                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFeatureFlags({ ...featureFlags, maintenanceMode: !featureFlags.maintenanceMode })}
+                    onClick={() =>
+                      setFeatureFlags({
+                        ...featureFlags,
+                        maintenanceMode: !featureFlags.maintenanceMode,
+                      })
+                    }
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      featureFlags.maintenanceMode ? "bg-red-500" : "bg-gray-400"
+                      featureFlags.maintenanceMode ? "bg-red-500" : (
+                        "bg-gray-400"
+                      )
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        featureFlags.maintenanceMode ? "translate-x-6" : "translate-x-1"
+                        featureFlags.maintenanceMode ? "translate-x-6" : (
+                          "translate-x-1"
+                        )
                       }`}
                     />
                   </button>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                   <div>
-                    <span className="text-primary font-medium">Show Leaderboards</span>
-                    <p className="text-xs text-gray-400">Display mentor/intern rankings</p>
+                    <span className="text-primary font-medium">
+                      Show Leaderboards
+                    </span>
+                    <p className="text-xs text-gray-400">
+                      Display mentor/intern rankings
+                    </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setFeatureFlags({ ...featureFlags, showLeaderboards: !featureFlags.showLeaderboards })}
+                    onClick={() =>
+                      setFeatureFlags({
+                        ...featureFlags,
+                        showLeaderboards: !featureFlags.showLeaderboards,
+                      })
+                    }
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      featureFlags.showLeaderboards ? "bg-green-500" : "bg-gray-400"
+                      featureFlags.showLeaderboards ? "bg-green-500" : (
+                        "bg-gray-400"
+                      )
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        featureFlags.showLeaderboards ? "translate-x-6" : "translate-x-1"
+                        featureFlags.showLeaderboards ? "translate-x-6" : (
+                          "translate-x-1"
+                        )
                       }`}
                     />
                   </button>
@@ -1985,9 +2422,13 @@ export default function AdminDashboard() {
                 These actions are irreversible. Please proceed with caution.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button 
+                <button
                   onClick={() => {
-                    if (confirm("Are you sure you want to clear all error logs? This cannot be undone.")) {
+                    if (
+                      confirm(
+                        "Are you sure you want to clear all error logs? This cannot be undone.",
+                      )
+                    ) {
                       alert("Error logs cleared (demo)");
                     }
                   }}
@@ -1995,9 +2436,13 @@ export default function AdminDashboard() {
                 >
                   <Trash2 size={18} /> Clear All Error Logs
                 </button>
-                <button 
+                <button
                   onClick={() => {
-                    if (confirm("Are you sure you want to reset all demo data? This will delete all users, projects, and sessions.")) {
+                    if (
+                      confirm(
+                        "Are you sure you want to reset all demo data? This will delete all users, projects, and sessions.",
+                      )
+                    ) {
                       alert("Demo data reset (demo)");
                     }
                   }}
@@ -2015,14 +2460,21 @@ export default function AdminDashboard() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-surface rounded-xl shadow-xl max-w-md w-full p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-primary">Edit User</h3>
-                <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-primary">
+                <h3 className="text-lg font-semibold text-primary">
+                  Edit User
+                </h3>
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="text-gray-400 hover:text-primary"
+                >
                   <X size={20} />
                 </button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Name</label>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Name
+                  </label>
                   <input
                     type="text"
                     defaultValue={selectedUser.name}
@@ -2031,7 +2483,9 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Email</label>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Email
+                  </label>
                   <input
                     type="email"
                     defaultValue={selectedUser.email}
@@ -2040,7 +2494,9 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Role</label>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Role
+                  </label>
                   <select
                     defaultValue={selectedUser.role}
                     id="editUserRole"
@@ -2052,7 +2508,9 @@ export default function AdminDashboard() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Notes</label>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Notes
+                  </label>
                   <textarea
                     defaultValue={selectedUser.notes || ""}
                     id="editUserNotes"
@@ -2064,7 +2522,9 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                   <div>
                     <span className="text-primary font-medium">Ban User</span>
-                    <p className="text-xs text-gray-400">Set user as inactive</p>
+                    <p className="text-xs text-gray-400">
+                      Set user as inactive
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -2078,12 +2538,16 @@ export default function AdminDashboard() {
                       span.classList.toggle("translate-x-1");
                     }}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      selectedUser.is_active === false ? "bg-red-500" : "bg-gray-400"
+                      selectedUser.is_active === false ?
+                        "bg-red-500"
+                      : "bg-gray-400"
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        selectedUser.is_active === false ? "translate-x-6" : "translate-x-1"
+                        selectedUser.is_active === false ?
+                          "translate-x-6"
+                        : "translate-x-1"
                       }`}
                     />
                   </button>
@@ -2097,13 +2561,25 @@ export default function AdminDashboard() {
                   </button>
                   <button
                     onClick={() => {
-                      const name = document.getElementById("editUserName").value;
-                      const email = document.getElementById("editUserEmail").value;
-                      const role = document.getElementById("editUserRole").value;
-                      const notes = document.getElementById("editUserNotes").value;
-                      const isActiveToggle = document.getElementById("editUserBanned");
-                      const isBanned = isActiveToggle.classList.contains("bg-red-500");
-                      handleUpdateUser(selectedUser.id, { name, email, role, notes, is_active: !isBanned });
+                      const name =
+                        document.getElementById("editUserName").value;
+                      const email =
+                        document.getElementById("editUserEmail").value;
+                      const role =
+                        document.getElementById("editUserRole").value;
+                      const notes =
+                        document.getElementById("editUserNotes").value;
+                      const isActiveToggle =
+                        document.getElementById("editUserBanned");
+                      const isBanned =
+                        isActiveToggle.classList.contains("bg-red-500");
+                      handleUpdateUser(selectedUser.id, {
+                        name,
+                        email,
+                        role,
+                        notes,
+                        is_active: !isBanned,
+                      });
                     }}
                     className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80"
                   >
@@ -2120,14 +2596,21 @@ export default function AdminDashboard() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-surface rounded-xl shadow-xl max-w-md w-full p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-primary">Edit Project</h3>
-                <button onClick={() => setSelectedProject(null)} className="text-gray-400 hover:text-primary">
+                <h3 className="text-lg font-semibold text-primary">
+                  Edit Project
+                </h3>
+                <button
+                  onClick={() => setSelectedProject(null)}
+                  className="text-gray-400 hover:text-primary"
+                >
                   <X size={20} />
                 </button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Project Name</label>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Project Name
+                  </label>
                   <input
                     type="text"
                     defaultValue={selectedProject.name || selectedProject.title}
@@ -2136,7 +2619,9 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Description</label>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Description
+                  </label>
                   <textarea
                     defaultValue={selectedProject.description || ""}
                     id="editProjectDescription"
@@ -2146,7 +2631,9 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Status</label>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Status
+                  </label>
                   <select
                     defaultValue={selectedProject.status}
                     id="editProjectStatus"
@@ -2168,12 +2655,16 @@ export default function AdminDashboard() {
                     type="button"
                     id="editProjectFeatured"
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      selectedProject.is_featured ? "bg-yellow-500" : "bg-gray-400"
+                      selectedProject.is_featured ? "bg-yellow-500" : (
+                        "bg-gray-400"
+                      )
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        selectedProject.is_featured ? "translate-x-6" : "translate-x-1"
+                        selectedProject.is_featured ? "translate-x-6" : (
+                          "translate-x-1"
+                        )
                       }`}
                     />
                   </button>
@@ -2187,8 +2678,10 @@ export default function AdminDashboard() {
                   </button>
                   <button
                     onClick={() => {
-                      const name = document.getElementById("editProjectName").value;
-                      const status = document.getElementById("editProjectStatus").value;
+                      const name =
+                        document.getElementById("editProjectName").value;
+                      const status =
+                        document.getElementById("editProjectStatus").value;
                       handleUpdateProjectStatus(selectedProject.id, status);
                     }}
                     className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80"
@@ -2207,41 +2700,63 @@ export default function AdminDashboard() {
             <div className="bg-surface rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-primary">Error Details</h3>
-                  <p className="text-sm text-gray-400">ID: {selectedError.id}</p>
+                  <h3 className="text-lg font-semibold text-primary">
+                    Error Details
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    ID: {selectedError.id}
+                  </p>
                 </div>
-                <button onClick={() => setSelectedError(null)} className="text-gray-400 hover:text-primary">
+                <button
+                  onClick={() => setSelectedError(null)}
+                  className="text-gray-400 hover:text-primary"
+                >
                   <X size={20} />
                 </button>
               </div>
 
               <div className="space-y-4">
                 <div className="flex gap-2">
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    selectedError.error_type === "javascript" ? "bg-yellow-500/20 text-yellow-400" :
-                    selectedError.error_type === "api" ? "bg-red-500/20 text-red-400" :
-                    selectedError.error_type === "server" ? "bg-purple-500/20 text-purple-400" :
-                    "bg-blue-500/20 text-blue-400"
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${
+                      selectedError.error_type === "javascript" ?
+                        "bg-yellow-500/20 text-yellow-400"
+                      : selectedError.error_type === "api" ?
+                        "bg-red-500/20 text-red-400"
+                      : selectedError.error_type === "server" ?
+                        "bg-purple-500/20 text-purple-400"
+                      : "bg-blue-500/20 text-blue-400"
+                    }`}
+                  >
                     {selectedError.error_type}
                   </span>
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    selectedError.status === "open" ? "bg-red-500/20 text-red-400" :
-                    selectedError.status === "resolved" ? "bg-green-500/20 text-green-400" :
-                    "bg-gray-500/20 text-gray-400"
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${
+                      selectedError.status === "open" ?
+                        "bg-red-500/20 text-red-400"
+                      : selectedError.status === "resolved" ?
+                        "bg-green-500/20 text-green-400"
+                      : "bg-gray-500/20 text-gray-400"
+                    }`}
+                  >
                     {selectedError.status}
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">Message</label>
-                  <p className="text-primary bg-surface-highlight p-3 rounded-lg">{selectedError.message}</p>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    Message
+                  </label>
+                  <p className="text-primary bg-surface-highlight p-3 rounded-lg">
+                    {selectedError.message}
+                  </p>
                 </div>
 
                 {selectedError.stack && (
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Stack Trace</label>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Stack Trace
+                    </label>
                     <pre className="text-xs text-primary bg-surface-highlight p-3 rounded-lg overflow-x-auto whitespace-pre-wrap">
                       {selectedError.stack}
                     </pre>
@@ -2250,17 +2765,27 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Page URL</label>
-                    <p className="text-primary text-sm">{selectedError.page_url || "N/A"}</p>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Page URL
+                    </label>
+                    <p className="text-primary text-sm">
+                      {selectedError.page_url || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">User ID</label>
-                    <p className="text-primary text-sm">{selectedError.user_id || "Anonymous"}</p>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      User ID
+                    </label>
+                    <p className="text-primary text-sm">
+                      {selectedError.user_id || "Anonymous"}
+                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">User Agent</label>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    User Agent
+                  </label>
                   <p className="text-primary text-xs bg-surface-highlight p-2 rounded-lg">
                     {selectedError.user_agent || "N/A"}
                   </p>
@@ -2268,15 +2793,23 @@ export default function AdminDashboard() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Created</label>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Created
+                    </label>
                     <p className="text-primary text-sm">
-                      {selectedError.created_at ? new Date(selectedError.created_at).toLocaleString() : "N/A"}
+                      {selectedError.created_at ?
+                        new Date(selectedError.created_at).toLocaleString()
+                      : "N/A"}
                     </p>
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-400 mb-1">Resolved</label>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Resolved
+                    </label>
                     <p className="text-primary text-sm">
-                      {selectedError.resolved_at ? new Date(selectedError.resolved_at).toLocaleString() : "Not resolved"}
+                      {selectedError.resolved_at ?
+                        new Date(selectedError.resolved_at).toLocaleString()
+                      : "Not resolved"}
                     </p>
                   </div>
                 </div>

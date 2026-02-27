@@ -25,7 +25,12 @@ export function useProjects(userId, options = {}) {
 
       // Fetch projects
       const data = await fetchProjects(userId);
-      setAllProjects(data);
+      if (Array.isArray(data)) {
+        setAllProjects(data);
+      } else {
+        setAllProjects([]);
+        setError(data.error || "Failed to load projects");
+      }
     } catch (err) {
       const { message } = getErrorMessage(err);
       setError(message);

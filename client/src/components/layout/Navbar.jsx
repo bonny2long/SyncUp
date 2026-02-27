@@ -18,6 +18,7 @@ import { useTheme } from "../../context/ThemeContext";
 import NotificationBell from "../NotificationBell";
 import HelpModal from "../shared/HelpModal";
 import { generateResumePDF } from "../../utils/resumeExport";
+import { getAvatarUrl } from "../../utils/api";
 
 export default function Navbar({ activeTab, onToggleSidebar }) {
   const { user: ctxUser, logout } = useUser();
@@ -136,10 +137,22 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
                 <button
                   data-onboarding="profile"
                   onClick={handleProfileClick}
-                  className="w-9 h-9 bg-secondary/20 flex items-center justify-center rounded-full text-secondary font-semibold hover:bg-secondary/30 transition cursor-pointer"
+                  className="w-9 h-9 bg-secondary/20 flex items-center justify-center rounded-full text-secondary font-semibold hover:bg-secondary/30 transition cursor-pointer overflow-hidden"
                   title="View your profile"
                 >
-                  {user.name.charAt(0)}
+                  {(() => {
+                    let imageUrl = user.profile_pic;
+                    if (imageUrl && imageUrl.startsWith("avatar:")) {
+                      imageUrl = getAvatarUrl(imageUrl.split(":")[1]);
+                    }
+                    return imageUrl ?
+                        <img
+                          src={imageUrl}
+                          alt={`${user.name}'s profile`}
+                          className="w-full h-full object-cover"
+                        />
+                      : user.name.charAt(0);
+                  })()}
                 </button>
                 <div>
                   <div className="flex items-center gap-2">
@@ -150,7 +163,9 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
                       </span>
                     </p>
                     <span className="text-gray-400 text-sm">·</span>
-                    <h1 className="text-sm font-semibold text-primary">{pageTitle}</h1>
+                    <h1 className="text-sm font-semibold text-primary">
+                      {pageTitle}
+                    </h1>
                   </div>
                   <p className="text-[11px] text-gray-500 capitalize">
                     {user.role}

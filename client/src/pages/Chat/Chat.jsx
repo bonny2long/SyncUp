@@ -11,6 +11,7 @@ import {
   updatePresence,
   fetchDMUsers,
   uploadFile,
+  getAvatarUrl,
 } from "../../utils/api";
 import {
   Hash,
@@ -233,6 +234,33 @@ export default function Chat() {
       .slice(0, 2);
   };
 
+  const UserAvatar = ({ user, size = "md" }) => {
+    const sizeClasses = {
+      sm: "w-6 h-6 text-xs",
+      md: "w-8 h-8 text-sm",
+      lg: "w-10 h-10 text-base",
+    };
+
+    let imageUrl = user.profile_pic;
+    if (imageUrl && imageUrl.startsWith("avatar:")) {
+      imageUrl = getAvatarUrl(imageUrl.split(":")[1]);
+    }
+
+    return (
+      <div
+        className={`${sizeClasses[size]} bg-surface-highlight rounded-full flex items-center justify-center overflow-hidden`}
+      >
+        {imageUrl ?
+          <img
+            src={imageUrl}
+            alt={user.name}
+            className="w-full h-full object-cover"
+          />
+        : getInitials(user.name)}
+      </div>
+    );
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "online":
@@ -423,9 +451,7 @@ export default function Chat() {
                   }`}
                 >
                   <div className="relative">
-                    <div className="w-6 h-6 bg-surface-highlight lg:bg-gray-200 rounded-full flex items-center justify-center text-xs dark:bg-gray-700">
-                      {getInitials(dmUser.name)}
-                    </div>
+                    <UserAvatar user={dmUser} size="sm" />
                     <div
                       className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white ${
                         dmUser.status === "online" ?
@@ -453,9 +479,7 @@ export default function Chat() {
             : activeDM ?
               <>
                 <div className="relative">
-                  <div className="w-6 h-6 bg-surface-highlight lg:bg-gray-200 rounded-full flex items-center justify-center text-xs dark:bg-gray-700">
-                    {getInitials(activeDM.name)}
-                  </div>
+                  <UserAvatar user={activeDM} size="sm" />
                   <div
                     className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-surface ${
                       activeDM.status === "online" ?
@@ -494,9 +518,13 @@ export default function Chat() {
                     >
                       <div className="w-8 h-8 flex-shrink-0">
                         {!isMe && (
-                          <div className="w-full h-full bg-primary/20 rounded-full flex items-center justify-center text-primary text-xs font-semibold">
-                            {getInitials(msg.sender_name)}
-                          </div>
+                          <UserAvatar
+                            user={{
+                              name: msg.sender_name,
+                              profile_pic: msg.sender_pic,
+                            }}
+                            size="md"
+                          />
                         )}
                       </div>
 
@@ -661,15 +689,7 @@ export default function Chat() {
                           className="w-full flex items-center gap-2 py-1.5 px-2 hover:bg-surface-highlight rounded transition-colors text-left"
                         >
                           <div className="relative">
-                            <div
-                              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
-                                u.status === "online" ?
-                                  "bg-green-100 text-green-700"
-                                : "bg-surface-highlight text-text-secondary lg:bg-gray-100 lg:text-gray-500 dark:bg-gray-700"
-                              }`}
-                            >
-                              {getInitials(u.name)}
-                            </div>
+                            <UserAvatar user={u} size="sm" />
                             <div
                               className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
                                 u.status === "online" ?
@@ -726,15 +746,7 @@ export default function Chat() {
                         className="w-full flex items-center gap-2 py-1.5 px-2 hover:bg-surface-highlight rounded transition-colors text-left opacity-80"
                       >
                         <div className="relative">
-                          <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
-                              u.status === "online" ?
-                                "bg-green-100 text-green-700"
-                              : "bg-surface-highlight text-text-secondary lg:bg-gray-100 lg:text-gray-500 dark:bg-gray-700"
-                            }`}
-                          >
-                            {getInitials(u.name)}
-                          </div>
+                          <UserAvatar user={u} size="sm" />
                           <div
                             className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
                               u.status === "online" ?

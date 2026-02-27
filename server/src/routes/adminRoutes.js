@@ -74,21 +74,21 @@ router.get("/platform-stats", async (req, res) => {
 // Returns user and project creation counts for the last 30 days
 router.get("/growth-stats", async (req, res) => {
   try {
-    // Get users created in last 30 days
+    // Get users joined in last 30 days (using join_date)
     const [users] = await pool.query(
-      `SELECT DATE(created_at) as date, COUNT(*) as count 
+      `SELECT DATE(join_date) as date, COUNT(*) as count 
        FROM users 
-       WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-       GROUP BY DATE(created_at)
+       WHERE join_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+       GROUP BY DATE(join_date)
        ORDER BY date ASC`
     );
 
-    // Get projects created in last 30 days
+    // Get projects created in last 30 days (using start_date as proxy for created)
     const [projects] = await pool.query(
-      `SELECT DATE(created_at) as date, COUNT(*) as count 
+      `SELECT DATE(start_date) as date, COUNT(*) as count 
        FROM projects 
-       WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-       GROUP BY DATE(created_at)
+       WHERE start_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+       GROUP BY DATE(start_date)
        ORDER BY date ASC`
     );
 
@@ -100,8 +100,8 @@ router.get("/growth-stats", async (req, res) => {
     const dailyData = [];
     for (let d = new Date(thirtyDaysAgo); d <= today; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split("T")[0];
-      const userCount = users.find(u => u.date && u.date.toISOString().split("T")[0] === dateStr)?.count || 0;
-      const projectCount = projects.find(p => p.date && p.date.toISOString().split("T")[0] === dateStr)?.count || 0;
+      const userCount = users.find(u => u.date === dateStr)?.count || 0;
+      const projectCount = projects.find(p => p.date === dateStr)?.count || 0;
       
       dailyData.push({
         date: dateStr,

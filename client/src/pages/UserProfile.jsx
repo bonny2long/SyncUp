@@ -37,7 +37,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 export default function UserProfile() {
   const { userId } = useParams();
-  const { user: currentUser } = useUser();
+  const { user: currentUser, updateUser } = useUser();
   const { addToast } = useToast();
 
   const [profile, setProfile] = useState(null);
@@ -295,6 +295,12 @@ export default function UserProfile() {
 
       const updatedUser = await res.json();
       setProfile((prev) => ({ ...prev, user: updatedUser }));
+
+      // Update global context so navbar updates immediately
+      if (currentUser.id === user.id) {
+        updateUser(updatedUser);
+      }
+
       setIsEditingProfile(false);
       addToast({ type: "success", message: "Profile updated successfully!" });
     } catch (err) {
@@ -324,9 +330,16 @@ export default function UserProfile() {
       await uploadAvatar(currentUser.id, file);
       setAvatarKey((k) => k + 1);
       await loadProfile();
+
+      // Update global user context to trigger navbar image update
+      updateUser({ profile_pic: `avatar:${currentUser.id}` });
+
       addToast({ type: "success", message: "Avatar updated!" });
     } catch (err) {
-      addToast({ type: "error", message: err.message || "Failed to upload avatar" });
+      addToast({
+        type: "error",
+        message: err.message || "Failed to upload avatar",
+      });
     } finally {
       setUploadingAvatar(false);
     }
@@ -359,20 +372,19 @@ export default function UserProfile() {
               <div className="flex items-start gap-4">
                 {/* Avatar */}
                 <div className="relative shrink-0">
-                  {user.profile_pic ? (
+                  {user.profile_pic ?
                     <img
                       key={avatarKey}
                       src={getAvatarUrl(user.id)}
                       alt={user.name}
                       className="w-16 h-16 rounded-full object-cover"
                     />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center">
+                  : <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center">
                       <span className="text-secondary text-2xl font-bold">
                         {user.name.charAt(0)}
                       </span>
                     </div>
-                  )}
+                  }
                   {currentUser && currentUser.id === user.id && (
                     <button
                       onClick={() => avatarInputRef.current?.click()}
@@ -380,11 +392,9 @@ export default function UserProfile() {
                       className="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition shadow-md"
                       title="Change avatar"
                     >
-                      {uploadingAvatar ? (
+                      {uploadingAvatar ?
                         <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Camera className="w-3 h-3 text-white" />
-                      )}
+                      : <Camera className="w-3 h-3 text-white" />}
                     </button>
                   )}
                   <input
@@ -435,7 +445,8 @@ export default function UserProfile() {
                         })}
                         {activity_streak > 0 && (
                           <span className="ml-2 text-gray-400">
-                            🔥 {activity_streak} day{activity_streak !== 1 ? "s" : ""} streak
+                            🔥 {activity_streak} day
+                            {activity_streak !== 1 ? "s" : ""} streak
                           </span>
                         )}
                       </p>
@@ -482,25 +493,26 @@ export default function UserProfile() {
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
+
                   : currentUser && currentUser.id !== user.id ?
-                      <>
-                        {user.role === "mentor" && (
-                          <button
-                            onClick={handleMentorshipRequest}
-                            className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition font-medium"
-                          >
-                            Request Session
-                          </button>
-                        )}
+                    <>
+                      {user.role === "mentor" && (
                         <button
-                          onClick={handleContact}
-                          className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-neutral-dark rounded-lg hover:bg-border transition font-medium border border-border"
+                          onClick={handleMentorshipRequest}
+                          className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition font-medium"
                         >
-                          <MessageSquare className="w-4 h-4" />
-                          Message
+                          Request Session
                         </button>
-                      </>
-                    : null}
+                      )}
+                      <button
+                        onClick={handleContact}
+                        className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-neutral-dark rounded-lg hover:bg-border transition font-medium border border-border"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        Message
+                      </button>
+                    </>
+                  : null}
                 </div>
               </div>
             </div>
@@ -628,8 +640,12 @@ export default function UserProfile() {
                               onClick={() => setShowAllBadges(!showAllBadges)}
                               className="flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 hover:border-primary transition-all duration-200 group"
                             >
-                              {showAllBadges ? "Show Less" : `View All ${userBadges.length} Badges`}
-                              <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllBadges ? "rotate-180" : "group-hover:translate-y-0.5"}`} />
+                              {showAllBadges ?
+                                "Show Less"
+                              : `View All ${userBadges.length} Badges`}
+                              <ChevronDown
+                                className={`w-4 h-4 transition-transform duration-300 ${showAllBadges ? "rotate-180" : "group-hover:translate-y-0.5"}`}
+                              />
                             </button>
                           )}
                         </div>
@@ -727,17 +743,25 @@ export default function UserProfile() {
                           </div>
 
                           {/* Show More / Show Less button */}
-                          {(remainingCount > 0 || showAllSkills) && skills.length > 6 && (
-                            <div className="mt-5 flex justify-center">
-                              <button
-                                onClick={() => setShowAllSkills(!showAllSkills)}
-                                className="flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 hover:border-primary transition-all duration-200 group"
-                              >
-                                {showAllSkills ? "Show Less" : `Show ${remainingCount} More Skill${remainingCount !== 1 ? "s" : ""}`}
-                                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${showAllSkills ? "rotate-180" : "group-hover:translate-y-0.5"}`} />
-                              </button>
-                            </div>
-                          )}
+                          {(remainingCount > 0 || showAllSkills) &&
+                            skills.length > 6 && (
+                              <div className="mt-5 flex justify-center">
+                                <button
+                                  onClick={() =>
+                                    setShowAllSkills(!showAllSkills)
+                                  }
+                                  className="flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 hover:border-primary transition-all duration-200 group"
+                                >
+                                  {showAllSkills ?
+                                    "Show Less"
+                                  : `Show ${remainingCount} More Skill${remainingCount !== 1 ? "s" : ""}`
+                                  }
+                                  <ChevronDown
+                                    className={`w-4 h-4 transition-transform duration-300 ${showAllSkills ? "rotate-180" : "group-hover:translate-y-0.5"}`}
+                                  />
+                                </button>
+                              </div>
+                            )}
                         </>
                       );
                     })()}
