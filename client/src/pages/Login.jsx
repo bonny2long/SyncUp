@@ -18,17 +18,15 @@ export default function Login() {
   }, []);
 
   const handleContinue = () => {
-    if (selected === "admin") {
-      login({ id: 0, name: "Admin User", role: "admin" });
-      navigate("/admin");
-      return;
-    }
-
     const user = users.find((u) => u.id === Number(selected));
     if (!user) return;
 
     login(user);
-    navigate("/");
+    if (user.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/");
+    }
   };
 
   if (loading) {
@@ -41,9 +39,7 @@ export default function Login() {
 
   return (
     <div className="max-w-md mx-auto mt-20 bg-white border rounded-lg p-6">
-      <h1 className="text-xl font-semibold text-gray-900">
-        Select a user
-      </h1>
+      <h1 className="text-xl font-semibold text-gray-900">Select a user</h1>
       <p className="text-sm text-gray-600 mt-1">
         Choose who you want to act as.
       </p>
@@ -54,12 +50,18 @@ export default function Login() {
         onChange={(e) => setSelected(e.target.value)}
       >
         <option value="">Select a user...</option>
-        <option value="admin">Admin User (admin)</option>
-        {users.filter(u => u.role !== 'admin').map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.name} ({u.role})
-          </option>
-        ))}
+        {[...users]
+          .sort((a, b) => {
+            // Sort by role (admin first) then name
+            if (a.role === "admin" && b.role !== "admin") return -1;
+            if (a.role !== "admin" && b.role === "admin") return 1;
+            return (a.name || "").localeCompare(b.name || "");
+          })
+          .map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name} ({u.role})
+            </option>
+          ))}
       </select>
 
       <button

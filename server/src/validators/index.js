@@ -40,7 +40,9 @@ export const projectValidators = {
       .notEmpty()
       .withMessage("Status is required")
       .isIn(["planned", "active", "completed", "archived"])
-      .withMessage("Status must be one of: planned, active, completed, archived"),
+      .withMessage(
+        "Status must be one of: planned, active, completed, archived",
+      ),
     validate,
   ],
 
@@ -151,9 +153,7 @@ export const mentorshipValidators = {
       .withMessage("session_date is required")
       .isISO8601()
       .withMessage("session_date must be a valid ISO 8601 date"),
-    body("session_focus")
-      .notEmpty()
-      .withMessage("session_focus is required"),
+    body("session_focus").notEmpty().withMessage("session_focus is required"),
     body("topic")
       .optional()
       .isLength({ max: 500 })
@@ -228,10 +228,16 @@ export const userValidators = {
       .trim()
       .isLength({ max: 500 })
       .withMessage("Bio must be less than 500 characters"),
-    body("email")
+    body("email").optional().isEmail().withMessage("Invalid email format"),
+    body("role")
       .optional()
-      .isEmail()
-      .withMessage("Invalid email format"),
+      .isIn(["intern", "mentor", "admin"])
+      .withMessage("Invalid role"),
+    body("notes")
+      .optional()
+      .trim()
+      .isLength({ max: 1000 })
+      .withMessage("Notes must be less than 1000 characters"),
     validate,
   ],
 };

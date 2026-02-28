@@ -37,6 +37,7 @@ import {
 } from "../utils/api";
 import HelpModal from "../components/shared/HelpModal";
 import ConfirmModal from "../components/shared/ConfirmModal";
+import InvitationPanel from "../components/admin/InvitationPanel";
 const Chat = React.lazy(() => import("./Chat/Chat"));
 import {
   Users,
@@ -427,6 +428,7 @@ export default function AdminDashboard() {
     { id: "errors", label: "Errors" },
     { id: "system", label: "System" },
     { id: "settings", label: "Settings" },
+    { id: "invitations", label: "Invitations" },
   ];
 
   // Load errors when Errors tab is active
@@ -2829,6 +2831,12 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === "invitations" && (
+          <div className="space-y-6">
+            <InvitationPanel />
           </div>
         )}
 

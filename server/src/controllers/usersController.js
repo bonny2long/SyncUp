@@ -234,10 +234,12 @@ export const getUserActivityTimeline = async (req, res) => {
 // Update user profile (name, email, bio), notification settings, and privacy settings
 export const updateUserProfile = async (req, res) => {
   const { userId } = req.params;
-  const { 
-    name, 
-    email, 
+  const {
+    name,
+    email,
     bio,
+    notes,
+    role,
     profile_pic,
     email_notifications,
     notify_join_requests,
@@ -250,26 +252,38 @@ export const updateUserProfile = async (req, res) => {
     show_projects,
     show_skills,
     accept_mentorship,
-    auto_accept_teammates
+    auto_accept_teammates,
   } = req.body;
 
   try {
     await pool.query(
       `UPDATE users SET 
-        name = ?, email = ?, bio = ?, profile_pic = ?,
+        name = ?, email = ?, bio = ?, role = ?, profile_pic = ?,
         email_notifications = ?, notify_join_requests = ?, notify_mentions = ?,
         notify_session_reminders = ?, notify_project_updates = ?, notify_weekly_summary = ?,
         profile_visibility = ?, show_email = ?, show_projects = ?, show_skills = ?,
         accept_mentorship = ?, auto_accept_teammates = ?
       WHERE id = ?`,
       [
-        name, email, bio || null, profile_pic || null,
-        email_notifications ?? true, notify_join_requests ?? true, notify_mentions ?? true,
-        notify_session_reminders ?? true, notify_project_updates ?? true, notify_weekly_summary ?? false,
-        profile_visibility ?? 'team', show_email ?? false, show_projects ?? true, show_skills ?? true,
-        accept_mentorship ?? true, auto_accept_teammates ?? false,
-        userId
-      ]
+        name,
+        email,
+        notes || bio || null,
+        role,
+        profile_pic || null,
+        email_notifications ?? true,
+        notify_join_requests ?? true,
+        notify_mentions ?? true,
+        notify_session_reminders ?? true,
+        notify_project_updates ?? true,
+        notify_weekly_summary ?? false,
+        profile_visibility ?? "team",
+        show_email ?? false,
+        show_projects ?? true,
+        show_skills ?? true,
+        accept_mentorship ?? true,
+        auto_accept_teammates ?? false,
+        userId,
+      ],
     );
 
     const [users] = await pool.query(
@@ -279,7 +293,7 @@ export const updateUserProfile = async (req, res) => {
         profile_visibility, show_email, show_projects, show_skills,
         accept_mentorship, auto_accept_teammates
       FROM users WHERE id = ?`,
-      [userId]
+      [userId],
     );
 
     if (users.length === 0) {
@@ -300,18 +314,22 @@ export const changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
-    return res.status(400).json({ error: "Current and new password are required" });
+    return res
+      .status(400)
+      .json({ error: "Current and new password are required" });
   }
 
   if (newPassword.length < 8) {
-    return res.status(400).json({ error: "Password must be at least 8 characters" });
+    return res
+      .status(400)
+      .json({ error: "Password must be at least 8 characters" });
   }
 
   try {
     // Get current password hash
     const [users] = await pool.query(
       "SELECT password_hash FROM users WHERE id = ?",
-      [userId]
+      [userId],
     );
 
     if (users.length === 0) {
@@ -320,17 +338,17 @@ export const changePassword = async (req, res) => {
 
     // For demo purposes, compare directly (in production, use bcrypt)
     const storedHash = users[0].password_hash;
-    
+
     // If no password set, allow setting one
     if (storedHash && storedHash !== currentPassword) {
       return res.status(400).json({ error: "Current password is incorrect" });
     }
 
     // Update password
-    await pool.query(
-      "UPDATE users SET password_hash = ? WHERE id = ?",
-      [newPassword, userId]
-    );
+    await pool.query("UPDATE users SET password_hash = ? WHERE id = ?", [
+      newPassword,
+      userId,
+    ]);
 
     res.json({ message: "Password changed successfully" });
   } catch (err) {
@@ -346,13 +364,19 @@ export const deleteUser = async (req, res) => {
 
   try {
     // Delete related data first (cascading should handle this, but being explicit)
-    await pool.query("DELETE FROM user_skill_signals WHERE user_id = ?", [userId]);
+    await pool.query("DELETE FROM user_skill_signals WHERE user_id = ?", [
+      userId,
+    ]);
     await pool.query("DELETE FROM project_members WHERE user_id = ?", [userId]);
     await pool.query("DELETE FROM notifications WHERE user_id = ?", [userId]);
-    await pool.query("DELETE FROM skill_validations WHERE user_id = ?", [userId]);
-    
+    await pool.query("DELETE FROM skill_validations WHERE user_id = ?", [
+      userId,
+    ]);
+
     // Delete user
-    const [result] = await pool.query("DELETE FROM users WHERE id = ?", [userId]);
+    const [result] = await pool.query("DELETE FROM users WHERE id = ?", [
+      userId,
+    ]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "User not found" });

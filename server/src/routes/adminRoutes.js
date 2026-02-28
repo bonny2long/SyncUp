@@ -1,5 +1,12 @@
 import express from "express";
 import pool from "../config/db.js";
+import {
+  createInvitation,
+  validateInvitation,
+  registerWithInvitation,
+  listInvitations,
+  revokeInvitation,
+} from "../controllers/invitationController.js";
 
 const router = express.Router();
 
@@ -206,5 +213,20 @@ router.put("/settings/maintenance", async (req, res) => {
     res.status(500).json({ error: "Failed to update maintenance settings" });
   }
 });
+
+// POST /api/admin/invitations - Create invitation (admin only)
+router.post("/invitations", createInvitation);
+
+// GET /api/admin/invitations - List invitations (admin only)
+router.get("/invitations", listInvitations);
+
+// DELETE /api/admin/invitations/:id - Revoke invitation (admin only)
+router.delete("/invitations/:id", revokeInvitation);
+
+// GET /api/admin/invitations/validate - Validate invitation token (public)
+router.get("/invitations/validate", validateInvitation);
+
+// POST /api/admin/register - Register with invitation (public)
+router.post("/register", registerWithInvitation);
 
 export default router;

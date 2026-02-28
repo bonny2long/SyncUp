@@ -22,10 +22,12 @@ export async function reportError(errorType, message, details = {}) {
     message: message,
     stack: details.stack || null,
     user_id: details.userId || null,
-    page_url: details.pageUrl || (typeof window !== "undefined" ? window.location.pathname : ""),
+    page_url:
+      details.pageUrl ||
+      (typeof window !== "undefined" ? window.location.pathname : ""),
     user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
   };
-  
+
   try {
     await fetch(`${API_BASE}/errors`, {
       method: "POST",
@@ -118,19 +120,25 @@ export async function updateProjectStatus(id, status, userId = null) {
 // ANALYTICS
 // ----------------------------------------------------
 export async function fetchActiveProjectsAnalytics() {
-  const res = await fetch(`${API_BASE}/analytics/projects/active`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/analytics/projects/active`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch active projects analytics");
   return res.json();
 }
 
 export async function fetchWeeklyUpdatesAnalytics() {
-  const res = await fetch(`${API_BASE}/analytics/updates/weekly`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/analytics/updates/weekly`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch weekly updates analytics");
   return res.json();
 }
 
 export async function fetchMentorEngagementAnalytics() {
-  const res = await fetch(`${API_BASE}/analytics/mentors/engagement`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/analytics/mentors/engagement`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch mentor engagement analytics");
   return res.json();
 }
@@ -140,19 +148,28 @@ export async function fetchMentorEngagementAnalytics() {
 // ----------------------------------------------------
 
 export async function fetchMentorshipGrowthCorrelation() {
-  const res = await fetch(`${API_BASE}/analytics/correlation/mentorship-growth`, { headers: getUserHeaders() });
+  const res = await fetch(
+    `${API_BASE}/analytics/correlation/mentorship-growth`,
+    { headers: getUserHeaders() },
+  );
   if (!res.ok) throw new Error("Failed to fetch mentorship growth correlation");
   return res.json();
 }
 
 export async function fetchEffectivePairings() {
-  const res = await fetch(`${API_BASE}/analytics/correlation/effective-pairings`, { headers: getUserHeaders() });
+  const res = await fetch(
+    `${API_BASE}/analytics/correlation/effective-pairings`,
+    { headers: getUserHeaders() },
+  );
   if (!res.ok) throw new Error("Failed to fetch effective pairings");
   return res.json();
 }
 
 export async function fetchEngagementLoops() {
-  const res = await fetch(`${API_BASE}/analytics/correlation/engagement-loops`, { headers: getUserHeaders() });
+  const res = await fetch(
+    `${API_BASE}/analytics/correlation/engagement-loops`,
+    { headers: getUserHeaders() },
+  );
   if (!res.ok) throw new Error("Failed to fetch engagement loops");
   return res.json();
 }
@@ -248,25 +265,33 @@ export async function createSession(payload) {
 // MENTORSHIP - GET MENTORS
 // ----------------------------------------------------
 export async function fetchMentors() {
-  const res = await fetch(`${API_BASE}/mentorship/mentors`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/mentorship/mentors`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch mentors");
   return res.json();
 }
 
 export async function fetchMentorDetails(id) {
-  const res = await fetch(`${API_BASE}/mentorship/mentor/${id}/details`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/mentorship/mentor/${id}/details`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch mentor details");
   return res.json();
 }
 
 export async function fetchAvailableMentors() {
-  const res = await fetch(`${API_BASE}/mentorship/mentors/available`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/mentorship/mentors/available`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch available mentors");
   return res.json();
 }
 
 export async function fetchProjectMentors() {
-  const res = await fetch(`${API_BASE}/mentorship/mentors/project`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/mentorship/mentors/project`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch project mentors");
   return res.json();
 }
@@ -380,7 +405,9 @@ export async function createProject(data) {
 // SKILLS - TRACKER & DISTRIBUTION
 // ----------------------------------------------------
 export async function fetchSkills() {
-  const res = await fetch(`${API_BASE}/skills?include_usage=true`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/skills?include_usage=true`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) {
     throw new Error("Failed to fetch skills");
   }
@@ -388,31 +415,41 @@ export async function fetchSkills() {
 }
 
 export async function getRecentSkills(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/recent`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/recent`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to load recent skills");
   return res.json();
 }
 
 export async function getSkillDistribution(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/distribution`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/distribution`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to load skill distribution");
   return res.json();
 }
 
 export async function getSkillMomentum(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/momentum`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/momentum`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to load skill momentum");
   return res.json();
 }
 
 export async function getSkillActivity(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/activity`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/activity`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to load skill activity");
   return res.json();
 }
 
 export async function getSkillSummary(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/summary`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/summary`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch skill summary");
   return res.json();
 }
@@ -421,7 +458,9 @@ export async function getSkillSummary(userId) {
 // PROJECT SKILLS
 // ----------------------------------------------------
 export const fetchProjectSkills = async () => {
-  const response = await fetch(`${API_BASE}/projects/skills`, { headers: getUserHeaders() });
+  const response = await fetch(`${API_BASE}/projects/skills`, {
+    headers: getUserHeaders(),
+  });
   if (!response.ok) throw new Error("Failed to fetch project skills");
   return response.json();
 };
@@ -457,7 +496,9 @@ export async function createJoinRequest(projectId, userId) {
 }
 
 export async function getProjectRequests(projectId) {
-  const res = await fetch(`${API_BASE}/projects/${projectId}/requests`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/projects/${projectId}/requests`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch project requests");
   return res.json();
 }
@@ -505,64 +546,80 @@ export async function rejectJoinRequest(projectId, requestId) {
 // ============================================================
 
 // Add validation (upvote or mentor endorsement)
-export async function addSkillValidation(signalId, validatorId, validationType = 'upvote') {
+export async function addSkillValidation(
+  signalId,
+  validatorId,
+  validationType = "upvote",
+) {
   const res = await fetch(`${API_BASE}/skills/${signalId}/validate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getUserHeaders() },
-    body: JSON.stringify({ 
-      validator_id: validatorId, 
-      validation_type: validationType 
-    })
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({
+      validator_id: validatorId,
+      validation_type: validationType,
+    }),
   });
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to add validation');
+    throw new Error(error.error || "Failed to add validation");
   }
   return res.json();
 }
 
 // Remove validation
-export async function removeSkillValidation(signalId, validatorId, validationType = 'upvote') {
+export async function removeSkillValidation(
+  signalId,
+  validatorId,
+  validationType = "upvote",
+) {
   const res = await fetch(`${API_BASE}/skills/${signalId}/validate`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', ...getUserHeaders() },
-    body: JSON.stringify({ 
-      validator_id: validatorId, 
-      validation_type: validationType 
-    })
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({
+      validator_id: validatorId,
+      validation_type: validationType,
+    }),
   });
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to remove validation');
+    throw new Error(error.error || "Failed to remove validation");
   }
   return res.json();
 }
 
 // Get validation counts for a signal
 export async function getSkillValidations(signalId) {
-  const res = await fetch(`${API_BASE}/skills/${signalId}/validations`, { headers: getUserHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch validations');
+  const res = await fetch(`${API_BASE}/skills/${signalId}/validations`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch validations");
   return res.json();
 }
 
 // Get user's received validations (show on their profile)
 export async function getUserReceivedValidations(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/validations`, { headers: getUserHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch user validations');
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/validations`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch user validations");
   return res.json();
 }
 
 // Get which signals a user has already validated
 export async function getUserValidatedSignals(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/has-validated`, { headers: getUserHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch validated signals');
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/has-validated`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch validated signals");
   return res.json();
 }
 
 // Get user's skill signals with validation counts (for validation UI)
 export async function getUserSkillSignals(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/signals`, { headers: getUserHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch skill signals');
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/signals`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch skill signals");
   return res.json();
 }
 
@@ -572,14 +629,19 @@ export async function getUserSkillSignals(userId) {
 
 // Get user notifications
 export async function fetchNotifications(userId, limit = 50) {
-  const res = await fetch(`${API_BASE}/notifications/${userId}?limit=${limit}`, { headers: getUserHeaders() });
+  const res = await fetch(
+    `${API_BASE}/notifications/${userId}?limit=${limit}`,
+    { headers: getUserHeaders() },
+  );
   if (!res.ok) throw new Error("Failed to fetch notifications");
   return res.json();
 }
 
 // Get unread count
 export async function fetchUnreadCount(userId) {
-  const res = await fetch(`${API_BASE}/notifications/${userId}/unread-count`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/notifications/${userId}/unread-count`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch unread count");
   return res.json();
 }
@@ -619,7 +681,9 @@ export async function deleteNotification(notificationId) {
 // ============================================================
 
 export async function fetchChannels() {
-  const res = await fetch(`${API_BASE}/chat/channels`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/chat/channels`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch channels");
   return res.json();
 }
@@ -713,7 +777,9 @@ export async function updatePresence(userId, status, channelId = null) {
 }
 
 export async function fetchDMUsers(userId) {
-  const res = await fetch(`${API_BASE}/chat/dm-users?user_id=${userId}`, { headers: getUserHeaders() });
+  const res = await fetch(`${API_BASE}/chat/dm-users?user_id=${userId}`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch DM users");
   return res.json();
 }
@@ -795,9 +861,13 @@ export async function deleteUser(userId) {
 export async function updateUser(userId, data) {
   const res = await fetch(`${API_BASE}/users/${userId}/profile`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...getUserHeaders(),
+    },
     body: JSON.stringify(data),
   });
+  await handleApiError(res, `/users/${userId}/profile`);
   if (!res.ok) throw new Error("Failed to update user");
   return res.json();
 }
@@ -820,13 +890,18 @@ export async function fetchHealth() {
 // ERROR REPORTING
 // ============================================================
 
-export async function fetchErrors(status = "all", type = "all", page = 1, limit = 20) {
+export async function fetchErrors(
+  status = "all",
+  type = "all",
+  page = 1,
+  limit = 20,
+) {
   const params = new URLSearchParams();
   if (status !== "all") params.append("status", status);
   if (type !== "all") params.append("type", type);
   params.append("page", page);
   params.append("limit", limit);
-  
+
   const res = await fetch(`${API_BASE}/errors?${params}`);
   if (!res.ok) throw new Error("Failed to fetch errors");
   return res.json();
@@ -921,4 +996,58 @@ export async function updateMaintenanceSettings(enabled, message) {
   });
   if (!res.ok) throw new Error("Failed to update maintenance settings");
   return res.json();
+}
+
+// ============================================================
+// ADMIN INVITATIONS
+// ============================================================
+
+export async function createInvitation(email) {
+  const res = await fetch(`${API_BASE}/admin/invitations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getUserHeaders(),
+    },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to create invitation");
+  return data;
+}
+
+export async function fetchInvitations() {
+  const res = await fetch(`${API_BASE}/admin/invitations`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch invitations");
+  return res.json();
+}
+
+export async function revokeInvitation(id) {
+  const res = await fetch(`${API_BASE}/admin/invitations/${id}`, {
+    method: "DELETE",
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to revoke invitation");
+  return res.json();
+}
+
+export async function validateInvitation(token) {
+  const res = await fetch(
+    `${API_BASE}/admin/invitations/validate?token=${token}`,
+  );
+  const data = await res.json();
+  return { ok: res.ok, ...data };
+}
+
+export async function registerWithInvitation(token, name, password) {
+  const res = await fetch(`${API_BASE}/admin/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, name, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to register");
+  return data;
 }

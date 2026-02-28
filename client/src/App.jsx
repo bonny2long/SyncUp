@@ -8,6 +8,7 @@ import { API_BASE } from "./utils/api";
 
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Login = React.lazy(() => import("./pages/Login"));
+const Register = React.lazy(() => import("./pages/Register"));
 const Settings = React.lazy(() => import("./pages/Settings"));
 const ProjectPortfolio = React.lazy(() => import("./pages/ProjectPortfolio"));
 const UserProfile = React.lazy(() => import("./pages/UserProfile"));
@@ -152,6 +153,7 @@ export default function App() {
               }
             />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route
               path="/portfolio"
               element={

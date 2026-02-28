@@ -22,28 +22,42 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-import { generalLimiter, strictLimiter, createLimiter, searchLimiter, sensitiveLimiter, adminLimiter } from "./config/rateLimit.js";
+import {
+  generalLimiter,
+  strictLimiter,
+  createLimiter,
+  searchLimiter,
+  sensitiveLimiter,
+  adminLimiter,
+} from "./config/rateLimit.js";
 import { swaggerDocs, swaggerSetup } from "./config/swagger.js";
 
 dotenv.config();
 const app = express();
 
 // Middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:"],
-      connectSrc: ["'self'", process.env.CLIENT_URL || "http://localhost:5173"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: [
+          "'self'",
+          process.env.CLIENT_URL || "http://localhost:5173",
+        ],
+      },
     },
-  },
-}));
-app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
-  credentials: true,
-}));
+  }),
+);
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use("/api", generalLimiter);
 
@@ -62,8 +76,14 @@ app.use((req, res, next) => {
 
 // Maintenance mode check - skip health, users (login), admin settings, and errors
 app.use("/api", (req, res, next) => {
-  const skippedPaths = ["/health", "/users", "/admin/settings/maintenance", "/admin/growth-stats", "/errors"];
-  if (skippedPaths.some(path => req.path.startsWith(path))) {
+  const skippedPaths = [
+    "/health",
+    "/users",
+    "/admin/settings/maintenance",
+    "/admin/growth-stats",
+    "/errors",
+  ];
+  if (skippedPaths.some((path) => req.path.startsWith(path))) {
     return next();
   }
   return checkMaintenanceMode(req, res, next);
@@ -104,6 +124,9 @@ app.delete("/api/users/:userId", sensitiveLimiter);
 
 // Apply admin limits
 app.use("/api/admin", adminLimiter);
+
+// Apply stricter limits to public registration to prevent abuse
+app.post("/api/admin/register", sensitiveLimiter);
 
 // Basic route for testing
 app.get("/", (req, res) => {
