@@ -23,6 +23,19 @@ function LoadingFallback() {
   );
 }
 
+function HomeRedirect() {
+  const { user, loading } = useUser();
+
+  if (loading) return <LoadingFallback />;
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (user.role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <Navigate to="/collaboration" replace />;
+}
+
 function MaintenanceCheck({ children }) {
   const { user, loading } = useUser();
   const [maintenanceMode, setMaintenanceMode] = useState(null);
@@ -55,6 +68,7 @@ function ProtectedRoute({
   children,
   requireIntern = false,
   requireAdmin = false,
+  disallowAdmin = false,
 }) {
   const { user, loading } = useUser();
 
@@ -64,7 +78,8 @@ function ProtectedRoute({
   const isAdmin = user.role === "admin";
 
   if (requireAdmin && !isAdmin) return <Navigate to="/" replace />;
-  if (requireIntern && user.role !== "intern" && user.role !== "admin")
+  if (disallowAdmin && isAdmin) return <Navigate to="/admin" replace />;
+  if (requireIntern && user.role !== "intern" && !isAdmin)
     return <Navigate to="/collaboration" replace />;
 
   return children;
@@ -82,7 +97,7 @@ export default function App() {
               path="/"
               element={
                 <MaintenanceCheck>
-                  <Navigate to="/collaboration" replace />
+                  <HomeRedirect />
                 </MaintenanceCheck>
               }
             />
@@ -90,7 +105,7 @@ export default function App() {
               path="/collaboration"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute>
+                  <ProtectedRoute disallowAdmin={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>
@@ -100,7 +115,7 @@ export default function App() {
               path="/chat"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute>
+                  <ProtectedRoute disallowAdmin={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>
@@ -110,7 +125,7 @@ export default function App() {
               path="/mentorship"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute>
+                  <ProtectedRoute disallowAdmin={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>
@@ -120,7 +135,7 @@ export default function App() {
               path="/skills"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute requireIntern={true}>
+                  <ProtectedRoute requireIntern={true} disallowAdmin={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>

@@ -110,6 +110,7 @@ function Toast({ toast, onRemove }) {
       <button
         onClick={onRemove}
         className="hover:opacity-80 transition ml-2 flex-shrink-0"
+        aria-label="Dismiss notification"
       >
         <X className="w-4 h-4" />
       </button>

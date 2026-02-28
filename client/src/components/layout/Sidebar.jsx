@@ -9,16 +9,31 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
 
   // Role-based navigation items
   const tabs = React.useMemo(() => {
+    if (user?.role === "admin") {
+      return [
+        { id: "admin", label: "Admin Dashboard", path: "/admin" },
+        { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
+      ];
+    }
+
     const items = [
-      { id: "collaboration", label: "Collaboration Hub", path: "/collaboration" },
+      {
+        id: "collaboration",
+        label: "Collaboration Hub",
+        path: "/collaboration",
+      },
       { id: "chat", label: "SyncChat", path: "/chat" },
       { id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" },
       { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
     ];
 
     // Only show Skill Tracker for interns
-    if (user?.role === 'intern') {
-      items.splice(2, 0, { id: "skills", label: "Skill Tracker", path: "/skills" });
+    if (user?.role === "intern") {
+      items.splice(2, 0, {
+        id: "skills",
+        label: "Skill Tracker",
+        path: "/skills",
+      });
     }
 
     return items;
@@ -39,7 +54,11 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
     <div className="w-64 bg-primary text-white flex flex-col p-6 rounded-r-2xl shadow-lg h-full">
       <h2 className="text-3xl font-bold mb-8 text-accent">SyncUp</h2>
 
-      <nav data-onboarding="sidebar" className="flex flex-col gap-3">
+      <nav
+        aria-label="Main Navigation"
+        data-onboarding="sidebar"
+        className="flex flex-col gap-3"
+      >
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -50,6 +69,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
                   "bg-white text-primary shadow-md border-l-4 border-accent"
                 : "hover:bg-secondary/30 text-white/90"
               }`}
+            aria-current={getActiveTab() === tab.id ? "page" : undefined}
           >
             {tab.label}
           </button>

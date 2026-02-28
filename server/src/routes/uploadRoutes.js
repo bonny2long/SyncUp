@@ -10,11 +10,28 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+// Sanitize filename to prevent path traversal
+const sanitizeFilename = (filename) => {
+  return filename
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/\.\./g, "_")
+    .substring(0, 200);
+};
+
 // Ensure upload directory exists for chat files
 const uploadDir = path.join(__dirname, "../uploads/chat");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+const avatarDir = path.join(__dirname, "../uploads/avatars");
+[uploadDir, avatarDir].forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+// Allowed extensions whitelist
+const allowedExtensions = new Set([
+  ".jpg", ".jpeg", ".png", ".gif", ".webp",
+  ".pdf", ".txt", ".doc", ".docx", ".xls", ".xlsx"
+]);
 
 // Configure multer storage for chat files
 const storage = multer.diskStorage({
@@ -23,7 +40,12 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+    const ext = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
+    
+    if (!allowedExtensions.has(ext)) {
+      return cb(new Error("File extension not allowed"), false);
+    }
+    
     cb(null, uniqueSuffix + ext);
   },
 });
@@ -42,6 +64,12 @@ const fileFilter = (req, file, cb) => {
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ];
+
+  const ext = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
+  
+  if (!allowedExtensions.has(ext)) {
+    return cb(new Error("File extension not allowed"), false);
+  }
 
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -63,6 +91,13 @@ const avatarUpload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    const ext = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
+    const allowedAvatarExtensions = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
+    
+    if (!allowedAvatarExtensions.has(ext)) {
+      return cb(new Error("File extension not allowed for avatar"), false);
+    }
+    
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {

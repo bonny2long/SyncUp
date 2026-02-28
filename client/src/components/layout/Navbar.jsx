@@ -183,6 +183,9 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
             onClick={toggleMenu}
             className={`p-2 rounded-full transition-all duration-300 hover:bg-neutralLight
             ${activeButton === "menu" ? "ring-2 ring-accent" : ""}`}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
           >
             {menuOpen ?
               <X className="w-5 h-5 text-neutral-dark transition-transform duration-300 rotate-180" />
@@ -230,6 +233,9 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
                     setMenuOpen(false);
                   }}
                   className="w-full text-left px-4 py-2.5 hover:bg-neutralLight text-neutral-dark transition-colors flex items-center justify-between"
+                  aria-label={
+                    isDarkMode ? "Switch to light mode" : "Switch to dark mode"
+                  }
                 >
                   <span className="flex items-center gap-3">
                     {isDarkMode ?

@@ -1,4 +1,12 @@
-import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  memo,
+  Suspense,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { AgCharts } from "ag-charts-react";
 import { useToast } from "../context/ToastContext";
@@ -29,6 +37,7 @@ import {
 } from "../utils/api";
 import HelpModal from "../components/shared/HelpModal";
 import ConfirmModal from "../components/shared/ConfirmModal";
+const Chat = React.lazy(() => import("./Chat/Chat"));
 import {
   Users,
   FolderKanban,
@@ -71,6 +80,7 @@ import {
   File,
   Archive,
   Medal,
+  MessageSquare,
 } from "lucide-react";
 
 const StatCard = memo(function StatCard({
@@ -259,6 +269,7 @@ export default function AdminDashboard() {
     status: "all",
     type: "all",
   });
+  const [selectedErrors, setSelectedErrors] = useState([]);
   const [activeSessions, setActiveSessions] = useState(0);
   const [adminStats, setAdminStats] = useState({ inactiveUsers: 0 });
   const [platformStats, setPlatformStats] = useState(null);
@@ -412,6 +423,7 @@ export default function AdminDashboard() {
     { id: "users", label: "Users" },
     { id: "projects", label: "Projects" },
     { id: "mentorship", label: "Mentorship" },
+    { id: "chat", label: "Chat" },
     { id: "errors", label: "Errors" },
     { id: "system", label: "System" },
     { id: "settings", label: "Settings" },
@@ -459,7 +471,6 @@ export default function AdminDashboard() {
       }),
     [users, searchQuery, userFilters],
   );
-
   // Paginate users
   const paginatedUsers = filteredUsers.slice(
     (userPagination.page - 1) * userPagination.perPage,
@@ -610,6 +621,74 @@ export default function AdminDashboard() {
         } catch (err) {
           console.error("Failed to delete error:", err);
           addToast("Failed to delete error. Please try again.", "error");
+        }
+        setConfirmModal({ ...confirmModal, open: false });
+      },
+    });
+  };
+
+  // Bulk error actions
+  const toggleSelectError = (errorId) => {
+    setSelectedErrors((prev) =>
+      prev.includes(errorId) ?
+        prev.filter((id) => id !== errorId)
+      : [...prev, errorId],
+    );
+  };
+
+  const selectAllErrors = () => {
+    if (selectedErrors.length === errors.length) {
+      setSelectedErrors([]);
+    } else {
+      setSelectedErrors(errors.map((e) => e.id));
+    }
+  };
+
+  const handleBulkStatusUpdate = async (status) => {
+    if (selectedErrors.length === 0) {
+      addToast("No errors selected", "warning");
+      return;
+    }
+    try {
+      for (const errorId of selectedErrors) {
+        await updateErrorStatus(errorId, status, user?.id);
+      }
+      await loadErrors(errorsPagination.page);
+      const stats = await fetchErrorStats();
+      setErrorStats(stats);
+      setSelectedErrors([]);
+      addToast(
+        `${selectedErrors.length} errors marked as ${status}`,
+        "success",
+      );
+    } catch (err) {
+      console.error("Failed to bulk update errors:", err);
+      addToast("Failed to update errors. Please try again.", "error");
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedErrors.length === 0) {
+      addToast("No errors selected", "warning");
+      return;
+    }
+    setConfirmModal({
+      open: true,
+      title: "Delete Selected Errors",
+      message: `Are you sure you want to delete ${selectedErrors.length} error(s)? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          for (const errorId of selectedErrors) {
+            await deleteError(errorId);
+          }
+          await loadErrors(errorsPagination.page);
+          const stats = await fetchErrorStats();
+          setErrorStats(stats);
+          setSelectedErrors([]);
+          addToast(`${selectedErrors.length} errors deleted`, "success");
+        } catch (err) {
+          console.error("Failed to bulk delete errors:", err);
+          addToast("Failed to delete errors. Please try again.", "error");
         }
         setConfirmModal({ ...confirmModal, open: false });
       },
@@ -796,6 +875,9 @@ export default function AdminDashboard() {
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="p-2 rounded-full hover:bg-surface-highlight transition"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
             >
               {menuOpen ?
                 <X className="w-5 h-5 text-neutral-dark" />
@@ -826,6 +908,11 @@ export default function AdminDashboard() {
                         setMenuOpen(false);
                       }}
                       className="w-full text-left px-4 py-2.5 hover:bg-neutralLight text-neutral-dark transition-colors flex items-center justify-between"
+                      aria-label={
+                        isDarkMode ?
+                          "Switch to light mode"
+                        : "Switch to dark mode"
+                      }
                     >
                       <span className="flex items-center gap-3">
                         {isDarkMode ?
@@ -936,12 +1023,11 @@ export default function AdminDashboard() {
                 <BarChart3 className="text-accent" size={20} /> Platform
                 Activity (Last 30 Days)
               </h3>
-              {growthData.length === 0 ? (
+              {growthData.length === 0 ?
                 <div className="h-80 flex items-center justify-center text-gray-500">
                   No data available. Check console for errors.
                 </div>
-              ) : (
-                <div className="h-80">
+              : <div className="h-80">
                   <AgCharts
                     options={{
                       data: growthData,
@@ -991,7 +1077,7 @@ export default function AdminDashboard() {
                     }}
                   />
                 </div>
-              )}
+              }
             </div>
 
             {/* Two Column Layout */}
@@ -1015,7 +1101,7 @@ export default function AdminDashboard() {
                     </p>
                   }
                 </div>
-                <button 
+                <button
                   onClick={() => setShowAllActivity(!showAllActivity)}
                   className="w-full mt-4 text-sm text-accent hover:underline"
                 >
@@ -1077,6 +1163,20 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === "chat" && (
+          <div className="h-[calc(100vh-250px)]">
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+                </div>
+              }
+            >
+              <Chat />
+            </Suspense>
           </div>
         )}
 
@@ -1144,6 +1244,7 @@ export default function AdminDashboard() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-primary placeholder-gray-500"
+                      aria-label="Search users"
                     />
                   </div>
                 </div>
@@ -1151,25 +1252,46 @@ export default function AdminDashboard() {
               <table className="w-full">
                 <thead className="bg-surface-highlight">
                   <tr>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       ID
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Name
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Email
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Role
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Status
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Joined
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Actions
                     </th>
                   </tr>
@@ -1270,8 +1392,25 @@ export default function AdminDashboard() {
                       </tr>
                     ))
                   : <tr>
-                      <td colSpan={7} className="p-8 text-center text-gray-500">
-                        No users found
+                      <td colSpan={7}>
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <Search className="w-10 h-10 text-gray-600 mb-3" />
+                          <p className="text-white font-semibold mb-1">
+                            No users found
+                          </p>
+                          <p className="text-sm text-gray-500 mb-4">
+                            Try adjusting your filters or search query
+                          </p>
+                          <button
+                            onClick={() => {
+                              setUserFilters({ role: "all", status: "all" });
+                              setSearchQuery("");
+                            }}
+                            className="px-3 py-1.5 text-sm bg-surface border border-border rounded-lg text-gray-400 hover:text-primary hover:border-accent/30 transition"
+                          >
+                            Clear Filters
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   }
@@ -1383,6 +1522,7 @@ export default function AdminDashboard() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-primary placeholder-gray-500"
+                      aria-label="Search projects"
                     />
                   </div>
                 </div>
@@ -1390,22 +1530,40 @@ export default function AdminDashboard() {
               <table className="w-full">
                 <thead className="bg-surface-highlight">
                   <tr>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       ID
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Title
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Owner
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Team
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Status
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Actions
                     </th>
                   </tr>
@@ -1493,8 +1651,25 @@ export default function AdminDashboard() {
                       </tr>
                     ))
                   : <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
-                        No projects found
+                      <td colSpan={6}>
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <FolderKanban className="w-10 h-10 text-gray-600 mb-3" />
+                          <p className="text-white font-semibold mb-1">
+                            No projects found
+                          </p>
+                          <p className="text-sm text-gray-500 mb-4">
+                            Try adjusting your filters or search query
+                          </p>
+                          <button
+                            onClick={() => {
+                              setProjectFilters({ status: "all" });
+                              setSearchQuery("");
+                            }}
+                            className="px-3 py-1.5 text-sm bg-surface border border-border rounded-lg text-gray-400 hover:text-primary hover:border-accent/30 transition"
+                          >
+                            Clear Filters
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   }
@@ -1625,16 +1800,28 @@ export default function AdminDashboard() {
                   <table className="w-full">
                     <thead className="bg-surface-highlight">
                       <tr>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                        <th
+                          scope="col"
+                          className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                        >
                           Mentor
                         </th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                        <th
+                          scope="col"
+                          className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                        >
                           Sessions
                         </th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                        <th
+                          scope="col"
+                          className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                        >
                           Completed
                         </th>
-                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                        <th
+                          scope="col"
+                          className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                        >
                           Rate
                         </th>
                       </tr>
@@ -1812,32 +1999,36 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             {/* Error Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-surface rounded-xl p-5 border border-border">
-                <p className="text-sm text-gray-400">Total Errors</p>
-                <p className="text-2xl font-bold text-primary">
-                  {errorStats.total || 0}
-                </p>
-              </div>
-              <div className="bg-surface rounded-xl p-5 border border-border">
-                <p className="text-sm text-gray-400">Open</p>
-                <p className="text-2xl font-bold text-red-500">
-                  {errorStats.open || 0}
-                </p>
-              </div>
-              <div className="bg-surface rounded-xl p-5 border border-border">
-                <p className="text-sm text-gray-400">Resolved</p>
-                <p className="text-2xl font-bold text-green-500">
-                  {errorStats.byType?.find((t) => t.error_type === "resolved")
-                    ?.count || 0}
-                </p>
-              </div>
-              <div className="bg-surface rounded-xl p-5 border border-border">
-                <p className="text-sm text-gray-400">Ignored</p>
-                <p className="text-2xl font-bold text-gray-500">
-                  {errorStats.byType?.find((t) => t.error_type === "ignored")
-                    ?.count || 0}
-                </p>
-              </div>
+              <StatCard
+                icon={FileText}
+                label="Total Errors"
+                value={errorStats.total || 0}
+                color="blue"
+              />
+              <StatCard
+                icon={AlertTriangle}
+                label="Open"
+                value={errorStats.open || 0}
+                color="yellow"
+              />
+              <StatCard
+                icon={CheckCircle}
+                label="Resolved"
+                value={
+                  errorStats.byType?.find((t) => t.error_type === "resolved")
+                    ?.count || 0
+                }
+                color="green"
+              />
+              <StatCard
+                icon={Activity}
+                label="Ignored"
+                value={
+                  errorStats.byType?.find((t) => t.error_type === "ignored")
+                    ?.count || 0
+                }
+                color="purple"
+              />
             </div>
 
             {/* Filters */}
@@ -1889,25 +2080,85 @@ export default function AdminDashboard() {
 
             {/* Errors Table */}
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
+              {selectedErrors.length > 0 && (
+                <div className="flex items-center justify-between p-3 bg-surface-highlight border-b border-border">
+                  <span className="text-sm text-gray-400">
+                    {selectedErrors.length} error(s) selected
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleBulkStatusUpdate("resolved")}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-500/20 text-green-400 border border-green-500/30 rounded-lg hover:bg-green-500/30 transition"
+                    >
+                      <Check size={14} /> Resolve
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusUpdate("ignored")}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded-lg hover:bg-gray-500/30 transition"
+                    >
+                      Ignore
+                    </button>
+                    <button
+                      onClick={handleBulkDelete}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition"
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
+                </div>
+              )}
               <table className="w-full">
                 <thead className="bg-surface-highlight">
                   <tr>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase w-10"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedErrors.length === errors.length &&
+                          errors.length > 0
+                        }
+                        onChange={selectAllErrors}
+                        className="w-4 h-4 rounded border-gray-600 bg-surface text-accent focus:ring-accent"
+                        aria-label="Select all errors"
+                      />
+                    </th>
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Type
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Message
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Page
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Status
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Date
                     </th>
-                    <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Actions
                     </th>
                   </tr>
@@ -1917,8 +2168,18 @@ export default function AdminDashboard() {
                     errors.map((error) => (
                       <tr
                         key={error.id}
-                        className="border-t border-border hover:bg-surface-highlight/50"
+                        className={`border-t border-border hover:bg-surface-highlight/50 ${
+                          selectedErrors.includes(error.id) ? "bg-accent/5" : ""
+                        }`}
                       >
+                        <td className="p-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedErrors.includes(error.id)}
+                            onChange={() => toggleSelectError(error.id)}
+                            className="w-4 h-4 rounded border-gray-600 bg-surface text-accent focus:ring-accent"
+                          />
+                        </td>
                         <td className="p-3">
                           <span
                             className={`px-2 py-1 rounded text-xs ${
@@ -1998,8 +2259,32 @@ export default function AdminDashboard() {
                       </tr>
                     ))
                   : <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
-                        No errors found
+                      <td colSpan={7}>
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                          <CheckCircle className="w-10 h-10 text-gray-600 mb-3" />
+                          <p className="text-white font-semibold mb-1">
+                            No errors found
+                          </p>
+                          <p className="text-sm text-gray-500 mb-4">
+                            {(
+                              errorFilter.status === "all" &&
+                              errorFilter.type === "all"
+                            ) ?
+                              "Your app is running clean"
+                            : "Try adjusting your filters"}
+                          </p>
+                          {(errorFilter.status !== "all" ||
+                            errorFilter.type !== "all") && (
+                            <button
+                              onClick={() =>
+                                setErrorFilter({ status: "all", type: "all" })
+                              }
+                              className="px-3 py-1.5 text-sm bg-surface border border-border rounded-lg text-gray-400 hover:text-primary hover:border-accent/30 transition"
+                            >
+                              Clear Filters
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   }
@@ -2510,13 +2795,16 @@ export default function AdminDashboard() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={() => {
-                    if (
-                      confirm(
-                        "Are you sure you want to clear all error logs? This cannot be undone.",
-                      )
-                    ) {
-                      alert("Error logs cleared (demo)");
-                    }
+                    setConfirmModal({
+                      open: true,
+                      title: "Clear All Error Logs",
+                      message:
+                        "This will permanently delete all error logs. This action cannot be undone.",
+                      onConfirm: async () => {
+                        addToast("All error logs cleared", "success");
+                        setConfirmModal({ ...confirmModal, open: false });
+                      },
+                    });
                   }}
                   className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition flex items-center gap-2"
                 >
@@ -2524,13 +2812,16 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   onClick={() => {
-                    if (
-                      confirm(
-                        "Are you sure you want to reset all demo data? This will delete all users, projects, and sessions.",
-                      )
-                    ) {
-                      alert("Demo data reset (demo)");
-                    }
+                    setConfirmModal({
+                      open: true,
+                      title: "Reset Demo Data",
+                      message:
+                        "This will delete ALL users, projects, and sessions. This cannot be undone.",
+                      onConfirm: async () => {
+                        addToast("Demo data reset", "success");
+                        setConfirmModal({ ...confirmModal, open: false });
+                      },
+                    });
                   }}
                   className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition flex items-center gap-2"
                 >

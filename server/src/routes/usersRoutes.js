@@ -128,7 +128,7 @@ router.get("/:userId/activity-timeline", userValidators.getActivityTimeline, get
  *       404:
  *         description: User not found
  */
-router.put("/:userId/profile", updateUserProfile);
+router.put("/:userId/profile", userValidators.updateProfile, updateUserProfile);
 
 /**
  * @swagger
@@ -159,7 +159,7 @@ router.put("/:userId/profile", updateUserProfile);
  *       400:
  *         description: Invalid password
  */
-router.put("/:userId/password", changePassword);
+router.put("/:userId/password", userValidators.changePassword, changePassword);
 
 /**
  * @swagger

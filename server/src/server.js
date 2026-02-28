@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import sql from "mssql";
 import usersRoutes from "./routes/usersRoutes.js";
@@ -21,14 +22,28 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-import { generalLimiter, strictLimiter, createLimiter, searchLimiter } from "./config/rateLimit.js";
+import { generalLimiter, strictLimiter, createLimiter, searchLimiter, sensitiveLimiter, adminLimiter } from "./config/rateLimit.js";
 import { swaggerDocs, swaggerSetup } from "./config/swagger.js";
 
 dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'", process.env.CLIENT_URL || "http://localhost:5173"],
+    },
+  },
+}));
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json());
 app.use("/api", generalLimiter);
 
@@ -82,6 +97,13 @@ app.post("/api/progress_updates", strictLimiter);
 
 app.put("/api/projects/:id/status", strictLimiter);
 app.put("/api/mentorship/sessions/:id", strictLimiter);
+
+// Apply sensitive limits to password changes and user deletion
+app.put("/api/users/:userId/password", sensitiveLimiter);
+app.delete("/api/users/:userId", sensitiveLimiter);
+
+// Apply admin limits
+app.use("/api/admin", adminLimiter);
 
 // Basic route for testing
 app.get("/", (req, res) => {

@@ -199,4 +199,94 @@ export const userValidators = {
       .withMessage("Offset must be a non-negative integer"),
     validate,
   ],
+
+  changePassword: [
+    body("currentPassword")
+      .notEmpty()
+      .withMessage("Current password is required")
+      .isLength({ min: 1 })
+      .withMessage("Current password cannot be empty"),
+    body("newPassword")
+      .notEmpty()
+      .withMessage("New password is required")
+      .isLength({ min: 8, max: 100 })
+      .withMessage("Password must be between 8 and 100 characters"),
+    validate,
+  ],
+
+  updateProfile: [
+    param("userId")
+      .isInt({ min: 1 })
+      .withMessage("User ID must be a positive integer"),
+    body("name")
+      .optional()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage("Name must be less than 100 characters"),
+    body("bio")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Bio must be less than 500 characters"),
+    body("email")
+      .optional()
+      .isEmail()
+      .withMessage("Invalid email format"),
+    validate,
+  ],
+};
+
+export const chatValidators = {
+  sendMessage: [
+    body("content")
+      .trim()
+      .notEmpty()
+      .withMessage("Message content is required")
+      .isLength({ max: 5000 })
+      .withMessage("Message must be less than 5000 characters"),
+    body("channel_id")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Channel ID must be a positive integer"),
+    body("recipient_id")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Recipient ID must be a positive integer"),
+    validate,
+  ],
+
+  createChannel: [
+    body("name")
+      .trim()
+      .notEmpty()
+      .withMessage("Channel name is required")
+      .isLength({ max: 100 })
+      .withMessage("Channel name must be less than 100 characters"),
+    body("description")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Description must be less than 500 characters"),
+    validate,
+  ],
+};
+
+export const notificationValidators = {
+  markRead: [
+    param("id")
+      .isInt({ min: 1 })
+      .withMessage("Notification ID must be a positive integer"),
+    validate,
+  ],
+};
+
+export const uploadValidators = {
+  avatar: [
+    body("user_id")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isInt({ min: 1 })
+      .withMessage("User ID must be a positive integer"),
+    validate,
+  ],
 };

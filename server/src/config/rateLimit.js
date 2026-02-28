@@ -39,3 +39,19 @@ export const searchLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export const sensitiveLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: "Too many attempts on sensitive operation, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+export const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: "Too many admin requests, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

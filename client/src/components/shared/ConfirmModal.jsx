@@ -39,6 +39,7 @@ export default function ConfirmModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1 rounded-full hover:bg-surface-highlight text-text-secondary hover:text-neutral-dark transition-colors"
+          aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
