@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { Check, AlertCircle, Info, X } from "lucide-react";
+import { reportToServer } from "../utils/logger";
+import { getErrorMessage, ERROR_TYPES } from "../utils/errorHandler";
 
 const ToastContext = createContext();
 
@@ -42,8 +44,20 @@ export function ToastProvider({ children }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  const handleError = useCallback(async (error, context = "operation") => {
+    const errorInfo = getErrorMessage(error);
+    addToast(errorInfo.message, "error");
+    
+    await reportToServer(errorInfo.type, errorInfo.message, {
+      stack: error?.stack,
+      details: { context, originalMessage: error?.message },
+    });
+    
+    return errorInfo;
+  }, [addToast]);
+
   return (
-    <ToastContext.Provider value={{ addToast, removeToast }}>
+    <ToastContext.Provider value={{ addToast, removeToast, handleError }}>
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>

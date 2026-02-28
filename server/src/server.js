@@ -15,6 +15,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import errorsRoutes from "./routes/errorsRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import { checkMaintenanceMode } from "./middleware/maintenanceMode.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -30,6 +31,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api", generalLimiter);
+
+// Middleware to pass user info from frontend headers
+app.use((req, res, next) => {
+  const userHeader = req.headers["x-user"];
+  if (userHeader) {
+    try {
+      req.user = JSON.parse(userHeader);
+    } catch (e) {
+      req.user = null;
+    }
+  }
+  next();
+});
+
+// Maintenance mode check - skip health, users (login), admin settings, and errors
+app.use("/api", (req, res, next) => {
+  const skippedPaths = ["/health", "/users", "/admin/settings/maintenance", "/admin/growth-stats", "/errors"];
+  if (skippedPaths.some(path => req.path.startsWith(path))) {
+    return next();
+  }
+  return checkMaintenanceMode(req, res, next);
+});
 
 // Swagger documentation
 app.use("/api-docs", swaggerDocs, swaggerSetup);

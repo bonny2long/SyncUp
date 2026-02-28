@@ -3,6 +3,18 @@
 export const API_BASE =
   import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
+// Helper to get user header for auth
+function getUserHeaders() {
+  const userStr = localStorage.getItem("syncup_user");
+  if (!userStr) return {};
+  try {
+    const user = JSON.parse(userStr);
+    return { "x-user": JSON.stringify(user) };
+  } catch {
+    return {};
+  }
+}
+
 // Error reporting function (defined first so handleApiError can use it)
 export async function reportError(errorType, message, details = {}) {
   const payload = {
@@ -28,6 +40,17 @@ export async function reportError(errorType, message, details = {}) {
 // Auto-report errors helper (doesn't block the call)
 async function handleApiError(res, endpoint, errorType = "api") {
   if (!res.ok) {
+    // Check for maintenance mode (503)
+    if (res.status === 503) {
+      try {
+        const errorData = await res.clone().json();
+        window.location.href = `/maintenance?message=${encodeURIComponent(errorData.message || "")}`;
+      } catch {
+        window.location.href = "/maintenance";
+      }
+      return res;
+    }
+
     const errorMsg = `API Error ${res.status}: ${endpoint} failed`;
     try {
       const errorData = await res.clone().json();
@@ -50,7 +73,7 @@ async function handleApiError(res, endpoint, errorType = "api") {
 export async function fetchProjects(userId) {
   const url =
     userId ? `${API_BASE}/projects?user_id=${userId}` : `${API_BASE}/projects`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: getUserHeaders() });
   await handleApiError(res, "/projects");
   return res.json();
 }
@@ -95,19 +118,19 @@ export async function updateProjectStatus(id, status, userId = null) {
 // ANALYTICS
 // ----------------------------------------------------
 export async function fetchActiveProjectsAnalytics() {
-  const res = await fetch(`${API_BASE}/analytics/projects/active`);
+  const res = await fetch(`${API_BASE}/analytics/projects/active`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch active projects analytics");
   return res.json();
 }
 
 export async function fetchWeeklyUpdatesAnalytics() {
-  const res = await fetch(`${API_BASE}/analytics/updates/weekly`);
+  const res = await fetch(`${API_BASE}/analytics/updates/weekly`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch weekly updates analytics");
   return res.json();
 }
 
 export async function fetchMentorEngagementAnalytics() {
-  const res = await fetch(`${API_BASE}/analytics/mentors/engagement`);
+  const res = await fetch(`${API_BASE}/analytics/mentors/engagement`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch mentor engagement analytics");
   return res.json();
 }
@@ -117,19 +140,19 @@ export async function fetchMentorEngagementAnalytics() {
 // ----------------------------------------------------
 
 export async function fetchMentorshipGrowthCorrelation() {
-  const res = await fetch(`${API_BASE}/analytics/correlation/mentorship-growth`);
+  const res = await fetch(`${API_BASE}/analytics/correlation/mentorship-growth`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch mentorship growth correlation");
   return res.json();
 }
 
 export async function fetchEffectivePairings() {
-  const res = await fetch(`${API_BASE}/analytics/correlation/effective-pairings`);
+  const res = await fetch(`${API_BASE}/analytics/correlation/effective-pairings`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch effective pairings");
   return res.json();
 }
 
 export async function fetchEngagementLoops() {
-  const res = await fetch(`${API_BASE}/analytics/correlation/engagement-loops`);
+  const res = await fetch(`${API_BASE}/analytics/correlation/engagement-loops`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch engagement loops");
   return res.json();
 }
@@ -138,7 +161,7 @@ export async function fetchEngagementLoops() {
 // USERS
 // ----------------------------------------------------
 export async function fetchUsers() {
-  const res = await fetch(`${API_BASE}/users`);
+  const res = await fetch(`${API_BASE}/users`, { headers: getUserHeaders() });
   await handleApiError(res, "/users");
   if (!res.ok) throw new Error("Failed to fetch users");
   return res.json();
@@ -152,7 +175,7 @@ export async function fetchUpdates(projectId) {
     projectId ?
       `${API_BASE}/progress_updates?project_id=${projectId}`
     : `${API_BASE}/progress_updates`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: getUserHeaders() });
   await handleApiError(res, "/progress_updates");
   return res.json();
 }
@@ -160,7 +183,7 @@ export async function fetchUpdates(projectId) {
 export async function postUpdate(content, projectId, userId, skills = []) {
   const res = await fetch(`${API_BASE}/progress_updates`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({
       content,
       project_id: projectId,
@@ -168,6 +191,28 @@ export async function postUpdate(content, projectId, userId, skills = []) {
       skills,
     }),
   });
+  return res.json();
+}
+
+// ----------------------------------------------------
+// PROGRESS UPDATE MUTATIONS
+// ----------------------------------------------------
+export async function updateProgressUpdate(id, content) {
+  const res = await fetch(`${API_BASE}/progress_updates/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) throw new Error("Failed to update progress update");
+  return res.json();
+}
+
+export async function deleteProgressUpdate(id) {
+  const res = await fetch(`${API_BASE}/progress_updates/${id}`, {
+    method: "DELETE",
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete progress update");
   return res.json();
 }
 
@@ -180,7 +225,7 @@ export async function fetchSessions(mentorId) {
       `${API_BASE}/mentorship/sessions?mentor_id=${mentorId}`
     : `${API_BASE}/mentorship/sessions`;
 
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: getUserHeaders() });
   await handleApiError(res, "/mentorship/sessions");
   if (!res.ok) throw new Error("Failed to fetch sessions");
   return res.json();
@@ -192,7 +237,7 @@ export async function fetchSessions(mentorId) {
 export async function createSession(payload) {
   const res = await fetch(`${API_BASE}/mentorship/sessions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Failed to create mentorship session");
@@ -203,25 +248,25 @@ export async function createSession(payload) {
 // MENTORSHIP - GET MENTORS
 // ----------------------------------------------------
 export async function fetchMentors() {
-  const res = await fetch(`${API_BASE}/mentorship/mentors`);
+  const res = await fetch(`${API_BASE}/mentorship/mentors`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch mentors");
   return res.json();
 }
 
 export async function fetchMentorDetails(id) {
-  const res = await fetch(`${API_BASE}/mentorship/mentor/${id}/details`);
+  const res = await fetch(`${API_BASE}/mentorship/mentor/${id}/details`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch mentor details");
   return res.json();
 }
 
 export async function fetchAvailableMentors() {
-  const res = await fetch(`${API_BASE}/mentorship/mentors/available`);
+  const res = await fetch(`${API_BASE}/mentorship/mentors/available`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch available mentors");
   return res.json();
 }
 
 export async function fetchProjectMentors() {
-  const res = await fetch(`${API_BASE}/mentorship/mentors/project`);
+  const res = await fetch(`${API_BASE}/mentorship/mentors/project`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch project mentors");
   return res.json();
 }
@@ -232,7 +277,7 @@ export async function fetchProjectMentors() {
 export async function updateSessionStatus(id, { status, skill_ids = [] }) {
   const res = await fetch(`${API_BASE}/mentorship/sessions/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({ status, skill_ids }),
   });
 
@@ -246,7 +291,7 @@ export async function updateSessionStatus(id, { status, skill_ids = [] }) {
 export async function updateSessionDetails(id, payload) {
   const res = await fetch(`${API_BASE}/mentorship/sessions/${id}/details`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify(payload),
   });
 
@@ -260,7 +305,7 @@ export async function updateSessionDetails(id, payload) {
 export async function rescheduleSession(id, session_date) {
   const res = await fetch(`${API_BASE}/mentorship/sessions/${id}/reschedule`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({ session_date }),
   });
 
@@ -274,6 +319,7 @@ export async function rescheduleSession(id, session_date) {
 export async function deleteSession(id) {
   const res = await fetch(`${API_BASE}/mentorship/sessions/${id}`, {
     method: "DELETE",
+    headers: getUserHeaders(),
   });
 
   if (!res.ok) throw new Error("Failed to delete session");
@@ -281,83 +327,48 @@ export async function deleteSession(id) {
 }
 
 // ----------------------------------------------------
-// PROGRESS UPDATE MUTATIONS
+// MENTORSHIP - SESSIONS
 // ----------------------------------------------------
-export async function updateProgressUpdate(id, content) {
-  const res = await fetch(`${API_BASE}/progress_updates/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-  });
-  if (!res.ok) throw new Error("Failed to update progress update");
+export async function fetchInternSessions(internId, status = "all") {
+  const url =
+    status && status !== "all" ?
+      `${API_BASE}/mentorship/sessions/intern/${internId}?status=${status}`
+    : `${API_BASE}/mentorship/sessions/intern/${internId}`;
+
+  const res = await fetch(url, { headers: getUserHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch intern sessions");
   return res.json();
 }
 
-export async function deleteProgressUpdate(id) {
-  const res = await fetch(`${API_BASE}/progress_updates/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error("Failed to delete progress update");
+export async function fetchMentorSessions(mentorId, status = "all") {
+  const url =
+    status && status !== "all" ?
+      `${API_BASE}/mentorship/sessions/mentor/${mentorId}?status=${status}`
+    : `${API_BASE}/mentorship/sessions/mentor/${mentorId}`;
+
+  const res = await fetch(url, { headers: getUserHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch mentor sessions");
   return res.json();
 }
 
-// ----------------------------------------------------
-// SKILLS - TRACKER & DISTRIBUTION
-// ----------------------------------------------------
-export async function fetchSkills() {
-  const res = await fetch(`${API_BASE}/skills?include_usage=true`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch skills");
-  }
-  return res.json();
-}
-
-export async function getRecentSkills(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/recent`);
-  if (!res.ok) throw new Error("Failed to load recent skills");
-  return res.json();
-}
-
-export async function getSkillDistribution(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/distribution`);
-  if (!res.ok) throw new Error("Failed to load skill distribution");
-  return res.json();
-}
-
-export async function getSkillMomentum(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/momentum`);
-  if (!res.ok) throw new Error("Failed to load skill momentum");
-  return res.json();
-}
-
-export async function getSkillActivity(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/activity`);
-  if (!res.ok) throw new Error("Failed to load skill activity");
-  return res.json();
-}
-
-export async function getSkillSummary(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/summary`);
-  if (!res.ok) throw new Error("Failed to fetch skill summary");
+export async function fetchMentorAvailability(mentorId) {
+  const res = await fetch(
+    `${API_BASE}/mentorship/mentors/${mentorId}/availability`,
+    { headers: getUserHeaders() },
+  );
+  if (!res.ok) throw new Error("Failed to fetch mentor availability");
   return res.json();
 }
 
 // ----------------------------------------------------
-// PROJECT SKILLS
-// ----------------------------------------------------
-export const fetchProjectSkills = async () => {
-  const response = await fetch(`${API_BASE}/projects/skills`);
-  if (!response.ok) throw new Error("Failed to fetch project skills");
-  return response.json();
-};
-
+// CREATE PROJECT
 // ----------------------------------------------------
 // CREATE PROJECT
 // ----------------------------------------------------
 export async function createProject(data) {
   const res = await fetch(`${API_BASE}/projects`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify(data),
   });
 
@@ -366,12 +377,62 @@ export async function createProject(data) {
 }
 
 // ----------------------------------------------------
+// SKILLS - TRACKER & DISTRIBUTION
+// ----------------------------------------------------
+export async function fetchSkills() {
+  const res = await fetch(`${API_BASE}/skills?include_usage=true`, { headers: getUserHeaders() });
+  if (!res.ok) {
+    throw new Error("Failed to fetch skills");
+  }
+  return res.json();
+}
+
+export async function getRecentSkills(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/recent`, { headers: getUserHeaders() });
+  if (!res.ok) throw new Error("Failed to load recent skills");
+  return res.json();
+}
+
+export async function getSkillDistribution(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/distribution`, { headers: getUserHeaders() });
+  if (!res.ok) throw new Error("Failed to load skill distribution");
+  return res.json();
+}
+
+export async function getSkillMomentum(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/momentum`, { headers: getUserHeaders() });
+  if (!res.ok) throw new Error("Failed to load skill momentum");
+  return res.json();
+}
+
+export async function getSkillActivity(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/activity`, { headers: getUserHeaders() });
+  if (!res.ok) throw new Error("Failed to load skill activity");
+  return res.json();
+}
+
+export async function getSkillSummary(userId) {
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/summary`, { headers: getUserHeaders() });
+  if (!res.ok) throw new Error("Failed to fetch skill summary");
+  return res.json();
+}
+
+// ----------------------------------------------------
+// PROJECT SKILLS
+// ----------------------------------------------------
+export const fetchProjectSkills = async () => {
+  const response = await fetch(`${API_BASE}/projects/skills`, { headers: getUserHeaders() });
+  if (!response.ok) throw new Error("Failed to fetch project skills");
+  return response.json();
+};
+
+// ----------------------------------------------------
 // ATTACH PROJECT SKILLS
 // ----------------------------------------------------
 export async function attachProjectSkills(projectId, skillIds) {
   const res = await fetch(`${API_BASE}/projects/${projectId}/skills`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({ skill_ids: skillIds }),
   });
 
@@ -385,7 +446,7 @@ export async function attachProjectSkills(projectId, skillIds) {
 export async function createJoinRequest(projectId, userId) {
   const res = await fetch(`${API_BASE}/projects/${projectId}/join-request`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({ user_id: userId }),
   });
   if (!res.ok) {
@@ -396,7 +457,7 @@ export async function createJoinRequest(projectId, userId) {
 }
 
 export async function getProjectRequests(projectId) {
-  const res = await fetch(`${API_BASE}/projects/${projectId}/requests`);
+  const res = await fetch(`${API_BASE}/projects/${projectId}/requests`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch project requests");
   return res.json();
 }
@@ -432,45 +493,10 @@ export async function rejectJoinRequest(projectId, requestId) {
     `${API_BASE}/projects/${projectId}/requests/${requestId}/reject`,
     {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getUserHeaders() },
     },
   );
   if (!res.ok) throw new Error("Failed to reject request");
-  return res.json();
-}
-
-// ============================================================
-// MENTORSHIP - SESSIONS
-// ============================================================
-
-export async function fetchInternSessions(internId, status = "all") {
-  const url =
-    status && status !== "all" ?
-      `${API_BASE}/mentorship/sessions/intern/${internId}?status=${status}`
-    : `${API_BASE}/mentorship/sessions/intern/${internId}`;
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch intern sessions");
-  return res.json();
-}
-
-export async function fetchMentorSessions(mentorId, status = "all") {
-  const url =
-    status && status !== "all" ?
-      `${API_BASE}/mentorship/sessions/mentor/${mentorId}?status=${status}`
-    : `${API_BASE}/mentorship/sessions/mentor/${mentorId}`;
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch mentor sessions");
-  return res.json();
-}
-
-// Get all availability slots for a specific mentor
-export async function fetchMentorAvailability(mentorId) {
-  const res = await fetch(
-    `${API_BASE}/mentorship/mentors/${mentorId}/availability`,
-  );
-  if (!res.ok) throw new Error("Failed to fetch mentor availability");
   return res.json();
 }
 
@@ -482,7 +508,7 @@ export async function fetchMentorAvailability(mentorId) {
 export async function addSkillValidation(signalId, validatorId, validationType = 'upvote') {
   const res = await fetch(`${API_BASE}/skills/${signalId}/validate`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getUserHeaders() },
     body: JSON.stringify({ 
       validator_id: validatorId, 
       validation_type: validationType 
@@ -499,7 +525,7 @@ export async function addSkillValidation(signalId, validatorId, validationType =
 export async function removeSkillValidation(signalId, validatorId, validationType = 'upvote') {
   const res = await fetch(`${API_BASE}/skills/${signalId}/validate`, {
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getUserHeaders() },
     body: JSON.stringify({ 
       validator_id: validatorId, 
       validation_type: validationType 
@@ -514,28 +540,28 @@ export async function removeSkillValidation(signalId, validatorId, validationTyp
 
 // Get validation counts for a signal
 export async function getSkillValidations(signalId) {
-  const res = await fetch(`${API_BASE}/skills/${signalId}/validations`);
+  const res = await fetch(`${API_BASE}/skills/${signalId}/validations`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error('Failed to fetch validations');
   return res.json();
 }
 
 // Get user's received validations (show on their profile)
 export async function getUserReceivedValidations(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/validations`);
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/validations`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error('Failed to fetch user validations');
   return res.json();
 }
 
 // Get which signals a user has already validated
 export async function getUserValidatedSignals(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/has-validated`);
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/has-validated`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error('Failed to fetch validated signals');
   return res.json();
 }
 
 // Get user's skill signals with validation counts (for validation UI)
 export async function getUserSkillSignals(userId) {
-  const res = await fetch(`${API_BASE}/skills/user/${userId}/signals`);
+  const res = await fetch(`${API_BASE}/skills/user/${userId}/signals`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error('Failed to fetch skill signals');
   return res.json();
 }
@@ -546,14 +572,14 @@ export async function getUserSkillSignals(userId) {
 
 // Get user notifications
 export async function fetchNotifications(userId, limit = 50) {
-  const res = await fetch(`${API_BASE}/notifications/${userId}?limit=${limit}`);
+  const res = await fetch(`${API_BASE}/notifications/${userId}?limit=${limit}`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch notifications");
   return res.json();
 }
 
 // Get unread count
 export async function fetchUnreadCount(userId) {
-  const res = await fetch(`${API_BASE}/notifications/${userId}/unread-count`);
+  const res = await fetch(`${API_BASE}/notifications/${userId}/unread-count`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch unread count");
   return res.json();
 }
@@ -562,6 +588,7 @@ export async function fetchUnreadCount(userId) {
 export async function markNotificationAsRead(notificationId) {
   const res = await fetch(`${API_BASE}/notifications/${notificationId}/read`, {
     method: "PUT",
+    headers: getUserHeaders(),
   });
   if (!res.ok) throw new Error("Failed to mark as read");
   return res.json();
@@ -571,6 +598,7 @@ export async function markNotificationAsRead(notificationId) {
 export async function markAllNotificationsAsRead(userId) {
   const res = await fetch(`${API_BASE}/notifications/${userId}/read-all`, {
     method: "PUT",
+    headers: getUserHeaders(),
   });
   if (!res.ok) throw new Error("Failed to mark all as read");
   return res.json();
@@ -580,6 +608,7 @@ export async function markAllNotificationsAsRead(userId) {
 export async function deleteNotification(notificationId) {
   const res = await fetch(`${API_BASE}/notifications/${notificationId}`, {
     method: "DELETE",
+    headers: getUserHeaders(),
   });
   if (!res.ok) throw new Error("Failed to delete notification");
   return res.json();
@@ -590,7 +619,7 @@ export async function deleteNotification(notificationId) {
 // ============================================================
 
 export async function fetchChannels() {
-  const res = await fetch(`${API_BASE}/chat/channels`);
+  const res = await fetch(`${API_BASE}/chat/channels`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch channels");
   return res.json();
 }
@@ -603,7 +632,7 @@ export async function createChannel(
 ) {
   const res = await fetch(`${API_BASE}/chat/channels?user_id=${userId}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({ name, description, is_private: isPrivate }),
   });
   if (!res.ok) throw new Error("Failed to create channel");
@@ -615,6 +644,7 @@ export async function joinChannel(channelId, userId) {
     `${API_BASE}/chat/channels/${channelId}/join?user_id=${userId}`,
     {
       method: "POST",
+      headers: getUserHeaders(),
     },
   );
   if (!res.ok) throw new Error("Failed to join channel");
@@ -624,6 +654,7 @@ export async function joinChannel(channelId, userId) {
 export async function fetchChannelMessages(channelId, limit = 50) {
   const res = await fetch(
     `${API_BASE}/chat/channels/${channelId}/messages?limit=${limit}`,
+    { headers: getUserHeaders() },
   );
   if (!res.ok) throw new Error("Failed to fetch messages");
   return res.json();
@@ -632,6 +663,7 @@ export async function fetchChannelMessages(channelId, limit = 50) {
 export async function fetchDMMessages(userId, currentUserId, limit = 50) {
   const res = await fetch(
     `${API_BASE}/chat/dm/${userId}?currentUserId=${currentUserId}&limit=${limit}`,
+    { headers: getUserHeaders() },
   );
   if (!res.ok) throw new Error("Failed to fetch DM");
   return res.json();
@@ -647,7 +679,7 @@ export async function sendMessage(
 ) {
   const res = await fetch(`${API_BASE}/chat/messages?user_id=${userId}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({
       content,
       channel_id: channelId,
@@ -665,7 +697,7 @@ export async function fetchPresence(userId) {
     userId ?
       `${API_BASE}/chat/presence?user_id=${userId}`
     : `${API_BASE}/chat/presence`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch presence");
   return res.json();
 }
@@ -673,7 +705,7 @@ export async function fetchPresence(userId) {
 export async function updatePresence(userId, status, channelId = null) {
   const res = await fetch(`${API_BASE}/chat/presence?user_id=${userId}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({ status, current_channel_id: channelId }),
   });
   if (!res.ok) throw new Error("Failed to update presence");
@@ -681,7 +713,7 @@ export async function updatePresence(userId, status, channelId = null) {
 }
 
 export async function fetchDMUsers(userId) {
-  const res = await fetch(`${API_BASE}/chat/dm-users?user_id=${userId}`);
+  const res = await fetch(`${API_BASE}/chat/dm-users?user_id=${userId}`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch DM users");
   return res.json();
 }
@@ -696,6 +728,7 @@ export async function uploadFile(file) {
 
   const res = await fetch(`${API_BASE}/upload/upload`, {
     method: "POST",
+    headers: getUserHeaders(),
     body: formData,
   });
 
@@ -717,6 +750,7 @@ export async function uploadAvatar(userId, file) {
 
   const res = await fetch(`${API_BASE}/upload/avatar`, {
     method: "POST",
+    headers: getUserHeaders(),
     body: formData,
   });
 
@@ -735,6 +769,7 @@ export function getAvatarUrl(userId) {
 export async function deleteAvatar(userId) {
   const res = await fetch(`${API_BASE}/upload/avatar/${userId}`, {
     method: "DELETE",
+    headers: getUserHeaders(),
   });
 
   if (!res.ok) {
@@ -776,7 +811,7 @@ export async function deleteProject(projectId) {
 }
 
 export async function fetchHealth() {
-  const res = await fetch(`${API_BASE}/health`);
+  const res = await fetch(`${API_BASE}/health`, { headers: getUserHeaders() });
   if (!res.ok) throw new Error("Failed to fetch health");
   return res.json();
 }
@@ -832,25 +867,58 @@ export async function deleteError(errorId) {
 // ============================================================
 
 export async function fetchAdminStats() {
-  const res = await fetch(`${API_BASE}/admin/stats`);
+  const res = await fetch(`${API_BASE}/admin/stats`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch admin stats");
   return res.json();
 }
 
 export async function fetchActiveSessions() {
-  const res = await fetch(`${API_BASE}/admin/active-sessions`);
+  const res = await fetch(`${API_BASE}/admin/active-sessions`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch active sessions");
   return res.json();
 }
 
 export async function fetchPlatformStats() {
-  const res = await fetch(`${API_BASE}/admin/platform-stats`);
+  const res = await fetch(`${API_BASE}/admin/platform-stats`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch platform stats");
   return res.json();
 }
 
 export async function fetchGrowthStats() {
-  const res = await fetch(`${API_BASE}/admin/growth-stats`);
+  const res = await fetch(`${API_BASE}/admin/growth-stats`, {
+    headers: getUserHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch growth stats");
+  return res.json();
+}
+
+// ============================================================
+// MAINTENANCE MODE
+// ============================================================
+
+export async function fetchMaintenanceSettings() {
+  const res = await fetch(`${API_BASE}/admin/settings/maintenance`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch maintenance settings");
+  return res.json();
+}
+
+export async function updateMaintenanceSettings(enabled, message) {
+  const res = await fetch(`${API_BASE}/admin/settings/maintenance`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...getUserHeaders(),
+    },
+    body: JSON.stringify({ enabled, message }),
+  });
+  if (!res.ok) throw new Error("Failed to update maintenance settings");
   return res.json();
 }

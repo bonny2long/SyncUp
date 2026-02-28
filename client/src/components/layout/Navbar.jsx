@@ -114,7 +114,7 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     mentorship: "Mentorship Bridge",
     skills: "Skill Tracker",
     portfolio: "Project Portfolio",
-    chat: "Team Chat",
+    chat: "SyncChat",
     settings: "Settings",
   };
   const pageTitle = titleMap[activeTab] || "SyncUp";

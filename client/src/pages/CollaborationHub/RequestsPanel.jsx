@@ -17,7 +17,6 @@ export default function RequestsPanel({ onRefresh }) {
   const loadRequests = useCallback(async () => {
     if (!currentUser?.id) return;
 
-    console.log("Loading join requests for user:", currentUser.id);
     setError("");
     setLoading(true);
 
@@ -38,7 +37,6 @@ export default function RequestsPanel({ onRefresh }) {
       }, {});
 
       setGroupedRequests(grouped);
-      console.log("Requests loaded:", data.length);
     } catch (err) {
       const { message } = getErrorMessage(err);
       setError(message);

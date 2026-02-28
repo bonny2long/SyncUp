@@ -24,6 +24,8 @@ import {
   fetchActiveSessions,
   fetchPlatformStats,
   fetchGrowthStats,
+  fetchMaintenanceSettings,
+  updateMaintenanceSettings,
 } from "../utils/api";
 import HelpModal from "../components/shared/HelpModal";
 import ConfirmModal from "../components/shared/ConfirmModal";
@@ -191,7 +193,7 @@ const ActionMenu = memo(function ActionMenu({ isOpen, onClose, actions }) {
 
 export default function AdminDashboard() {
   const { user, logout } = useUser();
-  const { addToast } = useToast();
+  const { addToast, handleError } = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
@@ -274,6 +276,10 @@ export default function AdminDashboard() {
     maintenanceMode: false,
     showLeaderboards: true,
   });
+  const [maintenanceMessage, setMaintenanceMessage] = useState(
+    "We are doing some work on the app. Please check back soon.",
+  );
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   // Phase 1: Load critical data needed for initial overview render
   useEffect(() => {
@@ -316,7 +322,7 @@ export default function AdminDashboard() {
           inactive: 0,
         });
       } catch (err) {
-        console.error("Failed to load admin data:", err);
+        handleError(err, "loadCriticalData");
       } finally {
         setLoading(false);
       }
@@ -346,7 +352,10 @@ export default function AdminDashboard() {
           fetchActiveSessions().catch(() => ({ activeSessions: 0 })),
           fetchPlatformStats().catch(() => null),
           fetchRecentErrors().catch(() => []),
-          fetchGrowthStats().catch(() => []),
+          fetchGrowthStats().catch((err) => {
+            console.error("Failed to load growth stats:", err);
+            return [];
+          }),
         ]);
         setHealthData(health);
         setAnalyticsData(analytics);
@@ -363,11 +372,28 @@ export default function AdminDashboard() {
           inactive: adminStatsData?.inactiveUsers || 0,
         }));
       } catch (err) {
-        console.error("Failed to load deferred admin data:", err);
+        handleError(err, "loadDeferredData");
       }
     }
     loadDeferredData();
   }, [loading]);
+
+  // Load maintenance settings
+  useEffect(() => {
+    async function loadMaintenanceSettings() {
+      try {
+        const data = await fetchMaintenanceSettings();
+        setFeatureFlags((prev) => ({
+          ...prev,
+          maintenanceMode: data.enabled,
+        }));
+        setMaintenanceMessage(data.message);
+      } catch (err) {
+        console.error("Failed to load maintenance settings:", err);
+      }
+    }
+    loadMaintenanceSettings();
+  }, []);
 
   // Handle click outside for menu
   useEffect(() => {
@@ -708,15 +734,18 @@ export default function AdminDashboard() {
   }, [sessions]);
 
   // Build activity from real updates data
-  const recentActivity = updates.slice(0, 5).map((update) => ({
-    icon: Activity,
-    text: `${update.user_name || "Someone"}: ${update.content?.substring(0, 50) || "posted an update"}...`,
-    time:
-      update.created_at ?
-        new Date(update.created_at).toLocaleDateString()
-      : "Recently",
-    color: "text-blue-400",
-  }));
+  const recentActivity = useMemo(() => {
+    const items = updates.map((update) => ({
+      icon: Activity,
+      text: `${update.user_name || "Someone"}: ${update.content?.substring(0, 50) || "posted an update"}...`,
+      time:
+        update.created_at ?
+          new Date(update.created_at).toLocaleDateString()
+        : "Recently",
+      color: "text-blue-400",
+    }));
+    return showAllActivity ? items : items.slice(0, 5);
+  }, [updates, showAllActivity]);
 
   // Alerts based on real data
   const alerts = [
@@ -838,7 +867,10 @@ export default function AdminDashboard() {
       />
 
       {/* Navigation Tabs */}
-      <nav className="bg-surface border-b border-border px-6" aria-label="Admin tabs">
+      <nav
+        className="bg-surface border-b border-border px-6"
+        aria-label="Admin tabs"
+      >
         <div className="flex gap-1" role="tablist">
           {tabs.map((tab) => (
             <button
@@ -899,17 +931,23 @@ export default function AdminDashboard() {
             </div>
 
             {/* Platform Activity Chart */}
-            {growthData.length > 0 && (
-              <div className="bg-surface rounded-xl p-5 border border-border">
-                <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
-                  <BarChart3 className="text-accent" size={20} /> Platform
-                  Activity (Last 30 Days)
-                </h3>
+            <div className="bg-surface rounded-xl p-5 border border-border">
+              <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+                <BarChart3 className="text-accent" size={20} /> Platform
+                Activity (Last 30 Days)
+              </h3>
+              {growthData.length === 0 ? (
+                <div className="h-80 flex items-center justify-center text-gray-500">
+                  No data available. Check console for errors.
+                </div>
+              ) : (
                 <div className="h-80">
-                    <AgCharts
-                      options={{
+                  <AgCharts
+                    options={{
                       data: growthData,
                       theme: {
+                        baseTheme:
+                          isDarkMode ? "ag-default-dark" : "ag-default",
                         palette: {
                           fills: ["#3b82f6", "#22c55e"],
                           strokes: ["#3b82f6", "#22c55e"],
@@ -953,8 +991,8 @@ export default function AdminDashboard() {
                     }}
                   />
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -977,8 +1015,11 @@ export default function AdminDashboard() {
                     </p>
                   }
                 </div>
-                <button className="w-full mt-4 text-sm text-accent hover:underline">
-                  View All Activity
+                <button 
+                  onClick={() => setShowAllActivity(!showAllActivity)}
+                  className="w-full mt-4 text-sm text-accent hover:underline"
+                >
+                  {showAllActivity ? "Show Less" : "View All Activity"}
                 </button>
               </div>
 
@@ -1200,7 +1241,10 @@ export default function AdminDashboard() {
                               )
                             }
                           >
-                            <MoreHorizontal size={18} aria-label="More options" />
+                            <MoreHorizontal
+                              size={18}
+                              aria-label="More options"
+                            />
                           </button>
                           {openMenu?.type === "user" &&
                             openMenu?.id === user.id && (
@@ -1405,7 +1449,10 @@ export default function AdminDashboard() {
                               )
                             }
                           >
-                            <MoreHorizontal size={18} aria-label="More options" />
+                            <MoreHorizontal
+                              size={18}
+                              aria-label="More options"
+                            />
                           </button>
                           {openMenu?.type === "project" &&
                             openMenu?.id === project.id && (
@@ -2357,12 +2404,24 @@ export default function AdminDashboard() {
                   </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      setFeatureFlags({
-                        ...featureFlags,
-                        maintenanceMode: !featureFlags.maintenanceMode,
-                      })
-                    }
+                    onClick={async () => {
+                      const newValue = !featureFlags.maintenanceMode;
+                      try {
+                        await updateMaintenanceSettings(
+                          newValue,
+                          maintenanceMessage,
+                        );
+                        setFeatureFlags({
+                          ...featureFlags,
+                          maintenanceMode: newValue,
+                        });
+                      } catch (err) {
+                        console.error(
+                          "Failed to update maintenance mode:",
+                          err,
+                        );
+                      }
+                    }}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       featureFlags.maintenanceMode ? "bg-red-500" : (
                         "bg-gray-400"
@@ -2378,6 +2437,33 @@ export default function AdminDashboard() {
                     />
                   </button>
                 </div>
+                {featureFlags.maintenanceMode && (
+                  <div className="mt-2 p-3 bg-surface-highlight/30 rounded-lg">
+                    <label className="block text-xs text-gray-400 mb-1">
+                      Maintenance Message
+                    </label>
+                    <input
+                      type="text"
+                      value={maintenanceMessage}
+                      onChange={(e) => setMaintenanceMessage(e.target.value)}
+                      onBlur={async () => {
+                        try {
+                          await updateMaintenanceSettings(
+                            featureFlags.maintenanceMode,
+                            maintenanceMessage,
+                          );
+                        } catch (err) {
+                          console.error(
+                            "Failed to update maintenance message:",
+                            err,
+                          );
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-background border border-gray-600 rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent"
+                      placeholder="Enter maintenance message..."
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                   <div>
                     <span className="text-primary font-medium">

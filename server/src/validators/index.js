@@ -146,11 +146,14 @@ export const mentorshipValidators = {
       .withMessage("intern_id is required")
       .isInt({ min: 1 })
       .withMessage("intern_id must be a positive integer"),
-    body("scheduled_at")
+    body("session_date")
       .notEmpty()
-      .withMessage("scheduled_at is required")
+      .withMessage("session_date is required")
       .isISO8601()
-      .withMessage("scheduled_at must be a valid ISO 8601 date"),
+      .withMessage("session_date must be a valid ISO 8601 date"),
+    body("session_focus")
+      .notEmpty()
+      .withMessage("session_focus is required"),
     body("topic")
       .optional()
       .isLength({ max: 500 })

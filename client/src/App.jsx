@@ -1,11 +1,11 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useUser } from "./context/UserContext";
 import { ToastProvider } from "./context/ToastContext";
 import { OnboardingProvider } from "./context/OnboardingContext";
 import OnboardingTour from "./components/shared/OnboardingTour";
+import { API_BASE } from "./utils/api";
 
-// Lazy-loaded pages — each becomes its own chunk
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Login = React.lazy(() => import("./pages/Login"));
 const Settings = React.lazy(() => import("./pages/Settings"));
@@ -13,6 +13,7 @@ const ProjectPortfolio = React.lazy(() => import("./pages/ProjectPortfolio"));
 const UserProfile = React.lazy(() => import("./pages/UserProfile"));
 const Chat = React.lazy(() => import("./pages/Chat/Chat"));
 const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
+const Maintenance = React.lazy(() => import("./pages/Maintenance"));
 
 function LoadingFallback() {
   return (
@@ -20,6 +21,34 @@ function LoadingFallback() {
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
     </div>
   );
+}
+
+function MaintenanceCheck({ children }) {
+  const { user, loading } = useUser();
+  const [maintenanceMode, setMaintenanceMode] = useState(null);
+
+  useEffect(() => {
+    async function checkMaintenance() {
+      try {
+        const res = await fetch(`${API_BASE}/admin/settings/maintenance`);
+        if (res.ok) {
+          const data = await res.json();
+          setMaintenanceMode(data.enabled);
+        }
+      } catch {
+        setMaintenanceMode(false);
+      }
+    }
+    checkMaintenance();
+  }, []);
+
+  if (loading || maintenanceMode === null) return null;
+
+  if (maintenanceMode && (!user || user.role !== "admin")) {
+    return <Navigate to="/maintenance" replace />;
+  }
+
+  return children;
 }
 
 function ProtectedRoute({
@@ -48,73 +77,94 @@ export default function App() {
         <OnboardingTour />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
+            <Route path="/maintenance" element={<Maintenance />} />
             <Route
               path="/"
-              element={<Navigate to="/collaboration" replace />}
+              element={
+                <MaintenanceCheck>
+                  <Navigate to="/collaboration" replace />
+                </MaintenanceCheck>
+              }
             />
             <Route
               path="/collaboration"
               element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
+                <MaintenanceCheck>
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
               }
             />
             <Route
               path="/chat"
               element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
+                <MaintenanceCheck>
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
               }
             />
             <Route
               path="/mentorship"
               element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
+                <MaintenanceCheck>
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
               }
             />
             <Route
               path="/skills"
               element={
-                <ProtectedRoute requireIntern={true}>
-                  <Dashboard />
-                </ProtectedRoute>
+                <MaintenanceCheck>
+                  <ProtectedRoute requireIntern={true}>
+                    <Dashboard />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
               }
             />
             <Route
               path="/profile/:userId"
               element={
-                <ProtectedRoute>
-                  <UserProfile />
-                </ProtectedRoute>
+                <MaintenanceCheck>
+                  <ProtectedRoute>
+                    <UserProfile />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
               }
             />
             <Route path="/login" element={<Login />} />
             <Route
               path="/portfolio"
               element={
-                <ProtectedRoute>
-                  <ProjectPortfolio />
-                </ProtectedRoute>
+                <MaintenanceCheck>
+                  <ProtectedRoute>
+                    <ProjectPortfolio />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
               }
             />
             <Route
               path="/settings"
               element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
+                <MaintenanceCheck>
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
               }
             />
             <Route
               path="/admin"
               element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminDashboard />
-                </ProtectedRoute>
+                <MaintenanceCheck>
+                  <ProtectedRoute requireAdmin={true}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
               }
             />
             <Route path="*" element={<Navigate to="/" replace />} />

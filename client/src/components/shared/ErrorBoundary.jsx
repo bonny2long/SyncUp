@@ -1,14 +1,7 @@
 import React from "react";
 import { AlertCircle, RotateCcw } from "lucide-react";
+import { reportToServer } from "../../utils/logger";
 
-/**
- * ErrorBoundary - Catches React errors and displays fallback UI
- *
- * Usage:
- * <ErrorBoundary>
- *   <YourComponent />
- * </ErrorBoundary>
- */
 export class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -20,7 +13,15 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("Error caught by boundary:", error, errorInfo);
+    const isDev = import.meta.env.DEV;
+    if (isDev) {
+      console.error("Error caught by boundary:", error, errorInfo);
+    }
+    
+    reportToServer("react_error", error.message, {
+      stack: error.stack,
+      componentStack: errorInfo?.componentStack,
+    });
   }
 
   handleReset = () => {
@@ -57,9 +58,6 @@ export class ErrorBoundary extends React.Component {
   }
 }
 
-/**
- * ChartError - Specific error state for chart components
- */
 export function ChartError({ onRetry, error }) {
   return (
     <div className="w-full p-6 text-center">

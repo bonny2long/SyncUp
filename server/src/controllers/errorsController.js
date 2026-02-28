@@ -100,8 +100,6 @@ export const reportError = async (req, res) => {
       [error_type || "server", message, stack || null, user_id || null, page_url || null, user_agent || null]
     );
     
-    console.log(`[ERROR REPORTED] ${error_type}: ${message.substring(0, 50)}...`);
-    
     res.json({ id: result.insertId, message: "Error reported successfully" });
   } catch (err) {
     console.error("Failed to report error:", err.message);

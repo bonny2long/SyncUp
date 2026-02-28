@@ -21,6 +21,7 @@ export const getProjects = async (req, res) => {
         p.status,
         p.owner_id,
         p.visibility,
+        p.start_date as created_at,
         owner.name AS owner_name,
         MAX(p.metadata) AS metadata,
         ${
@@ -54,8 +55,8 @@ export const getProjects = async (req, res) => {
       LEFT JOIN users usr ON pm.user_id = usr.id
       LEFT JOIN project_skills ps ON ps.project_id = p.id
       LEFT JOIN progress_updates upd ON upd.project_id = p.id
-      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.metadata, owner.name
-      ORDER BY p.id ASC;
+      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.metadata, owner.name, p.start_date
+      ORDER BY p.start_date DESC;
     `,
       userId ? [userId] : params,
     );
@@ -100,8 +101,8 @@ export const createProject = async (req, res) => {
     // 1. Create Project with visibility
     const [result] = await connection.query(
       `
-      INSERT INTO projects (title, description, owner_id, visibility, metadata)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO projects (title, description, owner_id, visibility, metadata, start_date)
+      VALUES (?, ?, ?, ?, ?, NOW())
       `,
       [
         title.trim(),
@@ -1009,8 +1010,15 @@ export const getTeamMomentum = async (req, res) => {
         ) as active_this_week
       `,
       [
-        projectId, projectId, projectId, projectId, projectId,
-        projectId, projectId, projectId, projectId,
+        projectId,
+        projectId,
+        projectId,
+        projectId,
+        projectId,
+        projectId,
+        projectId,
+        projectId,
+        projectId,
       ],
     );
 

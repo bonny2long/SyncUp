@@ -38,7 +38,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 export default function UserProfile() {
   const { userId } = useParams();
   const { user: currentUser, updateUser } = useUser();
-  const { addToast } = useToast();
+  const { addToast, handleError } = useToast();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,7 @@ export default function UserProfile() {
     } catch (err) {
       const { message } = getErrorMessage(err);
       setError(message);
-      console.error("Failed to load profile:", err);
+      handleError(err, "loadProfile");
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,7 @@ export default function UserProfile() {
         setUserBadges((prev) => [...prev, ...checkData.newlyEarned]);
       }
     } catch (err) {
-      console.error("Failed to load badges:", err);
+      handleError(err, "loadBadges");
     }
   };
 
@@ -125,7 +125,7 @@ export default function UserProfile() {
       setSkillSignals(signalsData || []);
       setValidatedSignals(validatedData || {});
     } catch (err) {
-      console.error("Failed to load skill signals:", err);
+      handleError(err, "loadSkillSignals");
     }
   };
 

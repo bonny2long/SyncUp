@@ -20,7 +20,6 @@ export default function TeamActivityFeed({ projectId }) {
         setLoading(true);
         setError(null);
 
-        console.log("Fetching team updates for project:", projectId);
         const response = await fetch(
           `${API_BASE}/progress_updates/project/${projectId}`,
         );
@@ -30,7 +29,6 @@ export default function TeamActivityFeed({ projectId }) {
         }
 
         const data = await response.json();
-        console.log("Team updates response:", data);
         setUpdates(data.slice(0, 5));
       } catch (err) {
         console.error("Failed to fetch team updates:", err);
