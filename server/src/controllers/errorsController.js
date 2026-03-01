@@ -5,7 +5,11 @@ export const getAllErrors = async (req, res) => {
   const { status, type, page = 1, limit = 20 } = req.query;
   const offset = (page - 1) * limit;
 
-  let query = "SELECT * FROM system_errors WHERE 1=1";
+  let query = `
+    SELECT se.*, u.name as user_name, u.role as user_role 
+    FROM system_errors se 
+    LEFT JOIN users u ON se.user_id = u.id 
+    WHERE 1=1`;
   const params = [];
 
   if (status && status !== "all") {
@@ -23,7 +27,7 @@ export const getAllErrors = async (req, res) => {
 
   try {
     const [rows] = await pool.query(query, params);
-    
+
     // Get total count for pagination
     let countQuery = "SELECT COUNT(*) as total FROM system_errors WHERE 1=1";
     const countParams = [];
@@ -43,8 +47,8 @@ export const getAllErrors = async (req, res) => {
         page: parseInt(page),
         limit: parseInt(limit),
         total: countResult[0].total,
-        pages: Math.ceil(countResult[0].total / limit)
-      }
+        pages: Math.ceil(countResult[0].total / limit),
+      },
     });
   } catch (err) {
     console.error("Failed to fetch errors:", err.message);
@@ -66,7 +70,7 @@ export const getErrorStats = async (req, res) => {
       FROM system_errors
       GROUP BY error_type
     `);
-    
+
     const [totals] = await pool.query(`
       SELECT 
         COUNT(*) as total,
@@ -77,7 +81,7 @@ export const getErrorStats = async (req, res) => {
     res.json({
       total: totals[0].total,
       open: totals[0].open,
-      byType: rows
+      byType: rows,
     });
   } catch (err) {
     console.error("Failed to fetch error stats:", err.message);
@@ -87,7 +91,8 @@ export const getErrorStats = async (req, res) => {
 
 // Report a new error
 export const reportError = async (req, res) => {
-  const { error_type, message, stack, user_id, page_url, user_agent } = req.body;
+  const { error_type, message, stack, user_id, page_url, user_agent } =
+    req.body;
 
   if (!message) {
     return res.status(400).json({ error: "Message is required" });
@@ -97,9 +102,16 @@ export const reportError = async (req, res) => {
     const [result] = await pool.query(
       `INSERT INTO system_errors (error_type, message, stack, user_id, page_url, user_agent, status) 
        VALUES (?, ?, ?, ?, ?, ?, 'open')`,
-      [error_type || "server", message, stack || null, user_id || null, page_url || null, user_agent || null]
+      [
+        error_type || "server",
+        message,
+        stack || null,
+        user_id || null,
+        page_url || null,
+        user_agent || null,
+      ],
     );
-    
+
     res.json({ id: result.insertId, message: "Error reported successfully" });
   } catch (err) {
     console.error("Failed to report error:", err.message);
@@ -113,7 +125,9 @@ export const updateErrorStatus = async (req, res) => {
   const { status, resolved_by } = req.body;
 
   if (!status || !["open", "resolved", "ignored"].includes(status)) {
-    return res.status(400).json({ error: "Valid status required: open, resolved, ignored" });
+    return res
+      .status(400)
+      .json({ error: "Valid status required: open, resolved, ignored" });
   }
 
   try {
@@ -122,7 +136,7 @@ export const updateErrorStatus = async (req, res) => {
       `UPDATE system_errors 
        SET status = ?, resolved_at = ${resolvedAt}, resolved_by = ? 
        WHERE id = ?`,
-      [status, resolved_by || null, id]
+      [status, resolved_by || null, id],
     );
     res.json({ message: "Error status updated" });
   } catch (err) {
@@ -148,9 +162,11 @@ export const deleteError = async (req, res) => {
 export const getRecentErrors = async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT * FROM system_errors 
-      WHERE status = 'open'
-      ORDER BY created_at DESC 
+      SELECT se.*, u.name as user_name 
+      FROM system_errors se 
+      LEFT JOIN users u ON se.user_id = u.id 
+      WHERE se.status = 'open'
+      ORDER BY se.created_at DESC 
       LIMIT 5
     `);
     res.json(rows);

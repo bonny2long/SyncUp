@@ -29,8 +29,17 @@ const avatarDir = path.join(__dirname, "../uploads/avatars");
 
 // Allowed extensions whitelist
 const allowedExtensions = new Set([
-  ".jpg", ".jpeg", ".png", ".gif", ".webp",
-  ".pdf", ".txt", ".doc", ".docx", ".xls", ".xlsx"
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".pdf",
+  ".txt",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
 ]);
 
 // Configure multer storage for chat files
@@ -41,11 +50,11 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
-    
+
     if (!allowedExtensions.has(ext)) {
       return cb(new Error("File extension not allowed"), false);
     }
-    
+
     cb(null, uniqueSuffix + ext);
   },
 });
@@ -66,7 +75,7 @@ const fileFilter = (req, file, cb) => {
   ];
 
   const ext = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
-  
+
   if (!allowedExtensions.has(ext)) {
     return cb(new Error("File extension not allowed"), false);
   }
@@ -92,12 +101,18 @@ const avatarUpload = multer({
   fileFilter: (req, file, cb) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     const ext = path.extname(sanitizeFilename(file.originalname)).toLowerCase();
-    const allowedAvatarExtensions = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
-    
+    const allowedAvatarExtensions = new Set([
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".webp",
+    ]);
+
     if (!allowedAvatarExtensions.has(ext)) {
       return cb(new Error("File extension not allowed for avatar"), false);
     }
-    
+
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -141,19 +156,21 @@ router.post("/avatar", avatarUpload.single("avatar"), async (req, res) => {
 
   try {
     // Delete existing avatar if any
-    await pool.query("DELETE FROM profile_pictures WHERE user_id = ?", [userId]);
+    await pool.query("DELETE FROM profile_pictures WHERE user_id = ?", [
+      userId,
+    ]);
 
     // Insert new avatar
     await pool.query(
       "INSERT INTO profile_pictures (user_id, file_data, mime_type, file_name) VALUES (?, ?, ?, ?)",
-      [userId, req.file.buffer, req.file.mimetype, req.file.originalname]
+      [userId, req.file.buffer, req.file.mimetype, req.file.originalname],
     );
 
     // Update users table with reference
-    await pool.query(
-      "UPDATE users SET profile_pic = ? WHERE id = ?",
-      [`avatar:${userId}`, userId]
-    );
+    await pool.query("UPDATE users SET profile_pic = ? WHERE id = ?", [
+      `avatar:${userId}`,
+      userId,
+    ]);
 
     res.json({
       success: true,
@@ -167,13 +184,20 @@ router.post("/avatar", avatarUpload.single("avatar"), async (req, res) => {
 });
 
 // Get avatar
+router.options("/avatar/:userId", (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  res.status(204).send();
+});
+
 router.get("/avatar/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
     const [rows] = await pool.query(
       "SELECT file_data, mime_type, file_name FROM profile_pictures WHERE user_id = ?",
-      [userId]
+      [userId],
     );
 
     if (rows.length === 0) {
@@ -181,6 +205,10 @@ router.get("/avatar/:userId", async (req, res) => {
     }
 
     const avatar = rows[0];
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
     res.set("Content-Type", avatar.mime_type);
     res.set("Content-Disposition", `inline; filename="${avatar.file_name}"`);
     res.send(avatar.file_data);
@@ -195,8 +223,12 @@ router.delete("/avatar/:userId", async (req, res) => {
   const { userId } = req.params;
 
   try {
-    await pool.query("DELETE FROM profile_pictures WHERE user_id = ?", [userId]);
-    await pool.query("UPDATE users SET profile_pic = NULL WHERE id = ?", [userId]);
+    await pool.query("DELETE FROM profile_pictures WHERE user_id = ?", [
+      userId,
+    ]);
+    await pool.query("UPDATE users SET profile_pic = NULL WHERE id = ?", [
+      userId,
+    ]);
 
     res.json({ success: true, message: "Avatar deleted" });
   } catch (err) {

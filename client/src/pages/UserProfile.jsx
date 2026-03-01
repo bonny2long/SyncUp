@@ -50,7 +50,7 @@ export default function UserProfile() {
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [allBadges, setAllBadges] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
-  const [newBadge, setNewBadge] = useState(null);
+  const [newBadges, setNewBadges] = useState([]);
   const [showAllBadges, setShowAllBadges] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", bio: "" });
@@ -106,7 +106,7 @@ export default function UserProfile() {
       const checkData = await checkRes.json();
 
       if (checkData.newlyEarned && checkData.newlyEarned.length > 0) {
-        setNewBadge(checkData.newlyEarned[0]);
+        setNewBadges(checkData.newlyEarned);
         setUserBadges((prev) => [...prev, ...checkData.newlyEarned]);
       }
     } catch (err) {
@@ -876,8 +876,8 @@ export default function UserProfile() {
       </div>
 
       {/* Badge Notification Modal */}
-      {newBadge && (
-        <BadgeNotification badge={newBadge} onClose={() => setNewBadge(null)} />
+      {newBadges.length > 0 && (
+        <BadgeNotification badges={newBadges} onClose={() => setNewBadges([])} />
       )}
     </div>
   );

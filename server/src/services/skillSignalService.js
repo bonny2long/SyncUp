@@ -3,6 +3,10 @@ import pool from "../config/db.js";
 /**
  * Centralized skill signal emission.
  * This is the ONLY place allowed to write to user_skill_signals.
+ * 
+ * ANTI-GAMING RULES:
+ * - Each user can only get 1 signal per skill per source (project/update/mentorship)
+ * - Duplicate signals are ignored to prevent farming points
  */
 export async function emitSkillSignals({
   userId,
@@ -54,27 +58,185 @@ export async function emitSkillSignals({
   const uniqueSkillIds = [...new Set(skillIds)];
 
   // ─────────────────────────────────────────────
-  // 3. Insert signals (append-only)
+  // 3. ANTI-GAMING: Check for existing signals
+  // Only insert if no signal exists for this user+skill+source combo
+  // This prevents users from farming points by posting multiple updates
+  // with the same skill
   // ─────────────────────────────────────────────
-  const values = uniqueSkillIds.map((skillId) => [
-    userId,
-    skillId,
-    sourceType,
-    sourceId,
-    signalType,
-    weight,
-  ]);
-
   const db = connection || pool;
+  
+  // Get existing signals for this user + source
+  const [existing] = await db.query(
+    `SELECT user_id, skill_id, source_type, source_id 
+     FROM user_skill_signals 
+     WHERE user_id = ? AND source_type = ? AND source_id = ?`,
+    [userId, sourceType, sourceId]
+  );
 
+  // Create a set of skill_ids that already have signals
+  const existingSkills = new Set(existing.map(s => s.skill_id));
+  
+  // Only add signals for skills that don't already have one
+  const newValues = uniqueSkillIds
+    .filter(skillId => !existingSkills.has(skillId))
+    .map((skillId) => [
+      userId,
+      skillId,
+      sourceType,
+      sourceId,
+      signalType,
+      weight,
+    ]);
+
+  if (newValues.length === 0) {
+    console.log("All skills already signaled for this source - skipping to prevent gaming");
+    return;
+  }
+
+  // ─────────────────────────────────────────────
+  // 4. Insert only new signals
+  // ─────────────────────────────────────────────
   await db.query(
     `
     INSERT INTO user_skill_signals
       (user_id, skill_id, source_type, source_id, signal_type, weight)
     VALUES ?
     `,
-    [values],
+    [newValues],
   );
+  
+  console.log(`Inserted ${newValues.length} new skill signals, filtered ${existingSkills.size} duplicates`);
+
+  // ─────────────────────────────────────────────
+  // 5. ANTI-GAMING: Create verification records for team projects
+  // Team members must verify skills claimed by others
+  // Solo projects are auto-verified
+  // ─────────────────────────────────────────────
+  
+  // Get project_id from context or sourceId
+  const projectId = context.project_id || (sourceType === 'project' ? sourceId : null);
+  
+  if (projectId) {
+    // Check if this is a team project (more than 1 member)
+    const [members] = await db.query(
+      `SELECT user_id FROM project_members WHERE project_id = ?`,
+      [projectId]
+    );
+    
+    const isTeamProject = members.length > 1;
+    
+    // Get the skill names for notifications
+    const skillNames = [];
+    if (newValues.length > 0) {
+      const skillIdsList = newValues.map(v => v[1]);
+      const [skills] = await db.query(
+        `SELECT id, skill_name FROM skills WHERE id IN (?)`,
+        [skillIdsList]
+      );
+      skills.forEach(s => skillNames.push(s.skill_name));
+    }
+
+    if (isTeamProject) {
+      console.log("Team project detected - creating verifications and notifications");
+      
+      // Create pending verification records for each new signal
+      for (const signal of newValues) {
+        // Get the signal ID we just inserted
+        const [signalRow] = await db.query(
+          `SELECT id FROM user_skill_signals 
+           WHERE user_id = ? AND skill_id = ? AND source_type = ? AND source_id = ? 
+           LIMIT 1`,
+          [signal[0], signal[1], signal[2], signal[3]]
+        );
+        
+        if (signalRow.length > 0) {
+          await db.query(
+            `INSERT INTO skill_verifications (signal_id, project_id, claimant_id, skill_id, status) 
+             VALUES (?, ?, ?, ?, 'pending')`,
+            [signalRow[0].id, projectId, signal[0], signal[1]]
+          );
+        }
+      }
+      
+      // Notify team members about pending skill verifications
+      const teamMemberIds = members
+        .map(m => m.user_id)
+        .filter(id => id !== userId); // Don't notify the claimant
+      
+      if (teamMemberIds.length > 0 && skillNames.length > 0) {
+        try {
+          await createSkillVerificationNotification(
+            db, 
+            teamMemberIds, 
+            userId, 
+            projectId, 
+            skillNames.slice(0, 3), // Max 3 skills in notification
+            sourceType
+          );
+        } catch (err) {
+          console.error("Failed to create skill verification notification:", err);
+          // Don't fail the main operation
+        }
+      }
+      
+      console.log(`Created ${newValues.length} pending verifications for team project ${projectId}`);
+    } else {
+      // Solo project - auto-verify
+      for (const signal of newValues) {
+        const [signalRow] = await db.query(
+          `SELECT id FROM user_skill_signals 
+           WHERE user_id = ? AND skill_id = ? AND source_type = ? AND source_id = ? 
+           LIMIT 1`,
+          [signal[0], signal[1], signal[2], signal[3]]
+        );
+        
+        if (signalRow.length > 0) {
+          await db.query(
+            `INSERT INTO skill_verifications (signal_id, project_id, claimant_id, verifier_id, skill_id, status, verified_at) 
+             VALUES (?, ?, ?, ?, ?, 'verified', NOW())`,
+            [signalRow[0].id, projectId, signal[0], signal[0], signal[1]] // Self-verified
+          );
+        }
+      }
+      console.log(`Auto-verified ${newValues.length} skills for solo project ${projectId}`);
+    }
+  }
+}
+
+// Helper to create notification for skill verification
+async function createSkillVerificationNotification(db, teamMemberIds, claimantId, projectId, skillNames, sourceType) {
+  console.log("Creating skill verification notification:", { teamMemberIds, claimantId, projectId, skillNames, sourceType });
+  
+  try {
+    const [project] = await db.query(
+      `SELECT title FROM projects WHERE id = ?`,
+      [projectId]
+    );
+    
+    const projectTitle = project[0]?.title || 'Unknown Project';
+    const skillText = skillNames.join(', ');
+    
+    // Get claimant name
+    const [user] = await db.query(
+      `SELECT name FROM users WHERE id = ?`,
+      [claimantId]
+    );
+    const claimantName = user[0]?.name || 'Someone';
+    
+    const notificationType = sourceType === 'update' ? 'skill_update' : 'skill_claim';
+    const message = `${claimantName} claimed ${skillText} on "${projectTitle}". Verify if accurate.`;
+    
+    for (const memberId of teamMemberIds) {
+      await db.query(
+        `INSERT INTO notifications (user_id, type, title, message, link, is_read, related_id, related_type) 
+         VALUES (?, ?, ?, ?, ?, 0, ?, 'skill_verification')`,
+        [memberId, notificationType, 'Skill Verification Needed', message, `/collaboration?project=${projectId}`, projectId]
+      );
+    }
+    console.log(`Created ${teamMemberIds.length} skill verification notifications`);
+  } catch (err) {
+    console.error("ERROR in createSkillVerificationNotification:", err.message);
+  }
 }
 
 /**

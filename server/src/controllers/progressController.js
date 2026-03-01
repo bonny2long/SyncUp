@@ -162,6 +162,7 @@ export const createProgressUpdate = async (req, res) => {
         signalType: "update",
         skillIds: skillIdsToSignal,
         weight: 1, // lowered to 1 for "Building Trust" phase
+        context: { project_id },
         connection,
       });
     }

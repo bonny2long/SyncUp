@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchUsers } from "../utils/api";
+import { fetchUsers, reportError } from "../utils/api";
 import { useUser } from "../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
@@ -71,6 +71,28 @@ export default function Login() {
       >
         Continue
       </button>
+
+      <div className="mt-8 pt-6 border-t border-gray-100">
+        <p className="text-xs text-gray-500 mb-2">Debug Tools:</p>
+        <button
+          onClick={() => {
+            const user = users.find((u) => u.id === Number(selected));
+            if (!user) {
+              alert("Please select a user first from the dropdown above.");
+              return;
+            }
+            reportError(
+              "javascript",
+              `Manual test error from ${user.name}`,
+              { userId: user.id },
+            );
+            alert("Test error triggered! Check admin dashboard.");
+          }}
+          className="w-full bg-red-50 text-red-600 border border-red-200 py-2 rounded text-sm hover:bg-red-100 transition"
+        >
+          Trigger Test Error
+        </button>
+      </div>
     </div>
   );
 }

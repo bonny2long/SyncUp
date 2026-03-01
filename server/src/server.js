@@ -38,12 +38,18 @@ const app = express();
 // Middleware
 app.use(
   helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", "blob:"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          process.env.BACKEND_URL || "http://localhost:5000",
+        ],
         connectSrc: [
           "'self'",
           process.env.CLIENT_URL || "http://localhost:5173",

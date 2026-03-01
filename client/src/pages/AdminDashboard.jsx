@@ -12,6 +12,7 @@ import { AgCharts } from "ag-charts-react";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import { useTheme } from "../context/ThemeContext";
+import { API_BASE } from "../utils/api";
 import {
   fetchUsers,
   fetchProjects,
@@ -2161,6 +2162,12 @@ export default function AdminDashboard() {
                       scope="col"
                       className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
                     >
+                      User
+                    </th>
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Actions
                     </th>
                   </tr>
@@ -2224,6 +2231,18 @@ export default function AdminDashboard() {
                           {error.created_at ?
                             new Date(error.created_at).toLocaleDateString()
                           : "N/A"}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex flex-col">
+                            <span className="text-sm text-primary">
+                              {error.user_name || "Anonymous"}
+                            </span>
+                            {error.user_role && (
+                              <span className="text-xs text-gray-500 uppercase">
+                                {error.user_role}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3">
                           <div className="flex gap-2">
@@ -2818,9 +2837,23 @@ export default function AdminDashboard() {
                       open: true,
                       title: "Reset Demo Data",
                       message:
-                        "This will delete ALL users, projects, and sessions. This cannot be undone.",
+                        "This will delete ALL users, projects, and sessions and create fresh demo data. This cannot be undone.",
                       onConfirm: async () => {
-                        addToast("Demo data reset", "success");
+                        try {
+                          const res = await fetch(`${API_BASE}/admin/reset-demo`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ apiKey: "syncup-reset-key-2024" }),
+                          });
+                          const data = await res.json();
+                          if (res.ok) {
+                            addToast(`Demo data reset! Created: 1 admin, ${data.summary.mentors} mentors, ${data.summary.interns} interns, ${data.summary.projects} projects`, "success");
+                          } else {
+                            addToast(data.error || "Failed to reset demo data", "error");
+                          }
+                        } catch (err) {
+                          addToast("Failed to reset demo data", "error");
+                        }
                         setConfirmModal({ ...confirmModal, open: false });
                       },
                     });
@@ -3159,11 +3192,20 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <label className="block text-sm text-gray-400 mb-1">
-                      User ID
+                      User
                     </label>
-                    <p className="text-primary text-sm">
-                      {selectedError.user_id || "Anonymous"}
-                    </p>
+                    <div className="flex flex-col">
+                      <p className="text-primary text-sm">
+                        {selectedError.user_name || "Anonymous"}
+                      </p>
+                      {selectedError.user_id && (
+                        <p className="text-xs text-gray-500">
+                          ID: {selectedError.user_id}
+                          {selectedError.user_role &&
+                            ` (${selectedError.user_role})`}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
 

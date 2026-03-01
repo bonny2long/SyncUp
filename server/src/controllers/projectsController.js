@@ -31,6 +31,7 @@ export const getProjects = async (req, res) => {
         }
         -- how many members are on this project
         COUNT(DISTINCT pm.user_id) AS team_count,
+        COUNT(DISTINCT pm.user_id) AS team_size,
         -- how many skills are on this project
         COUNT(DISTINCT ps.skill_id) AS skill_count,
         -- how many updates exist
@@ -161,24 +162,33 @@ export const createProject = async (req, res) => {
           [skillValues],
         );
 
-        // 4. Emit Signals for Owner
+        // 4. Emit Signals for Owner (with anti-gaming: deduplicate)
         const signalValues = skillIds.map((sid) => [
           ownerId,
           sid,
           "project",
           projectId,
           "joined",
-          1, // Weight for creating a project
+          1,
         ]);
 
-        await connection.query(
-          `
-          INSERT INTO user_skill_signals
-            (user_id, skill_id, source_type, source_id, signal_type, weight)
-          VALUES ?
-          `,
-          [signalValues],
+        // Anti-gaming: Check for existing signals before inserting
+        const [existingSignals] = await connection.query(
+          `SELECT user_id, skill_id, source_type, source_id FROM user_skill_signals 
+           WHERE user_id = ? AND source_type = 'project' AND source_id = ?`,
+          [ownerId, projectId]
         );
+        const existingSkillIds = new Set(existingSignals.map(s => s.skill_id));
+        
+        // Filter out skills that already have signals
+        const newSignalValues = signalValues.filter(sv => !existingSkillIds.has(sv[1]));
+        
+        if (newSignalValues.length > 0) {
+          await connection.query(
+            `INSERT INTO user_skill_signals (user_id, skill_id, source_type, source_id, signal_type, weight) VALUES ?`,
+            [newSignalValues],
+          );
+        }
       }
     }
 
@@ -261,7 +271,7 @@ export const addProjectMember = async (req, res) => {
       [projectId],
     );
 
-    // Insert skill signals (append-only)
+    // Insert skill signals (append-only) with anti-gaming
     if (skills.length > 0) {
       const signalValues = skills.map(({ skill_id }) => [
         user_id,
@@ -272,14 +282,21 @@ export const addProjectMember = async (req, res) => {
         1,
       ]);
 
-      await connection.query(
-        `
-        INSERT INTO user_skill_signals
-          (user_id, skill_id, source_type, source_id, signal_type, weight)
-        VALUES ?
-        `,
-        [signalValues],
+      // Anti-gaming: Check for existing signals
+      const [existingSignals] = await connection.query(
+        `SELECT user_id, skill_id, source_type, source_id FROM user_skill_signals 
+         WHERE user_id = ? AND source_type = 'project' AND source_id = ?`,
+        [user_id, projectId]
       );
+      const existingSkillIds = new Set(existingSignals.map(s => s.skill_id));
+      const newSignalValues = signalValues.filter(sv => !existingSkillIds.has(sv[1]));
+
+      if (newSignalValues.length > 0) {
+        await connection.query(
+          `INSERT INTO user_skill_signals (user_id, skill_id, source_type, source_id, signal_type, weight) VALUES ?`,
+          [newSignalValues],
+        );
+      }
     }
 
     await connection.commit();
@@ -847,7 +864,7 @@ export const approveJoinRequest = async (req, res) => {
       [projectId],
     );
 
-    // Insert skill signals for the newly approved member
+    // Insert skill signals for the newly approved member (with anti-gaming)
     if (skills.length > 0) {
       const signalValues = skills.map(({ skill_id }) => [
         userId,
@@ -858,12 +875,21 @@ export const approveJoinRequest = async (req, res) => {
         1,
       ]);
 
-      await connection.query(
-        `INSERT INTO user_skill_signals
-          (user_id, skill_id, source_type, source_id, signal_type, weight)
-         VALUES ?`,
-        [signalValues],
+      // Anti-gaming: Check for existing signals
+      const [existingSignals] = await connection.query(
+        `SELECT user_id, skill_id, source_type, source_id FROM user_skill_signals 
+         WHERE user_id = ? AND source_type = 'project' AND source_id = ?`,
+        [userId, projectId]
       );
+      const existingSkillIds = new Set(existingSignals.map(s => s.skill_id));
+      const newSignalValues = signalValues.filter(sv => !existingSkillIds.has(sv[1]));
+
+      if (newSignalValues.length > 0) {
+        await connection.query(
+          `INSERT INTO user_skill_signals (user_id, skill_id, source_type, source_id, signal_type, weight) VALUES ?`,
+          [newSignalValues],
+        );
+      }
     }
 
     // Update request status

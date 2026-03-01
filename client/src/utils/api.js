@@ -17,11 +17,26 @@ function getUserHeaders() {
 
 // Error reporting function (defined first so handleApiError can use it)
 export async function reportError(errorType, message, details = {}) {
+  let userId = details.userId || null;
+
+  // Auto-capture userId from localStorage if available
+  if (!userId && typeof localStorage !== "undefined") {
+    try {
+      const userStr = localStorage.getItem("syncup_user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        userId = user.id;
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+  }
+
   const payload = {
     error_type: errorType,
     message: message,
     stack: details.stack || null,
-    user_id: details.userId || null,
+    user_id: userId,
     page_url:
       details.pageUrl ||
       (typeof window !== "undefined" ? window.location.pathname : ""),
@@ -623,6 +638,37 @@ export async function getUserSkillSignals(userId) {
   return res.json();
 }
 
+// Get pending skill verifications for a user
+export async function fetchPendingVerifications(userId) {
+  const res = await fetch(`${API_BASE}/skills/verifications/pending?user_id=${userId}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch pending verifications");
+  return res.json();
+}
+
+// Verify a skill claim
+export async function verifySkillClaim(verificationId, userId) {
+  const res = await fetch(`${API_BASE}/skills/verifications/${verificationId}/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!res.ok) throw new Error("Failed to verify skill claim");
+  return res.json();
+}
+
+// Challenge a skill claim
+export async function challengeSkillClaim(verificationId, userId, reason = "") {
+  const res = await fetch(`${API_BASE}/skills/verifications/${verificationId}/challenge`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ user_id: userId, reason }),
+  });
+  if (!res.ok) throw new Error("Failed to challenge skill claim");
+  return res.json();
+}
+
 // ============================================================
 // NOTIFICATIONS
 // ============================================================
@@ -741,17 +787,18 @@ export async function sendMessage(
   fileUrl = null,
   fileName = null,
 ) {
+  const body = { content };
+  if (channelId) body.channel_id = channelId;
+  if (recipientId) body.recipient_id = recipientId;
+  if (fileUrl) body.file_url = fileUrl;
+  if (fileName) body.file_name = fileName;
+
   const res = await fetch(`${API_BASE}/chat/messages?user_id=${userId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getUserHeaders() },
-    body: JSON.stringify({
-      content,
-      channel_id: channelId,
-      recipient_id: recipientId,
-      file_url: fileUrl,
-      file_name: fileName,
-    }),
+    body: JSON.stringify(body),
   });
+  await handleApiError(res, "/chat/messages");
   if (!res.ok) throw new Error("Failed to send message");
   return res.json();
 }
