@@ -6,13 +6,13 @@ Frontend application for the SyncUp platform, built with React and Vite, styled 
 
 ## Tech Stack
 
-- **React 19** - UI component library
-- **Vite 7** - Build tool and development server
-- **Tailwind CSS v4** - Utility-first CSS framework
-- **AG Charts** - High-performance charting library
-- **Lucide React** - Beautiful & consistent icons
-- **PostCSS** - CSS processing
-- **Autoprefixer** - Vendor prefix automation
+- React 19 - UI component library
+- Vite 7 - Build tool and development server
+- Tailwind CSS v4 - Utility-first CSS framework
+- AG Charts - High-performance charting library
+- Lucide React - Beautiful and consistent icons
+- PostCSS - CSS processing
+- Autoprefixer - Vendor prefix automation
 
 ## Design System
 

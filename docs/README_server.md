@@ -6,15 +6,15 @@ Backend API for the SyncUp platform, powered by Node.js and Express with a MySQL
 
 ## Tech Stack
 
-- **Node.js v20+** - JavaScript runtime
-- **Express 5** - Web application framework
-- **MySQL2** - MySQL client with Promise support
-- **MSSQL** - Microsoft SQL Server client (Azure SQL support)
-- **dotenv** - Environment variable management
-- **CORS** - Cross-Origin Resource Sharing
-- **axios** - Promise based HTTP client
-- **faker** - Generate massive amounts of fake data
-- **Nodemon** - Development auto-restart utility
+- Node.js v20+ - JavaScript runtime
+- Express 5 - Web application framework
+- MySQL2 - MySQL client with Promise support
+- MSSQL - Microsoft SQL Server client (Azure SQL support)
+- dotenv - Environment variable management
+- CORS - Cross-Origin Resource Sharing
+- axios - Promise based HTTP client
+- faker - Generate massive amounts of fake data
+- Nodemon - Development auto-restart utility
 
 ## API Endpoints
 

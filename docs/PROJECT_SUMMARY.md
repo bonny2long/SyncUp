@@ -23,24 +23,24 @@ The platform is built on the philosophy that professional growth should be a mir
 ## Technology Stack
 
 ### Frontend
-- **Framework**: React 19 with Vite
-- **Styling**: Tailwind CSS v4
-- **Charts**: AG Charts, Recharts
-- **Icons**: Lucide React
-- **State Management**: React Context + LocalStorage
-- **Routing**: React Router DOM
+- Framework: React 19 with Vite
+- Styling: Tailwind CSS v4
+- Charts: AG Charts, Recharts
+- Icons: Lucide React
+- State Management: React Context + LocalStorage
+- Routing: React Router DOM
 
 ### Backend
-- **Runtime**: Node.js v20+
-- **Framework**: Express.js
-- **Database**: MySQL 8.0+ (Local development), Azure SQL (Production)
-- **File Storage**: Local filesystem with static serving
+- Runtime: Node.js v20+
+- Framework: Express.js
+- Database: MySQL 8.0+ (Local development), Azure SQL (Production)
+- File Storage: Local filesystem with static serving
 
 ### Development Tools
-- **API Documentation**: Swagger/OpenAPI
-- **Error Handling**: Custom error logging service
-- **Rate Limiting**: Express rate limiter
-- **Validation**: Custom validators
+- API Documentation: Swagger/OpenAPI
+- Error Handling: Custom error logging service
+- Rate Limiting: Express rate limiter
+- Validation: Custom validators
 
 ---
 

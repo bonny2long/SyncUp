@@ -1,8 +1,8 @@
 # SyncUp
 
-**The Intern Collaboration and Mentorship Reflection System**
+The Intern Collaboration and Mentorship Reflection System
 
-SyncUp is a full-stack platform designed to connect interns, mentors, and alumni through real-world project collaboration and structured mentorship. Unlike traditional platforms that rely on manual skill logging, SyncUp uses an evidence-based **Skill Signal** pipeline to track professional growth.
+SyncUp is a full-stack platform designed to connect interns, mentors, and alumni through real-world project collaboration and structured mentorship. Unlike traditional platforms that rely on manual skill logging, SyncUp uses an evidence-based Skill Signal pipeline to track professional growth.
 
 ---
 
@@ -10,9 +10,9 @@ SyncUp is a full-stack platform designed to connect interns, mentors, and alumni
 
 SyncUp is built on the philosophy that professional growth should be a mirror of real activity, not a manual checklist.
 
-- **Evidence-Based**: Skills are derived from project work, updates, and verified mentorship.
-- **High Integrity**: Guardrails ensure that only relevant, validated activities contribute to skill growth.
-- **Decoupled Hubs**: Mentorship and Projects exist as independent but intersecting systems to support diverse career paths.
+- Evidence-Based: Skills are derived from project work, updates, and verified mentorship.
+- High Integrity: Guardrails ensure that only relevant, validated activities contribute to skill growth.
+- Decoupled Hubs: Mentorship and Projects exist as independent but intersecting systems to support diverse career paths.
 
 ---
 
@@ -20,21 +20,21 @@ SyncUp is built on the philosophy that professional growth should be a mirror of
 
 ### 1. Collaboration Hub
 
-- **Project Discovery**: Browse and join intern-led projects.
-- **Progress Feed**: Post real-time updates with dynamic skill tagging.
-- **Team Management**: Collaborative project ownership and membership tracking.
+- Project Discovery: Browse and join intern-led projects.
+- Progress Feed: Post real-time updates with dynamic skill tagging.
+- Team Management: Collaborative project ownership and membership tracking.
 
 ### 2. Mentorship Bridge
 
-- **Mentor Directory**: Connect with experienced mentors and alumni.
-- **Independent Sessions**: Request guidance on career, technical, or life leadership.
-- **Skill Verification**: Mentors verify technical skills during session completion to provide high-weight signals.
+- Mentor Directory: Connect with experienced mentors and alumni.
+- Independent Sessions: Request guidance on career, technical, or life leadership.
+- Skill Verification: Mentors verify technical skills during session completion to provide high-weight signals.
 
 ### 3. Skill Tracker
 
-- **Skill Distribution**: Visualize your total skill volume across all activities.
-- **Skill Momentum**: Track week-over-week growth and identify your fastest-rising skills.
-- **Activity Sources**: See exactly what is driving your growth (Projects vs. Updates vs. Mentorship).
+- Skill Distribution: Visualize total skill volume across all activities.
+- Skill Momentum: Track week-over-week growth and identify fastest-rising skills.
+- Activity Sources: See exactly what is driving growth (Projects vs. Updates vs. Mentorship).
 
 ---
 
@@ -42,10 +42,10 @@ SyncUp is built on the philosophy that professional growth should be a mirror of
 
 | Layer          | Technologies                                      |
 | -------------- | ------------------------------------------------- |
-| **Frontend**   | React 19, Vite, Tailwind CSS, Recharts, AG Charts |
-| **Backend**    | Node.js, Express                                  |
-| **Database**   | MySQL (Local), Azure SQL (Production)             |
-| **State/Auth** | React Context + LocalStorage                      |
+| Frontend       | React 19, Vite, Tailwind CSS, Recharts, AG Charts |
+| Backend        | Node.js, Express                                  |
+| Database       | MySQL (Local), Azure SQL (Production)             |
+| State/Auth    | React Context + LocalStorage                      |
 
 ---
 
