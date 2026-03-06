@@ -3,18 +3,17 @@ import { useUser } from "../../../context/UserContext";
 import { getErrorMessage } from "../../../utils/errorHandler";
 import SkeletonLoader from "../../../components/shared/SkeletonLoader";
 import TeamOverview from "./TeamOverview";
-import TeamSkillChart from "./TeamSkillChart";
-import TeamMomentumChart from "./TeamMomentumChart";
 import TeamActivityFeed from "./TeamActivityFeed";
 import KeyInsight from "./KeyInsight";
-import { BarChart2, ChevronDown, ChevronUp } from "lucide-react";
+import TeamSkillCoverage from "./TeamSkillCoverage";
+import TeamAchievements from "./TeamAchievements";
+import TopContributors from "./TopContributors";
 
 const TeamDashboard = ({ projectId }) => {
   const { user: currentUser } = useUser();
   const [teamData, setTeamData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showCharts, setShowCharts] = useState(false);
 
   const loadTeamData = async () => {
     if (!projectId || !currentUser?.id) return;
@@ -96,47 +95,20 @@ const TeamDashboard = ({ projectId }) => {
         skillDistribution={teamData.skillDistribution || []}
       />
 
-      {/* Team Activity Feed - Always Visible */}
+      {/* Team Activity Feed */}
       <TeamActivityFeed projectId={projectId} />
 
       {/* Key Insight - Single actionable insight */}
       <KeyInsight data={teamData} />
 
-      {/* Charts Section - Collapsible */}
-      <div>
-        {/* Toggle Button */}
-        <button
-          onClick={() => setShowCharts(!showCharts)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-surface hover:bg-surface-highlight border border-border rounded-lg transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <BarChart2 className="w-4 h-4 text-text-secondary" />
-            <span className="font-medium text-neutral-dark">
-              {showCharts ? "Hide Charts" : "View Charts"}
-            </span>
-          </div>
-          {showCharts ?
-            <ChevronUp className="w-4 h-4 text-text-secondary" />
-          : <ChevronDown className="w-4 h-4 text-text-secondary" />}
-        </button>
+      {/* Team Achievements - 3 Cards */}
+      <TeamAchievements data={teamData} />
 
-        {/* Charts Content - Collapsible */}
-        {showCharts && (
-          <div className="mt-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Team Skill Distribution */}
-              <div className="h-full">
-                <TeamSkillChart data={teamData.skillDistribution} />
-              </div>
+      {/* Team Skill Coverage - Heatmap */}
+      <TeamSkillCoverage data={teamData.skillDistribution || []} />
 
-              {/* Team Momentum */}
-              <div className="h-full">
-                <TeamMomentumChart data={teamData.momentum} />
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Top Contributors - Leaderboard */}
+      <TopContributors data={teamData} />
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { useUser } from "../../context/UserContext";
 import SkeletonLoader from "../../components/shared/SkeletonLoader";
 import { ChartError } from "../../components/shared/ErrorBoundary";
 import { getErrorMessage } from "../../utils/errorHandler";
+import { useChartTheme } from "./useChartTheme";
 
 const COLORS = {
   react: "#4f46e5",
@@ -21,6 +22,7 @@ const COLORS = {
 
 export default function SkillMomentumChart() {
   const { user } = useUser();
+  const chartTheme = useChartTheme();
   const [rawData, setRawData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -144,8 +146,10 @@ export default function SkillMomentumChart() {
   if (!chartData.length) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-gray-500">No momentum data available yet.</p>
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-sm text-text-secondary">
+          No momentum data available yet.
+        </p>
+        <p className="text-xs text-text-secondary mt-2">
           Data needs at least 2 weeks of activity to show trends.
         </p>
       </div>
@@ -175,14 +179,14 @@ export default function SkillMomentumChart() {
         label: {
           fontSize: 12,
           wrapping: "on-space",
-          color: "var(--color-text-secondary)",
+          color: chartTheme.axisLabelColor,
         },
       },
       y: {
         type: "number",
         position: "left",
         nice: true,
-        label: { fontSize: 11, color: "var(--color-text-secondary)" },
+        label: { fontSize: 11, color: chartTheme.axisLabelColor },
       },
     },
     padding: { top: 12, right: 48, bottom: 16, left: 18 },
@@ -190,7 +194,7 @@ export default function SkillMomentumChart() {
       position: "bottom",
       item: {
         label: {
-          color: "var(--color-text-secondary)",
+          color: chartTheme.legendLabelColor,
         },
       },
     },
@@ -202,7 +206,7 @@ export default function SkillMomentumChart() {
       {insights.length > 0 && (
         <div className="mb-3 space-y-1">
           {insights.map((text, idx) => (
-            <p key={idx} className="text-xs text-gray-500">
+            <p key={idx} className="text-xs text-text-secondary">
               {text}
             </p>
           ))}

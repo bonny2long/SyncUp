@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   updateProjectStatus,
   addProjectMember,
@@ -9,14 +9,15 @@ import MemberModal from "./MemberModal";
 import ProjectDetailModal from "../../components/modals/ProjectDetailModal";
 import ConfirmModal from "../../components/shared/ConfirmModal";
 import { useUser } from "../../context/UserContext";
+import { Search, ArrowUpDown } from "lucide-react";
 
 export default function ProjectList({
   selectedProject,
   setSelectedProject,
   updatesData = [],
-  projects: passedProjects = [], // ← NEW: Accept projects as prop
-  loading: passedLoading = false, // ← NEW: Accept loading state as prop
-  onRefresh, // NEW: Accept refresh callback
+  projects: passedProjects = [],
+  loading: passedLoading = false,
+  onRefresh,
 }) {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState("");
@@ -26,12 +27,48 @@ export default function ProjectList({
   const [showMembersFor, setShowMembersFor] = useState(null);
   const [modalProject, setModalProject] = useState(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+
   // Use passed-in projects instead of fetching
   useEffect(() => {
     if (passedProjects && passedProjects.length > 0) {
       setProjects(passedProjects);
     }
   }, [passedProjects]);
+
+  // Filter and sort projects
+  const filteredAndSortedProjects = useMemo(() => {
+    let result = [...projects];
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.title?.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        case "oldest":
+          return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+        case "name-asc":
+          return (a.title || "").localeCompare(b.title || "");
+        case "name-desc":
+          return (b.title || "").localeCompare(a.title || "");
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [projects, searchQuery, sortBy]);
 
   // 7-day activity bucket
   const now = new Date();
@@ -238,7 +275,46 @@ export default function ProjectList({
       <div className="flex flex-col gap-3">
         {error && <p className="text-xs text-red-500">{error}</p>}
 
-        {projects.map((project) => {
+        {/* Search and Sort */}
+        <div className="flex flex-col sm:flex-row gap-2 mb-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+            />
+          </div>
+          <div className="relative">
+            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="pl-10 pr-8 py-2 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none cursor-pointer"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+            </select>
+          </div>
+        </div>
+
+        {filteredAndSortedProjects.length === 0 && searchQuery && (
+          <div className="text-center py-6 text-text-secondary">
+            <p className="text-sm">No projects match "{searchQuery}"</p>
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-xs text-primary hover:underline mt-1"
+            >
+              Clear search
+            </button>
+          </div>
+        )}
+
+        {filteredAndSortedProjects.map((project) => {
           const active = selectedProject?.id === project.id;
           const activity = activityMap[project.id] || [];
 

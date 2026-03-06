@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
-  Flame,
   Award,
   BookOpen,
   Users,
   Code,
   MessageSquare,
   Rocket,
-  Download,
   ChevronDown,
   ChevronUp,
+  Edit2,
+  Save,
+  X,
+  Camera,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -18,12 +20,13 @@ import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { ChartError } from "../components/shared/ErrorBoundary";
 import SkillBadge from "../components/shared/SkillBadge";
 import { getErrorMessage } from "../utils/errorHandler";
-import { generateResumePDF } from "../utils/resumeExport";
 import {
   getUserSkillSignals,
   getUserValidatedSignals,
   addSkillValidation,
   removeSkillValidation,
+  uploadAvatar,
+  getAvatarUrl,
 } from "../utils/api";
 import Sidebar from "../components/layout/Sidebar";
 import Navbar from "../components/layout/Navbar";
@@ -34,13 +37,12 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 export default function UserProfile() {
   const { userId } = useParams();
-  const { user: currentUser } = useUser();
-  const { addToast } = useToast();
+  const { user: currentUser, updateUser } = useUser();
+  const { addToast, handleError } = useToast();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [exporting, setExporting] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const [skillsExpanded, setSkillsExpanded] = useState(true);
@@ -48,7 +50,16 @@ export default function UserProfile() {
   const [showAllProjects, setShowAllProjects] = useState(false);
   const [allBadges, setAllBadges] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
-  const [newBadge, setNewBadge] = useState(null);
+  const [newBadges, setNewBadges] = useState([]);
+  const [showAllBadges, setShowAllBadges] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", bio: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarKey, setAvatarKey] = useState(0);
+  const avatarInputRef = useRef(null);
+
+  const BADGE_PREVIEW_COUNT = 6;
 
   // Skill validation state
   const [skillSignals, setSkillSignals] = useState([]);
@@ -68,7 +79,7 @@ export default function UserProfile() {
     } catch (err) {
       const { message } = getErrorMessage(err);
       setError(message);
-      console.error("Failed to load profile:", err);
+      handleError(err, "loadProfile");
     } finally {
       setLoading(false);
     }
@@ -95,11 +106,11 @@ export default function UserProfile() {
       const checkData = await checkRes.json();
 
       if (checkData.newlyEarned && checkData.newlyEarned.length > 0) {
-        setNewBadge(checkData.newlyEarned[0]);
+        setNewBadges(checkData.newlyEarned);
         setUserBadges((prev) => [...prev, ...checkData.newlyEarned]);
       }
     } catch (err) {
-      console.error("Failed to load badges:", err);
+      handleError(err, "loadBadges");
     }
   };
 
@@ -114,7 +125,7 @@ export default function UserProfile() {
       setSkillSignals(signalsData || []);
       setValidatedSignals(validatedData || {});
     } catch (err) {
-      console.error("Failed to load skill signals:", err);
+      handleError(err, "loadSkillSignals");
     }
   };
 
@@ -259,23 +270,78 @@ export default function UserProfile() {
     });
   };
 
-  // Handle PDF export
-  const handleExportResume = async () => {
-    if (!profile) return;
-    setExporting(true);
+  const handleEditProfile = () => {
+    setEditForm({ name: user.name, bio: user.bio || "" });
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+    setEditForm({ name: "", bio: "" });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!currentUser || currentUser.id !== user.id) return;
+
+    setSavingProfile(true);
     try {
-      const fileName = generateResumePDF(profile);
-      addToast({
-        type: "success",
-        message: `Resume exported: ${fileName}`,
+      const res = await fetch(`${API_BASE}/users/${user.id}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
       });
+
+      if (!res.ok) throw new Error("Failed to save");
+
+      const updatedUser = await res.json();
+      setProfile((prev) => ({ ...prev, user: updatedUser }));
+
+      // Update global context so navbar updates immediately
+      if (currentUser.id === user.id) {
+        updateUser(updatedUser);
+      }
+
+      setIsEditingProfile(false);
+      addToast({ type: "success", message: "Profile updated successfully!" });
+    } catch (err) {
+      addToast({ type: "error", message: "Failed to update profile" });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser || currentUser.id !== user.id) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast({ type: "error", message: "Image must be less than 5MB" });
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      addToast({ type: "error", message: "Only JPG, PNG, GIF, WebP allowed" });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      await uploadAvatar(currentUser.id, file);
+      setAvatarKey((k) => k + 1);
+      await loadProfile();
+
+      // Update global user context to trigger navbar image update
+      updateUser({ profile_pic: `avatar:${currentUser.id}` });
+
+      addToast({ type: "success", message: "Avatar updated!" });
     } catch (err) {
       addToast({
         type: "error",
-        message: "Failed to export resume. Please try again.",
+        message: err.message || "Failed to upload avatar",
       });
     } finally {
-      setExporting(false);
+      setUploadingAvatar(false);
     }
   };
 
@@ -302,37 +368,133 @@ export default function UserProfile() {
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
-            <div className="bg-surface border-b border-border rounded-t-lg p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-4xl font-bold text-neutral-dark">
-                    {user.name}
-                  </h1>
-                  <p className="text-text-secondary mt-1">
-                    {user.role.charAt(0).toUpperCase() + user.role.slice(1)} •{" "}
-                    {new Date(user.join_date).toLocaleDateString("en-US", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </p>
+            <div className="bg-surface border border-border rounded-lg p-6 mb-6 relative">
+              <div className="flex items-start gap-4">
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                  {user.profile_pic ?
+                    <img
+                      key={avatarKey}
+                      src={getAvatarUrl(user.id)}
+                      alt={user.name}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  : <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center">
+                      <span className="text-secondary text-2xl font-bold">
+                        {user.name.charAt(0)}
+                      </span>
+                    </div>
+                  }
+                  {currentUser && currentUser.id === user.id && (
+                    <button
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={uploadingAvatar}
+                      className="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition shadow-md"
+                      title="Change avatar"
+                    >
+                      {uploadingAvatar ?
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      : <Camera className="w-3 h-3 text-white" />}
+                    </button>
+                  )}
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </div>
+
+                <div className="flex-1">
+                  {isEditingProfile ?
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, name: e.target.value })
+                        }
+                        className="text-4xl font-bold text-neutral-dark bg-transparent border-b-2 border-primary focus:outline-none w-full"
+                        placeholder="Your name"
+                      />
+                      <textarea
+                        value={editForm.bio}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, bio: e.target.value })
+                        }
+                        maxLength={200}
+                        placeholder="Tell us about yourself..."
+                        className="w-full text-text-secondary text-sm mt-3 bg-surface-highlight border border-border rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        rows={2}
+                      />
+                      <p className="text-xs text-text-secondary">
+                        {editForm.bio?.length || 0}/200 characters
+                      </p>
+                    </div>
+                  : <>
+                      <h1 className="text-4xl font-bold text-neutral-dark">
+                        {user.name}
+                      </h1>
+                      <p className="text-text-secondary mt-1">
+                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}{" "}
+                        •{" "}
+                        {new Date(user.join_date).toLocaleDateString("en-US", {
+                          month: "long",
+                          year: "numeric",
+                        })}
+                        {activity_streak > 0 && (
+                          <span className="ml-2 text-gray-400">
+                            🔥 {activity_streak} day
+                            {activity_streak !== 1 ? "s" : ""} streak
+                          </span>
+                        )}
+                      </p>
+                      {user.bio && (
+                        <p className="text-text-secondary text-sm mt-3 max-w-2xl italic">
+                          "{user.bio}"
+                        </p>
+                      )}
+                      {!user.bio &&
+                        currentUser &&
+                        currentUser.id === user.id && (
+                          <p className="text-text-secondary text-sm mt-3 italic">
+                            Click edit to add a bio
+                          </p>
+                        )}
+                    </>
+                  }
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {activity_streak > 0 && (
-                    <div className="text-center bg-surface-highlight px-4 py-3 rounded-lg border border-accent">
-                      <div className="flex items-center gap-2 justify-center">
-                        <Flame className="w-5 h-5 text-accent" />
-                        <span className="text-2xl font-bold text-accent">
-                          {activity_streak}
-                        </span>
+                  {currentUser && currentUser.id === user.id ?
+                    isEditingProfile ?
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleCancelEdit}
+                          className="flex items-center gap-2 px-3 py-2 text-text-secondary hover:text-neutral-dark transition"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveProfile}
+                          disabled={savingProfile}
+                          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50"
+                        >
+                          <Save className="w-4 h-4" />
+                          {savingProfile ? "Saving..." : "Save"}
+                        </button>
                       </div>
-                      <p className="text-xs text-neutral-dark mt-1">
-                        day streak
-                      </p>
-                    </div>
-                  )}
+                    : <button
+                        onClick={handleEditProfile}
+                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-highlight text-gray-400 hover:text-primary transition"
+                        title="Edit Profile"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
 
-                  {currentUser && currentUser.id !== user.id && (
+                  : currentUser && currentUser.id !== user.id ?
                     <>
                       {user.role === "mentor" && (
                         <button
@@ -350,23 +512,17 @@ export default function UserProfile() {
                         Message
                       </button>
                     </>
-                  )}
-
-                  <button
-                    onClick={handleExportResume}
-                    disabled={exporting}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium disabled:opacity-50"
-                  >
-                    <Download className="w-4 h-4" />
-                    {exporting ? "Exporting..." : "Export Resume"}
-                  </button>
+                  : null}
                 </div>
               </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 mt-6">
-              <div className="bg-surface p-4 rounded-lg border border-border">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div
+                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                title="Total unique skills you've practiced across all projects"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <Code className="w-5 h-5 text-primary" />
                   <p className="text-sm text-neutral-dark">Skills</p>
@@ -376,7 +532,10 @@ export default function UserProfile() {
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border">
+              <div
+                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                title="Total skill points from all activities and validations"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <Award className="w-5 h-5 text-secondary" />
                   <p className="text-sm text-neutral-dark">Growth</p>
@@ -386,17 +545,23 @@ export default function UserProfile() {
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border">
+              <div
+                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                title="Projects you own or are a member of"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-5 h-5 text-accent" />
-                  <p className="text-sm text-neutral-dark">Projects</p>
+                  <p className="text-sm text-neutral-dark">Recent Projects</p>
                 </div>
                 <p className="text-3xl font-bold text-neutral-dark">
                   {projects.length}
                 </p>
               </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border">
+              <div
+                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                title="Days you've been active in the last 30 days"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <BookOpen className="w-5 h-5 text-primary" />
                   <p className="text-sm text-neutral-dark">Active</p>
@@ -405,55 +570,88 @@ export default function UserProfile() {
                   {stats.days_active || 0}d
                 </p>
               </div>
+            </div>
 
-              <div className="bg-surface p-4 rounded-lg border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Rocket className="w-5 h-5 text-accent" />
-                  <p className="text-sm text-neutral-dark">Growth Sources</p>
-                </div>
-                <p className="text-lg font-bold text-neutral-dark">
-                  {stats.project_count || 0} Projects •{" "}
-                  {stats.update_count || 0} Updates •{" "}
-                  {stats.mentorship_count || 0} Sessions
-                </p>
-              </div>
+            {/* Growth Sources */}
+            <div className="bg-surface rounded-lg border border-border p-4 mb-6">
+              <p className="text-sm text-text-secondary text-center">
+                <span className="font-medium text-neutral-dark">
+                  Growth Sources:
+                </span>{" "}
+                {stats.project_count || 0} Projects • {stats.update_count || 0}{" "}
+                Updates • {stats.mentorship_count || 0} Sessions
+              </p>
             </div>
 
             {/* Badges Section - Interns only */}
             {user.role === "intern" && allBadges.length > 0 && (
               <section className="bg-surface rounded-lg border border-border p-6 mb-8">
-                {/* Unlocked - only earned badges (colored) */}
-                {userBadges.length > 0 && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-bold text-neutral-dark mb-3">
-                      Unlocked ({userBadges.length})
-                    </h2>
-                    <BadgeGrid
-                      allBadges={userBadges}
-                      earnedBadges={userBadges}
-                    />
-                  </div>
-                )}
+                {userBadges.length > 0 &&
+                  (() => {
+                    const previewBadges =
+                      showAllBadges ? userBadges : (
+                        userBadges.slice(0, BADGE_PREVIEW_COUNT)
+                      );
+                    const hiddenCount = userBadges.length - BADGE_PREVIEW_COUNT;
 
-                {/* Locked - badges not yet earned (grayed out) */}
-                {(() => {
-                  const earnedIds = new Set(
-                    userBadges.map((b) => b.badge_id || b.id),
-                  );
-                  const lockedBadges = allBadges.filter(
-                    (b) => !earnedIds.has(b.id),
-                  );
-                  if (lockedBadges.length === 0) return null;
+                    const earnedIds = new Set(
+                      userBadges.map((b) => b.badge_id || b.id),
+                    );
+                    const lockedBadges = allBadges.filter(
+                      (b) => !earnedIds.has(b.id),
+                    );
 
-                  return (
-                    <div className="mt-6 pt-6 border-t border-border">
-                      <h2 className="text-lg font-bold text-neutral-dark mb-3">
-                        Locked ({lockedBadges.length})
-                      </h2>
-                      <BadgeGrid allBadges={lockedBadges} earnedBadges={[]} />
-                    </div>
-                  );
-                })()}
+                    return (
+                      <>
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-3">
+                          <h2 className="text-lg font-bold text-neutral-dark">
+                            Unlocked ({userBadges.length})
+                          </h2>
+                        </div>
+
+                        {/* Badge grid - preview or all */}
+                        <div className="flex justify-center">
+                          <BadgeGrid
+                            allBadges={previewBadges}
+                            earnedBadges={previewBadges}
+                          />
+                        </div>
+
+                        {/* Locked badges - only shown when expanded */}
+                        {showAllBadges && lockedBadges.length > 0 && (
+                          <div className="mt-6 pt-6 border-t border-border">
+                            <h2 className="text-lg font-bold text-neutral-dark mb-3">
+                              Locked ({lockedBadges.length})
+                            </h2>
+                            <div className="flex justify-center">
+                              <BadgeGrid
+                                allBadges={lockedBadges}
+                                earnedBadges={[]}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Toggle button */}
+                        <div className="mt-5 flex justify-center">
+                          {(hiddenCount > 0 || showAllBadges) && (
+                            <button
+                              onClick={() => setShowAllBadges(!showAllBadges)}
+                              className="flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 hover:border-primary transition-all duration-200 group"
+                            >
+                              {showAllBadges ?
+                                "Show Less"
+                              : `View All ${userBadges.length} Badges`}
+                              <ChevronDown
+                                className={`w-4 h-4 transition-transform duration-300 ${showAllBadges ? "rotate-180" : "group-hover:translate-y-0.5"}`}
+                              />
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
               </section>
             )}
 
@@ -484,7 +682,7 @@ export default function UserProfile() {
 
                       return (
                         <>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-2 justify-center">
                             {displayedSkills.map((skill) => {
                               const canValidate =
                                 currentUser &&
@@ -545,23 +743,25 @@ export default function UserProfile() {
                           </div>
 
                           {/* Show More / Show Less button */}
-                          {!showAllSkills && remainingCount > 0 && (
-                            <button
-                              onClick={() => setShowAllSkills(true)}
-                              className="mt-4 text-sm text-primary hover:text-primary/80 font-medium"
-                            >
-                              Show {remainingCount} more skill
-                              {remainingCount !== 1 ? "s" : ""} →
-                            </button>
-                          )}
-                          {showAllSkills && skills.length > 6 && (
-                            <button
-                              onClick={() => setShowAllSkills(false)}
-                              className="mt-4 text-sm text-primary hover:text-primary/80 font-medium"
-                            >
-                              Show less ↑
-                            </button>
-                          )}
+                          {(remainingCount > 0 || showAllSkills) &&
+                            skills.length > 6 && (
+                              <div className="mt-5 flex justify-center">
+                                <button
+                                  onClick={() =>
+                                    setShowAllSkills(!showAllSkills)
+                                  }
+                                  className="flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary/10 hover:border-primary transition-all duration-200 group"
+                                >
+                                  {showAllSkills ?
+                                    "Show Less"
+                                  : `Show ${remainingCount} More Skill${remainingCount !== 1 ? "s" : ""}`
+                                  }
+                                  <ChevronDown
+                                    className={`w-4 h-4 transition-transform duration-300 ${showAllSkills ? "rotate-180" : "group-hover:translate-y-0.5"}`}
+                                  />
+                                </button>
+                              </div>
+                            )}
                         </>
                       );
                     })()}
@@ -676,8 +876,8 @@ export default function UserProfile() {
       </div>
 
       {/* Badge Notification Modal */}
-      {newBadge && (
-        <BadgeNotification badge={newBadge} onClose={() => setNewBadge(null)} />
+      {newBadges.length > 0 && (
+        <BadgeNotification badges={newBadges} onClose={() => setNewBadges([])} />
       )}
     </div>
   );

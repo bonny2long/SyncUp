@@ -6,6 +6,7 @@ import { useUser } from "../../context/UserContext";
 import SkeletonLoader from "../../components/shared/SkeletonLoader";
 import { ChartError } from "../../components/shared/ErrorBoundary";
 import { getErrorMessage } from "../../utils/errorHandler";
+import { useChartTheme } from "./useChartTheme";
 
 const COLORS = {
   project: "#4f46e5",
@@ -15,6 +16,7 @@ const COLORS = {
 
 export default function SkillActivityChart() {
   const { user } = useUser();
+  const chartTheme = useChartTheme();
   const [rawData, setRawData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,24 +80,15 @@ export default function SkillActivityChart() {
     const [source] = dominant;
     const label = source.charAt(0).toUpperCase() + source.slice(1);
 
-    return `${label} contributed the most to activity this week.`;
+    return `${label} contributed the most this week.`;
   }, [chartData]);
 
-  if (loading) {
-    return <SkeletonLoader type="chart" height={260} />;
-  }
-
-  if (error) {
-    return <ChartError onRetry={loadData} error={error} />;
-  }
-
+  if (loading) return <SkeletonLoader type="chart" height={200} />;
+  if (error) return <ChartError onRetry={loadData} error={error} />;
   if (!chartData.length) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-8">
         <p className="text-sm text-text-secondary">No activity yet.</p>
-        <p className="text-xs text-text-secondary mt-2">
-          This updates automatically as you work.
-        </p>
       </div>
     );
   }
@@ -133,26 +126,22 @@ export default function SkillActivityChart() {
         type: "category",
         position: "bottom",
         label: {
-          fontSize: 12,
+          fontSize: 11,
           wrapping: "on-space",
-          color: "var(--color-text-secondary)",
+          color: chartTheme.axisLabelColor,
         },
       },
       y: {
         type: "number",
         position: "left",
         nice: true,
-        label: { fontSize: 11, color: "var(--color-text-secondary)" },
+        label: { fontSize: 11, color: chartTheme.axisLabelColor },
       },
     },
-    padding: { top: 12, right: 24, bottom: 16, left: 18 },
+    padding: { top: 10, right: 16, bottom: 45, left: 16 },
     legend: {
       position: "bottom",
-      item: {
-        label: {
-          color: "var(--color-text-secondary)",
-        },
-      },
+      item: { label: { color: chartTheme.legendLabelColor } },
     },
     background: { fill: "transparent" },
   };
@@ -160,7 +149,7 @@ export default function SkillActivityChart() {
   return (
     <div className="w-full">
       {insight && <p className="text-xs text-text-secondary mb-2">{insight}</p>}
-      <div style={{ height: 260 }}>
+      <div style={{ height: 200 }}>
         <AgCharts options={options} />
       </div>
     </div>

@@ -32,7 +32,6 @@ export default function FindMentors({ onSessionRequested }) {
             await fetchAvailableMentors()
           : await fetchProjectMentors();
 
-        console.log(`Loaded ${data.length} mentors/slots for tab ${tab}`);
         setMentors(data);
       } catch (err) {
         setError("Failed to load mentors");

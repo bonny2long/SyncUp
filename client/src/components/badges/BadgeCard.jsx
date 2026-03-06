@@ -43,7 +43,7 @@ export default function BadgeCard({ badge, earned = false, showDescription = tru
   return (
     <div
       className={`
-        relative flex flex-col items-center p-2 rounded-lg border transition-all duration-300
+        relative flex flex-col items-center justify-between p-2 rounded-lg border transition-all duration-300 h-24
         ${earned 
           ? "border-yellow-400 bg-yellow-50 hover:shadow-md hover:scale-105" 
           : "border-gray-200 bg-gray-50 opacity-50"
@@ -56,27 +56,29 @@ export default function BadgeCard({ badge, earned = false, showDescription = tru
 
       <div
         className={`
-          w-8 h-8 flex items-center justify-center rounded-full mb-1
+          w-8 h-8 flex items-center justify-center rounded-full
           ${earned ? "bg-yellow-100 text-yellow-600" : "bg-gray-200 text-gray-400"}
         `}
       >
         <IconComponent className="w-4 h-4" />
       </div>
 
-      <p
-        className={`
-          text-[10px] font-semibold text-center leading-tight
-          ${earned ? "text-gray-900" : "text-gray-500"}
-        `}
-      >
-        {badge.name}
-      </p>
-
-      {showDescription && earned && (
-        <p className="text-[8px] text-gray-500 text-center mt-0.5 px-0.5">
-          {badge.description}
+      <div className="flex flex-col items-center flex-1 justify-center gap-0.5">
+        <p
+          className={`
+            text-[10px] font-semibold text-center leading-tight
+            ${earned ? "text-gray-900" : "text-gray-500"}
+          `}
+        >
+          {badge.name}
         </p>
-      )}
+
+        {showDescription && earned && (
+          <p className="text-[8px] text-gray-500 text-center">
+            {badge.description}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

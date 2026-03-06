@@ -102,7 +102,7 @@ export const getChannelMessages = async (req, res) => {
   try {
     const [rows] = await pool.query(
       `
-      SELECT m.*, u.name as sender_name, u.role as sender_role
+      SELECT m.*, u.name as sender_name, u.role as sender_role, u.profile_pic as sender_pic
       FROM messages m
       JOIN users u ON m.sender_id = u.id
       WHERE m.channel_id = ?
@@ -128,7 +128,7 @@ export const getDMMessages = async (req, res) => {
   try {
     const [rows] = await pool.query(
       `
-      SELECT m.*, u.name as sender_name, u.role as sender_role
+      SELECT m.*, u.name as sender_name, u.role as sender_role, u.profile_pic as sender_pic
       FROM messages m
       JOIN users u ON m.sender_id = u.id
       WHERE (m.sender_id = ? AND m.recipient_id = ?)
@@ -206,7 +206,7 @@ export const getPresence = async (req, res) => {
       // Optimized query: fetches all presence but includes shared project titles for the current user
       query = `
         SELECT up.status, up.last_seen, up.current_channel_id, 
-               u.id, u.name, u.role,
+               u.id, u.name, u.role, u.profile_pic,
                (
                  SELECT GROUP_CONCAT(p.title)
                  FROM project_members pm
@@ -220,7 +220,7 @@ export const getPresence = async (req, res) => {
       params = [user_id];
     } else {
       query = `
-        SELECT up.status, up.last_seen, up.current_channel_id, u.id, u.name, u.role
+        SELECT up.status, up.last_seen, up.current_channel_id, u.id, u.name, u.role, u.profile_pic
         FROM user_presence up
         JOIN users u ON up.user_id = u.id
       `;
@@ -271,7 +271,7 @@ export const getDMUsers = async (req, res) => {
     // Get users from same projects + all other users
     const [rows] = await pool.query(
       `
-      SELECT DISTINCT u.id, u.name, u.role, 
+      SELECT DISTINCT u.id, u.name, u.role, u.profile_pic,
              COALESCE(up.status, 'offline') as status,
              up.last_seen
       FROM users u

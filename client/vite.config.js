@@ -27,6 +27,9 @@ export default defineConfig({
           charts: ["ag-charts-react", "ag-charts-community"],
           // UI components
           icons: ["lucide-react"],
+          // Utility libraries
+          "date-utils": ["date-fns"],
+          pdf: ["jspdf", "jspdf-autotable"],
         },
       },
     },

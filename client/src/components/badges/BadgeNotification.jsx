@@ -1,28 +1,30 @@
 import React, { useEffect } from "react";
-import { X, Trophy } from "lucide-react";
+import { X, Trophy, Award } from "lucide-react";
 import BadgeCard from "./BadgeCard";
 
-export default function BadgeNotification({ badge, onClose }) {
+export default function BadgeNotification({ badges = [], onClose }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 5000);
+    }, 7000);
 
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  if (!badge) return null;
+  if (!badges || badges.length === 0) return null;
+
+  const isMultiple = badges.length > 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl animate-bounce-in">
+      <div className="relative bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl animate-bounce-in">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 transition"
@@ -33,25 +35,25 @@ export default function BadgeNotification({ badge, onClose }) {
         {/* Celebration Header */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
-            <Trophy className="w-8 h-8 text-yellow-600" />
+            {isMultiple ? (
+              <Award className="w-8 h-8 text-yellow-600" />
+            ) : (
+              <Trophy className="w-8 h-8 text-yellow-600" />
+            )}
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-1">
-            Badge Unlocked!
+            {isMultiple ? `${badges.length} Badges Unlocked!` : "Badge Unlocked!"}
           </h2>
-          <p className="text-gray-500">
-            You've earned a new achievement
-          </p>
+          <p className="text-gray-500">You've earned new achievements</p>
         </div>
 
-        {/* Badge Display */}
-        <div className="flex justify-center mb-6">
-          <div className="scale-125">
-            <BadgeCard 
-              badge={badge} 
-              earned={true} 
-              showDescription={true}
-            />
-          </div>
+        {/* Badges Display */}
+        <div className="flex flex-wrap gap-3 justify-center mb-6">
+          {badges.map((badge) => (
+            <div key={badge.id} className="scale-110">
+              <BadgeCard badge={badge} earned={true} showDescription={true} />
+            </div>
+          ))}
         </div>
 
         {/* Dismiss Button */}

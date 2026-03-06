@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchUsers } from "../utils/api";
+import { fetchUsers, reportError } from "../utils/api";
 import { useUser } from "../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
@@ -22,7 +22,11 @@ export default function Login() {
     if (!user) return;
 
     login(user);
-    navigate("/");
+    if (user.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/");
+    }
   };
 
   if (loading) {
@@ -35,9 +39,7 @@ export default function Login() {
 
   return (
     <div className="max-w-md mx-auto mt-20 bg-white border rounded-lg p-6">
-      <h1 className="text-xl font-semibold text-gray-900">
-        Select a user
-      </h1>
+      <h1 className="text-xl font-semibold text-gray-900">Select a user</h1>
       <p className="text-sm text-gray-600 mt-1">
         Choose who you want to act as.
       </p>
@@ -48,11 +50,18 @@ export default function Login() {
         onChange={(e) => setSelected(e.target.value)}
       >
         <option value="">Select a user...</option>
-        {users.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.name} ({u.role})
-          </option>
-        ))}
+        {[...users]
+          .sort((a, b) => {
+            // Sort by role (admin first) then name
+            if (a.role === "admin" && b.role !== "admin") return -1;
+            if (a.role !== "admin" && b.role === "admin") return 1;
+            return (a.name || "").localeCompare(b.name || "");
+          })
+          .map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name} ({u.role})
+            </option>
+          ))}
       </select>
 
       <button
@@ -62,6 +71,28 @@ export default function Login() {
       >
         Continue
       </button>
+
+      <div className="mt-8 pt-6 border-t border-gray-100">
+        <p className="text-xs text-gray-500 mb-2">Debug Tools:</p>
+        <button
+          onClick={() => {
+            const user = users.find((u) => u.id === Number(selected));
+            if (!user) {
+              alert("Please select a user first from the dropdown above.");
+              return;
+            }
+            reportError(
+              "javascript",
+              `Manual test error from ${user.name}`,
+              { userId: user.id },
+            );
+            alert("Test error triggered! Check admin dashboard.");
+          }}
+          className="w-full bg-red-50 text-red-600 border border-red-200 py-2 rounded text-sm hover:bg-red-100 transition"
+        >
+          Trigger Test Error
+        </button>
+      </div>
     </div>
   );
 }

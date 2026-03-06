@@ -11,6 +11,7 @@ import {
   updatePresence,
   fetchDMUsers,
   uploadFile,
+  getAvatarUrl,
 } from "../../utils/api";
 import {
   Hash,
@@ -54,7 +55,7 @@ export default function Chat() {
 
   // Load initial data
   useEffect(() => {
-    if (user?.id) {
+    if (user && user.id !== undefined) {
       loadData();
       // Update presence to online on load
       updatePresence(user.id, "online", null).catch(console.error);
@@ -78,7 +79,7 @@ export default function Chat() {
 
   // Update presence when switching channels
   useEffect(() => {
-    if (user?.id) {
+    if (user && user.id !== undefined) {
       updatePresence(user.id, "online", activeChannel?.id || null).catch(
         console.error,
       );
@@ -102,7 +103,6 @@ export default function Chat() {
         fetchPresence(user.id),
         fetchDMUsers(user.id),
       ]);
-      console.log("DM Users loaded:", dmUsersData);
       setChannels(channelsData);
       setPresence(presenceData);
       setDmUsers(dmUsersData);
@@ -139,9 +139,7 @@ export default function Chat() {
 
   const loadDMMessages = async (dmUserId) => {
     try {
-      console.log("Loading DM messages for user:", dmUserId, "from:", user.id);
       const data = await fetchDMMessages(dmUserId, user.id);
-      console.log("DM messages loaded:", data);
       setMessages(data);
     } catch (err) {
       console.error("Error loading DM:", err);
@@ -169,14 +167,6 @@ export default function Chat() {
       return;
     }
 
-    console.log("Sending message:", {
-      content: newMessage,
-      channel_id: activeChannel?.id,
-      recipient_id: activeDM?.id,
-      user_id: user.id,
-      user_name: user.name,
-    });
-
     try {
       setSending(true);
 
@@ -190,7 +180,6 @@ export default function Chat() {
           const uploadResult = await uploadFile(selectedFile);
           fileUrl = uploadResult.file_url;
           fileName = uploadResult.file_name;
-          console.log("File uploaded:", uploadResult);
         } catch (uploadErr) {
           console.error("File upload failed:", uploadErr);
           addToast(
@@ -210,7 +199,6 @@ export default function Chat() {
         fileUrl,
         fileName,
       );
-      console.log("Message sent:", message);
       setMessages([...messages, message]);
       setNewMessage("");
       setSelectedFile(null);
@@ -231,6 +219,33 @@ export default function Chat() {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const UserAvatar = ({ user, size = "md" }) => {
+    const sizeClasses = {
+      sm: "w-6 h-6 text-xs",
+      md: "w-8 h-8 text-sm",
+      lg: "w-10 h-10 text-base",
+    };
+
+    let imageUrl = user.profile_pic;
+    if (imageUrl && imageUrl.startsWith("avatar:")) {
+      imageUrl = getAvatarUrl(imageUrl.split(":")[1]);
+    }
+
+    return (
+      <div
+        className={`${sizeClasses[size]} bg-surface-highlight rounded-full flex items-center justify-center overflow-hidden`}
+      >
+        {imageUrl ?
+          <img
+            src={imageUrl}
+            alt={user.name}
+            className="w-full h-full object-cover"
+          />
+        : getInitials(user.name)}
+      </div>
+    );
   };
 
   const getStatusColor = (status) => {
@@ -335,7 +350,10 @@ export default function Chat() {
       {/* Main Chat Layout */}
       <div className="flex flex-1 gap-4 overflow-hidden">
         {/* Left Sidebar - Channels & DMs */}
-        <div className="w-64 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
+        <div
+          className="w-64 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col"
+          aria-label="Chat navigation"
+        >
           {/* Channels */}
           <div className="p-3 border-b border-border">
             <div className="flex items-center justify-between mb-2">
@@ -345,6 +363,7 @@ export default function Chat() {
               <button
                 onClick={() => setShowCreateChannel(true)}
                 className="p-1 hover:bg-surface-highlight rounded"
+                aria-label="Create new channel"
               >
                 <Plus className="w-4 h-4 text-text-secondary" />
               </button>
@@ -361,6 +380,9 @@ export default function Chat() {
                     "bg-primary/10 text-primary"
                   : "text-neutral-dark hover:bg-surface-highlight"
                 }`}
+                aria-current={
+                  activeChannel?.id === channel.id ? "true" : undefined
+                }
               >
                 <Hash className="w-4 h-4" />
                 <span className="truncate">{channel.name}</span>
@@ -412,7 +434,6 @@ export default function Chat() {
                 <button
                   key={dmUser.id}
                   onClick={() => {
-                    console.log("Setting active DM:", dmUser);
                     setActiveDM(dmUser);
                     setActiveChannel(null);
                   }}
@@ -421,11 +442,10 @@ export default function Chat() {
                       "bg-primary/10 text-primary"
                     : "text-neutral-dark hover:bg-surface-highlight"
                   }`}
+                  aria-current={activeDM?.id === dmUser.id ? "true" : undefined}
                 >
                   <div className="relative">
-                    <div className="w-6 h-6 bg-surface-highlight lg:bg-gray-200 rounded-full flex items-center justify-center text-xs dark:bg-gray-700">
-                      {getInitials(dmUser.name)}
-                    </div>
+                    <UserAvatar user={dmUser} size="sm" />
                     <div
                       className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white ${
                         dmUser.status === "online" ?
@@ -453,9 +473,7 @@ export default function Chat() {
             : activeDM ?
               <>
                 <div className="relative">
-                  <div className="w-6 h-6 bg-surface-highlight lg:bg-gray-200 rounded-full flex items-center justify-center text-xs dark:bg-gray-700">
-                    {getInitials(activeDM.name)}
-                  </div>
+                  <UserAvatar user={activeDM} size="sm" />
                   <div
                     className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border-2 border-white dark:border-surface ${
                       activeDM.status === "online" ?
@@ -482,7 +500,12 @@ export default function Chat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div
+            className="flex-1 overflow-y-auto p-4 space-y-4"
+            aria-label="Messages"
+            role="log"
+            aria-live="polite"
+          >
             {activeChannel || activeDM ?
               messages.length > 0 ?
                 messages.map((msg) => {
@@ -494,9 +517,13 @@ export default function Chat() {
                     >
                       <div className="w-8 h-8 flex-shrink-0">
                         {!isMe && (
-                          <div className="w-full h-full bg-primary/20 rounded-full flex items-center justify-center text-primary text-xs font-semibold">
-                            {getInitials(msg.sender_name)}
-                          </div>
+                          <UserAvatar
+                            user={{
+                              name: msg.sender_name,
+                              profile_pic: msg.sender_pic,
+                            }}
+                            size="md"
+                          />
                         )}
                       </div>
 
@@ -577,6 +604,7 @@ export default function Chat() {
                   <button
                     onClick={() => setSelectedFile(null)}
                     className="p-1 hover:bg-surface rounded"
+                    aria-label="Remove file"
                   >
                     <X className="w-4 h-4 text-text-secondary" />
                   </button>
@@ -598,6 +626,7 @@ export default function Chat() {
                   onClick={() => fileInputRef.current?.click()}
                   className="p-2 hover:bg-surface-highlight rounded text-text-secondary"
                   disabled={uploading}
+                  aria-label="Attach file"
                 >
                   {uploading ?
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -616,6 +645,7 @@ export default function Chat() {
                   onClick={handleSendMessage}
                   disabled={!newMessage.trim() || sending}
                   className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50"
+                  aria-label="Send message"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -661,15 +691,7 @@ export default function Chat() {
                           className="w-full flex items-center gap-2 py-1.5 px-2 hover:bg-surface-highlight rounded transition-colors text-left"
                         >
                           <div className="relative">
-                            <div
-                              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
-                                u.status === "online" ?
-                                  "bg-green-100 text-green-700"
-                                : "bg-surface-highlight text-text-secondary lg:bg-gray-100 lg:text-gray-500 dark:bg-gray-700"
-                              }`}
-                            >
-                              {getInitials(u.name)}
-                            </div>
+                            <UserAvatar user={u} size="sm" />
                             <div
                               className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
                                 u.status === "online" ?
@@ -726,15 +748,7 @@ export default function Chat() {
                         className="w-full flex items-center gap-2 py-1.5 px-2 hover:bg-surface-highlight rounded transition-colors text-left opacity-80"
                       >
                         <div className="relative">
-                          <div
-                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
-                              u.status === "online" ?
-                                "bg-green-100 text-green-700"
-                              : "bg-surface-highlight text-text-secondary lg:bg-gray-100 lg:text-gray-500 dark:bg-gray-700"
-                            }`}
-                          >
-                            {getInitials(u.name)}
-                          </div>
+                          <UserAvatar user={u} size="sm" />
                           <div
                             className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
                               u.status === "online" ?

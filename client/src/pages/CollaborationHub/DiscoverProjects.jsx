@@ -23,20 +23,23 @@ export default function DiscoverProjects({
               : "border-accent/30 bg-surface hover:border-accent hover:shadow-md"
             }`}
           >
+            {/* Header row: title + status badge */}
             <div className="flex justify-between items-start mb-2">
               <h4 className="font-semibold text-neutral-dark text-sm">
                 {project.title}
               </h4>
-              <span className="text-[10px] px-2 py-1 bg-accent/20 text-accent rounded-full font-medium">
+              <span className="text-[10px] px-2 py-1 bg-accent/20 text-accent rounded-full font-medium shrink-0 ml-2">
                 {project.status}
               </span>
             </div>
 
+            {/* Description */}
             <p className="text-xs text-text-secondary mb-3 line-clamp-2">
               {project.description}
             </p>
 
-            <div className="flex justify-between items-center mb-3 text-xs text-text-secondary">
+            {/* Footer row: meta info + compact action button */}
+            <div className="flex justify-between items-center text-xs text-text-secondary">
               <div className="flex gap-3 items-center">
                 <div className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
@@ -46,49 +49,37 @@ export default function DiscoverProjects({
                   <Target className="w-3 h-3" />
                   <span>{project.skill_count ?? 0}</span>
                 </div>
-                <span
-                  className={`px-2 py-1 rounded-full font-medium flex items-center gap-1 ${
-                    project.visibility === "public" ?
-                      "bg-blue-500/10 text-blue-500"
-                    : "bg-purple-500/10 text-purple-500"
-                  }`}
-                >
-                  {project.visibility === "public" ?
-                    <>
-                      <Globe className="w-3 h-3" />
-                      Public
-                    </>
-                  : <>
-                      <UserPlus className="w-3 h-3" />
-                      Seeking
-                    </>
-                  }
-                </span>
+                {project.visibility === "public" && (
+                  <span className="flex items-center gap-1 text-blue-400">
+                    <Globe className="w-3 h-3" />
+                    Public
+                  </span>
+                )}
               </div>
-            </div>
 
-            {/* Show different buttons based on visibility */}
-            {project.visibility === "seeking" ?
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onJoinClick(project);
-                }}
-                className="w-full px-3 py-2 bg-secondary text-white text-xs rounded-lg hover:bg-secondary/90 transition font-medium"
-              >
-                Join Project
-              </button>
-            : <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Open the detail modal for viewing
-                  onViewProject(project);
-                }}
-                className="w-full px-3 py-2 bg-surface-highlight text-text-secondary text-xs rounded-lg hover:bg-surface-highlight/80 transition font-medium"
-              >
-                View Project
-              </button>
-            }
+              {/* Compact inline button — no full-width CTA */}
+              {project.visibility === "seeking" ?
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onJoinClick(project);
+                  }}
+                  className="px-3 py-1 bg-secondary/10 text-secondary border border-secondary/30 text-xs rounded-lg hover:bg-secondary hover:text-white transition font-medium flex items-center gap-1 shrink-0"
+                >
+                  <UserPlus className="w-3 h-3" />
+                  Join
+                </button>
+              : <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewProject(project);
+                  }}
+                  className="px-3 py-1 bg-surface-highlight text-text-secondary text-xs rounded-lg hover:bg-border transition font-medium shrink-0"
+                >
+                  View
+                </button>
+              }
+            </div>
           </div>
         );
       })}

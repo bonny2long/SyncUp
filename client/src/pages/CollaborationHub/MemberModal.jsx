@@ -1,11 +1,14 @@
 import React from "react";
+import { createPortal } from "react-dom";
 
 export default function MemberModal({ members = [], onClose }) {
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-5 border border-gray-100">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[70] p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-5 border border-gray-100 animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-primary">Project Members</h3>
+          <h3 className="text-lg font-semibold text-primary">
+            Project Members
+          </h3>
           <button
             type="button"
             onClick={onClose}
@@ -15,10 +18,9 @@ export default function MemberModal({ members = [], onClose }) {
           </button>
         </div>
 
-        {members.length === 0 ? (
+        {members.length === 0 ?
           <p className="text-sm text-gray-500">No members yet.</p>
-        ) : (
-          <div className="max-h-80 overflow-y-auto space-y-2">
+        : <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
             {members.map((m) => (
               <div
                 key={m.id || m.name}
@@ -48,8 +50,9 @@ export default function MemberModal({ members = [], onClose }) {
               </div>
             ))}
           </div>
-        )}
+        }
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { rescheduleSession, deleteSession } from "../../../utils/api";
 import { useToast } from "../../../context/ToastContext";
 import { useUser } from "../../../context/UserContext";
-import { Calendar, Clock, Target, XCircle } from "lucide-react";
+import { Calendar, Clock, Target, XCircle, Users, ArrowRight } from "lucide-react";
 import ConfirmModal from "../../../components/shared/ConfirmModal";
 import RescheduleModal from "../../../components/shared/RescheduleModal";
 
@@ -13,6 +13,7 @@ export default function MyRequests({
   loading,
   error,
   onRefresh,
+  onFindMentors,
 }) {
   const { addToast } = useToast();
   const { user } = useUser();
@@ -136,9 +137,23 @@ export default function MyRequests({
           )}
         </h2>
         {pending.length === 0 ?
-          <p className="text-sm text-text-secondary bg-surface-highlight p-4 rounded-lg">
-            No pending requests. Find a mentor to get started!
-          </p>
+          <div className="bg-surface-highlight border border-dashed border-border rounded-lg p-6 text-center">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+              <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <p className="text-sm text-text-secondary mb-3">
+              No pending requests. Find a mentor to get started!
+            </p>
+            {onFindMentors && (
+              <button
+                onClick={onFindMentors}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition font-medium"
+              >
+                Find a Mentor
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         : <div className="space-y-3">
             {pending.map((session) => (
               <RequestCard
@@ -164,9 +179,23 @@ export default function MyRequests({
           )}
         </h2>
         {accepted.length === 0 ?
-          <p className="text-sm text-text-secondary bg-surface-highlight p-4 rounded-lg">
-            No upcoming sessions scheduled
-          </p>
+          <div className="bg-surface-highlight border border-dashed border-border rounded-lg p-6 text-center">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-green-100 dark:bg-green-900/30">
+              <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-sm text-text-secondary mb-3">
+              No upcoming sessions scheduled
+            </p>
+            {onFindMentors && (
+              <button
+                onClick={onFindMentors}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition font-medium"
+              >
+                Book Your First Session
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         : <div className="space-y-3">
             {accepted.map((session) => (
               <RequestCard

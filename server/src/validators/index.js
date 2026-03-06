@@ -40,7 +40,9 @@ export const projectValidators = {
       .notEmpty()
       .withMessage("Status is required")
       .isIn(["planned", "active", "completed", "archived"])
-      .withMessage("Status must be one of: planned, active, completed, archived"),
+      .withMessage(
+        "Status must be one of: planned, active, completed, archived",
+      ),
     validate,
   ],
 
@@ -146,11 +148,12 @@ export const mentorshipValidators = {
       .withMessage("intern_id is required")
       .isInt({ min: 1 })
       .withMessage("intern_id must be a positive integer"),
-    body("scheduled_at")
+    body("session_date")
       .notEmpty()
-      .withMessage("scheduled_at is required")
+      .withMessage("session_date is required")
       .isISO8601()
-      .withMessage("scheduled_at must be a valid ISO 8601 date"),
+      .withMessage("session_date must be a valid ISO 8601 date"),
+    body("session_focus").notEmpty().withMessage("session_focus is required"),
     body("topic")
       .optional()
       .isLength({ max: 500 })
@@ -194,6 +197,102 @@ export const userValidators = {
       .optional()
       .isInt({ min: 0 })
       .withMessage("Offset must be a non-negative integer"),
+    validate,
+  ],
+
+  changePassword: [
+    body("currentPassword")
+      .notEmpty()
+      .withMessage("Current password is required")
+      .isLength({ min: 1 })
+      .withMessage("Current password cannot be empty"),
+    body("newPassword")
+      .notEmpty()
+      .withMessage("New password is required")
+      .isLength({ min: 8, max: 100 })
+      .withMessage("Password must be between 8 and 100 characters"),
+    validate,
+  ],
+
+  updateProfile: [
+    param("userId")
+      .isInt({ min: 1 })
+      .withMessage("User ID must be a positive integer"),
+    body("name")
+      .optional()
+      .trim()
+      .isLength({ max: 100 })
+      .withMessage("Name must be less than 100 characters"),
+    body("bio")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Bio must be less than 500 characters"),
+    body("email").optional().isEmail().withMessage("Invalid email format"),
+    body("role")
+      .optional()
+      .isIn(["intern", "mentor", "admin"])
+      .withMessage("Invalid role"),
+    body("notes")
+      .optional()
+      .trim()
+      .isLength({ max: 1000 })
+      .withMessage("Notes must be less than 1000 characters"),
+    validate,
+  ],
+};
+
+export const chatValidators = {
+  sendMessage: [
+    body("content")
+      .trim()
+      .notEmpty()
+      .withMessage("Message content is required")
+      .isLength({ max: 5000 })
+      .withMessage("Message must be less than 5000 characters"),
+    body("channel_id")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Channel ID must be a positive integer"),
+    body("recipient_id")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Recipient ID must be a positive integer"),
+    validate,
+  ],
+
+  createChannel: [
+    body("name")
+      .trim()
+      .notEmpty()
+      .withMessage("Channel name is required")
+      .isLength({ max: 100 })
+      .withMessage("Channel name must be less than 100 characters"),
+    body("description")
+      .optional()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage("Description must be less than 500 characters"),
+    validate,
+  ],
+};
+
+export const notificationValidators = {
+  markRead: [
+    param("id")
+      .isInt({ min: 1 })
+      .withMessage("Notification ID must be a positive integer"),
+    validate,
+  ],
+};
+
+export const uploadValidators = {
+  avatar: [
+    body("user_id")
+      .notEmpty()
+      .withMessage("User ID is required")
+      .isInt({ min: 1 })
+      .withMessage("User ID must be a positive integer"),
     validate,
   ],
 };

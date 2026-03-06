@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X, AlertTriangle, CheckCircle } from "lucide-react";
 
 export default function ConfirmModal({
@@ -17,18 +18,18 @@ export default function ConfirmModal({
   const getColors = () => {
     switch (confirmColor) {
       case "red":
-        return "bg-red-600 hover:bg-red-700 shadow-red-200";
+        return "bg-red-600 hover:bg-red-700";
       case "green":
-        return "bg-green-600 hover:bg-green-700 shadow-green-200";
+        return "bg-green-600 hover:bg-green-700";
       case "blue":
       default:
-        return "bg-blue-600 hover:bg-blue-700 shadow-blue-200";
+        return "bg-blue-600 hover:bg-blue-700";
     }
   };
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
@@ -38,6 +39,7 @@ export default function ConfirmModal({
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1 rounded-full hover:bg-surface-highlight text-text-secondary hover:text-neutral-dark transition-colors"
+          aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
@@ -68,7 +70,7 @@ export default function ConfirmModal({
             </button>
             <button
               onClick={onConfirm}
-              className={`flex-1 px-4 py-2.5 rounded-xl text-white font-medium shadow-lg hover:shadow-xl focus:ring-4 focus:ring-opacity-50 transition-all ${getColors()}`}
+              className={`flex-1 px-4 py-2.5 rounded-xl text-white font-medium hover:opacity-90 transition-all ${getColors()}`}
               disabled={loading}
             >
               {loading ? "Processing..." : confirmText}
@@ -76,6 +78,7 @@ export default function ConfirmModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

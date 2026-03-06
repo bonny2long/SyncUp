@@ -54,11 +54,6 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
         if (!existingSessions || existingSessions.length === 0) {
           try {
             const allSessions = await fetchSessions(mentor.id);
-            console.log(
-              "Fallback: Using fetchSessions, got",
-              allSessions.length,
-              "sessions",
-            );
             existingSessions.push(...allSessions);
           } catch (fallbackErr) {
             console.warn("Fallback fetchSessions also failed:", fallbackErr);
@@ -116,7 +111,6 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
       !loading &&
       !isClearingSelection
     ) {
-      console.log("Selected slot is now booked, clearing selection");
       setIsClearingSelection(true);
       setFormData((prev) => ({ ...prev, session_date: "" }));
       addToast({
@@ -133,7 +127,6 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
     // Prevent submission if we're in the middle of clearing a booked slot
     if (isClearingSelection) {
-      console.log("Skipping submission - clearing selection");
       return;
     }
 
@@ -184,7 +177,6 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
       // Add a small delay to ensure backend processes the booking, then refresh availability
       setTimeout(() => {
         setRefreshKey((prev) => prev + 1);
-        console.log("Refreshing availability after booking...");
       }, 1000); // 1 second delay
     } catch (err) {
       console.error("Error creating session:", err);

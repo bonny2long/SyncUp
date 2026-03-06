@@ -1,9 +1,13 @@
 import express from "express";
+import pool from "../config/db.js";
 import {
   getAllUsers,
   getUserProfile,
   getUserSkillInventory,
   getUserActivityTimeline,
+  updateUserProfile,
+  changePassword,
+  deleteUser,
 } from "../controllers/usersController.js";
 import { userValidators } from "../validators/index.js";
 
@@ -92,5 +96,89 @@ router.get("/:userId/skill-inventory", userValidators.getProfile, getUserSkillIn
  *         description: User activity timeline
  */
 router.get("/:userId/activity-timeline", userValidators.getActivityTimeline, getUserActivityTimeline);
+
+/**
+ * @swagger
+ * /users/{userId}/profile:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User updated
+ *       404:
+ *         description: User not found
+ */
+router.put("/:userId/profile", userValidators.updateProfile, updateUserProfile);
+
+/**
+ * @swagger
+ * /users/{userId}/password:
+ *   put:
+ *     summary: Change user password
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password changed
+ *       400:
+ *         description: Invalid password
+ */
+router.put("/:userId/password", userValidators.changePassword, changePassword);
+
+/**
+ * @swagger
+ * /users/{userId}:
+ *   delete:
+ *     summary: Delete user account
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Account deleted
+ *       404:
+ *         description: User not found
+ */
+router.delete("/:userId", deleteUser);
 
 export default router;

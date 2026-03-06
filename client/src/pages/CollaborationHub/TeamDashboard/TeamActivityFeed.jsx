@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { MessageSquare, Clock } from "lucide-react";
+import { MessageSquare, Clock, ChevronDown, ChevronUp } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
@@ -7,6 +7,7 @@ export default function TeamActivityFeed({ projectId }) {
   const [updates, setUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
     if (!projectId) {
@@ -19,7 +20,6 @@ export default function TeamActivityFeed({ projectId }) {
         setLoading(true);
         setError(null);
 
-        console.log("Fetching team updates for project:", projectId);
         const response = await fetch(
           `${API_BASE}/progress_updates/project/${projectId}`,
         );
@@ -29,7 +29,6 @@ export default function TeamActivityFeed({ projectId }) {
         }
 
         const data = await response.json();
-        console.log("Team updates response:", data);
         setUpdates(data.slice(0, 5));
       } catch (err) {
         console.error("Failed to fetch team updates:", err);
@@ -70,10 +69,18 @@ export default function TeamActivityFeed({ projectId }) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <MessageSquare className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold text-gray-900">Team Activity</h3>
+      <div className="bg-surface rounded-lg border border-border p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-secondary" />
+            <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
+          </div>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1 hover:bg-surface-highlight rounded transition-colors"
+          >
+            <ChevronUp className="w-4 h-4 text-text-secondary" />
+          </button>
         </div>
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
@@ -93,9 +100,17 @@ export default function TeamActivityFeed({ projectId }) {
   if (!projectId) {
     return (
       <div className="bg-surface rounded-lg border border-border p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <MessageSquare className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-secondary" />
+            <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
+          </div>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1 hover:bg-surface-highlight rounded transition-colors"
+          >
+            <ChevronDown className="w-4 h-4 text-text-secondary" />
+          </button>
         </div>
         <p className="text-sm text-text-secondary text-center py-4">
           Select a project to view team activity
@@ -107,9 +122,17 @@ export default function TeamActivityFeed({ projectId }) {
   if (error) {
     return (
       <div className="bg-surface rounded-lg border border-border p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <MessageSquare className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-secondary" />
+            <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
+          </div>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1 hover:bg-surface-highlight rounded transition-colors"
+          >
+            <ChevronDown className="w-4 h-4 text-text-secondary" />
+          </button>
         </div>
         <p className="text-sm text-red-500">{error}</p>
       </div>
@@ -119,9 +142,17 @@ export default function TeamActivityFeed({ projectId }) {
   if (updates.length === 0) {
     return (
       <div className="bg-surface rounded-lg border border-border p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <MessageSquare className="w-4 h-4 text-secondary" />
-          <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-secondary" />
+            <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
+          </div>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1 hover:bg-surface-highlight rounded transition-colors"
+          >
+            <ChevronDown className="w-4 h-4 text-text-secondary" />
+          </button>
         </div>
         <p className="text-sm text-text-secondary text-center py-4">
           No team updates yet. Be the first to post!
@@ -137,45 +168,54 @@ export default function TeamActivityFeed({ projectId }) {
           <MessageSquare className="w-4 h-4 text-secondary" />
           <h3 className="font-semibold text-neutral-dark">Team Activity</h3>
         </div>
-        <span className="text-xs text-text-secondary">
-          Last {updates.length} updates
-        </span>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="p-1 hover:bg-surface-highlight rounded transition-colors"
+        >
+          {isExpanded ? (
+            <ChevronUp className="w-4 h-4 text-text-secondary" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-text-secondary" />
+          )}
+        </button>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {updates.map((update) => (
-          <div
-            key={update.id}
-            className="flex gap-3 p-2 rounded-lg hover:bg-surface-highlight transition"
-          >
-            <div className="w-8 h-8 bg-primary/20 flex items-center justify-center rounded-full text-primary font-semibold text-xs flex-shrink-0">
-              {getInitials(update.user_name)}
-            </div>
+      {isExpanded && (
+        <div className="flex flex-col gap-3">
+          {updates.map((update) => (
+            <div
+              key={update.id}
+              className="flex gap-3 p-2 rounded-lg hover:bg-surface-highlight transition"
+            >
+              <div className="w-8 h-8 bg-primary/20 flex items-center justify-center rounded-full text-primary font-semibold text-xs flex-shrink-0">
+                {getInitials(update.user_name)}
+              </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm text-neutral-dark">
-                  {update.user_name || "Unknown"}
-                </span>
-                {update.user_role && (
-                  <span className="text-[10px] uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                    {update.user_role}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm text-neutral-dark">
+                    {update.user_name || "Unknown"}
                   </span>
-                )}
-              </div>
+                  {update.user_role && (
+                    <span className="text-[10px] uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                      {update.user_role}
+                    </span>
+                  )}
+                </div>
 
-              <p className="text-sm text-text-secondary line-clamp-2">
-                {update.content}
-              </p>
+                <p className="text-sm text-text-secondary line-clamp-2">
+                  {update.content}
+                </p>
 
-              <div className="flex items-center gap-1 mt-1.5 text-xs text-text-secondary">
-                <Clock className="w-3 h-3" />
-                <span>{formatTimeAgo(update.created_at)}</span>
+                <div className="flex items-center gap-1 mt-1.5 text-xs text-text-secondary">
+                  <Clock className="w-3 h-3" />
+                  <span>{formatTimeAgo(update.created_at)}</span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
