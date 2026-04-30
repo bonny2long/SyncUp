@@ -47,7 +47,7 @@ export default function FindMentors({ onSessionRequested }) {
     try {
       const details = await fetchMentorDetails(mentorId);
       setSelectedMentorForProfile(details);
-    } catch (err) {
+    } catch {
       setError("Failed to load mentor profile");
     }
   };
@@ -78,6 +78,7 @@ export default function FindMentors({ onSessionRequested }) {
         name: mentorRow.name,
         email: mentorRow.email,
         role: mentorRow.role,
+        cycle: mentorRow.cycle || null,
         projects: mentorRow.projects || "", // Project tab specific
         availabilityCount: mentorRow.available_date ? 1 : 0,
         nextAvailable:
@@ -103,6 +104,9 @@ export default function FindMentors({ onSessionRequested }) {
       // Merge projects if applicable
       if (mentorRow.projects && !existing.projects) {
         existing.projects = mentorRow.projects;
+      }
+      if (mentorRow.cycle && !existing.cycle) {
+        existing.cycle = mentorRow.cycle;
       }
     }
 

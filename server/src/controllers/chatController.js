@@ -6,13 +6,44 @@ import pool from "../config/db.js";
 
 // Get all channels
 export const getChannels = async (req, res) => {
+  const { user_id } = req.query;
+
   try {
+    let userRole = "intern";
+    let hasCommenced = false;
+
+    if (user_id) {
+      const [userRows] = await pool.query(
+        "SELECT role, has_commenced FROM users WHERE id = ?",
+        [user_id],
+      );
+
+      if (userRows.length > 0) {
+        userRole = userRows[0].role;
+        hasCommenced = Boolean(userRows[0].has_commenced);
+      }
+    }
+
+    if (userRole === "intern" && !hasCommenced) {
+      return res.json([]);
+    }
+
     const [rows] = await pool.query(`
       SELECT c.*, 
              (SELECT COUNT(*) FROM channel_members WHERE channel_id = c.id) as member_count
       FROM channels c
-      ORDER BY created_at DESC
-    `);
+      WHERE c.allowed_roles IS NULL
+         OR JSON_CONTAINS(c.allowed_roles, JSON_QUOTE(?))
+      ORDER BY
+        CASE c.channel_type
+          WHEN 'announcements' THEN 0
+          WHEN 'general' THEN 1
+          WHEN 'community' THEN 2
+          WHEN 'restricted' THEN 3
+          ELSE 4
+        END,
+        c.created_at ASC
+    `, [userRole]);
     res.json(rows);
   } catch (err) {
     console.error("Error fetching channels:", err);
@@ -30,6 +61,14 @@ export const createChannel = async (req, res) => {
   }
 
   try {
+    const [userRows] = await pool.query("SELECT role FROM users WHERE id = ?", [
+      user_id,
+    ]);
+
+    if (userRows[0]?.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
     const [result] = await pool.query(
       "INSERT INTO channels (name, description, created_by, is_private) VALUES (?, ?, ?, ?)",
       [name, description || null, user_id, is_private || false],
@@ -196,37 +235,25 @@ export const sendMessage = async (req, res) => {
 
 // Get all users and their presence, including shared projects
 export const getPresence = async (req, res) => {
-  const { user_id } = req.query;
-
   try {
-    let query;
-    let params = [];
-
-    if (user_id) {
-      // Optimized query: fetches all presence but includes shared project titles for the current user
-      query = `
-        SELECT up.status, up.last_seen, up.current_channel_id, 
-               u.id, u.name, u.role, u.profile_pic,
-               (
-                 SELECT GROUP_CONCAT(p.title)
-                 FROM project_members pm
-                 JOIN projects p ON pm.project_id = p.id
-                 WHERE pm.user_id = u.id
-                   AND p.id IN (SELECT project_id FROM project_members WHERE user_id = ?)
-               ) as project_names
-        FROM user_presence up
-        JOIN users u ON up.user_id = u.id
-      `;
-      params = [user_id];
-    } else {
-      query = `
-        SELECT up.status, up.last_seen, up.current_channel_id, u.id, u.name, u.role, u.profile_pic
-        FROM user_presence up
-        JOIN users u ON up.user_id = u.id
-      `;
-    }
-
-    const [rows] = await pool.query(query, params);
+    const [rows] = await pool.query(`
+      SELECT
+        COALESCE(up.status, 'offline') AS status,
+        up.last_seen,
+        up.current_channel_id,
+        u.id,
+        u.name,
+        u.role,
+        u.profile_pic,
+        u.cycle
+      FROM users u
+      LEFT JOIN user_presence up ON up.user_id = u.id
+      WHERE u.role != 'intern'
+         OR (u.role = 'intern' AND u.has_commenced = TRUE)
+      ORDER BY
+        CASE COALESCE(up.status, 'offline') WHEN 'online' THEN 0 ELSE 1 END,
+        u.name ASC
+    `);
     res.json(rows);
   } catch (err) {
     console.error("Error fetching presence:", err);
@@ -268,20 +295,53 @@ export const getDMUsers = async (req, res) => {
   const { user_id } = req.query;
 
   try {
-    // Get users from same projects + all other users
-    const [rows] = await pool.query(
-      `
-      SELECT DISTINCT u.id, u.name, u.role, u.profile_pic,
-             COALESCE(up.status, 'offline') as status,
-             up.last_seen
-      FROM users u
-      LEFT JOIN user_presence up ON u.id = up.user_id
-      WHERE u.id != ?
-      ORDER BY u.name
-    `,
+    const [requestingUser] = await pool.query(
+      "SELECT role, has_commenced FROM users WHERE id = ?",
       [user_id],
     );
 
+    const isPreCommencedIntern =
+      requestingUser[0]?.role === "intern" &&
+      !requestingUser[0]?.has_commenced;
+
+    let query;
+    let params;
+
+    if (isPreCommencedIntern) {
+      query = `
+        SELECT DISTINCT
+          u.id,
+          u.name,
+          u.role,
+          u.profile_pic,
+          u.cycle,
+          COALESCE(up.status, 'offline') AS status
+        FROM users u
+        LEFT JOIN user_presence up ON u.id = up.user_id
+        WHERE u.id != ?
+          AND u.role IN ('mentor', 'alumni', 'resident', 'admin')
+        ORDER BY u.name
+      `;
+      params = [user_id];
+    } else {
+      query = `
+        SELECT DISTINCT
+          u.id,
+          u.name,
+          u.role,
+          u.profile_pic,
+          u.cycle,
+          COALESCE(up.status, 'offline') AS status
+        FROM users u
+        LEFT JOIN user_presence up ON u.id = up.user_id
+        WHERE u.id != ?
+          AND (u.role != 'intern' OR u.has_commenced = TRUE)
+        ORDER BY u.name
+      `;
+      params = [user_id];
+    }
+
+    const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
     console.error("Error fetching DM users:", err);

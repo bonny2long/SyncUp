@@ -70,6 +70,7 @@ function ProtectedRoute({
   requireIntern = false,
   requireAdmin = false,
   disallowAdmin = false,
+  requireChatAccess = false,
 }) {
   const { user, loading } = useUser();
 
@@ -77,11 +78,18 @@ function ProtectedRoute({
   if (!user) return <Navigate to="/login" replace />;
 
   const isAdmin = user.role === "admin";
+  const isCommunityMember = ["alumni", "resident", "mentor"].includes(
+    user.role,
+  );
+  const canAccessSyncChat =
+    isCommunityMember || (user.role === "intern" && user.has_commenced);
 
   if (requireAdmin && !isAdmin) return <Navigate to="/" replace />;
   if (disallowAdmin && isAdmin) return <Navigate to="/admin" replace />;
   if (requireIntern && user.role !== "intern" && !isAdmin)
     return <Navigate to="/collaboration" replace />;
+  if (requireChatAccess && !canAccessSyncChat)
+    return <Navigate to="/mentorship" replace />;
 
   return children;
 }
@@ -116,7 +124,10 @@ export default function App() {
               path="/chat"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute disallowAdmin={true}>
+                  <ProtectedRoute
+                    disallowAdmin={true}
+                    requireChatAccess={true}
+                  >
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>

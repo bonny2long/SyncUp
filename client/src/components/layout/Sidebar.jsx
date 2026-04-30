@@ -7,7 +7,6 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   const location = useLocation();
   const { user } = useUser();
 
-  // Role-based navigation items
   const tabs = React.useMemo(() => {
     if (user?.role === "admin") {
       return [
@@ -16,37 +15,46 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
       ];
     }
 
+    const isCommunityMember = ["alumni", "resident", "mentor"].includes(
+      user?.role,
+    );
+    const canAccessSyncChat =
+      isCommunityMember || (user?.role === "intern" && user?.has_commenced);
+
     const items = [
       {
         id: "collaboration",
         label: "Collaboration Hub",
         path: "/collaboration",
       },
-      { id: "chat", label: "SyncChat", path: "/chat" },
-      { id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" },
-      { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
     ];
 
-    // Only show Skill Tracker for interns
+    if (canAccessSyncChat) {
+      items.push({ id: "chat", label: "SyncChat", path: "/chat" });
+    }
+
+    items.push({ id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" });
+
     if (user?.role === "intern") {
-      items.splice(2, 0, {
+      items.push({
         id: "skills",
         label: "Skill Tracker",
         path: "/skills",
       });
     }
 
+    items.push({ id: "portfolio", label: "Project Portfolio", path: "/portfolio" });
+
     return items;
-  }, [user?.role]);
+  }, [user?.role, user?.has_commenced]);
 
   const handleTabClick = (tab) => {
     navigate(tab.path);
     onClose?.();
   };
 
-  // Determine active tab based on current route
   const getActiveTab = () => {
-    const currentTab = tabs.find((t) => t.path === location.pathname);
+    const currentTab = tabs.find((tab) => tab.path === location.pathname);
     return currentTab ? currentTab.id : activeTab;
   };
 
@@ -63,12 +71,11 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab)}
-            className={`px-4 py-2 rounded-lg text-left font-medium transition-all duration-300
-              ${
-                getActiveTab() === tab.id ?
-                  "bg-white text-primary shadow-md border-l-4 border-accent"
-                : "hover:bg-secondary/30 text-white/90"
-              }`}
+            className={`px-4 py-2 rounded-lg text-left font-medium transition-all duration-300 ${
+              getActiveTab() === tab.id ?
+                "bg-white text-primary shadow-md border-l-4 border-accent"
+              : "hover:bg-secondary/30 text-white/90"
+            }`}
             aria-current={getActiveTab() === tab.id ? "page" : undefined}
           >
             {tab.label}
@@ -76,8 +83,19 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
         ))}
       </nav>
 
+      {user?.role === "intern" && !user?.has_commenced && (
+        <div className="mt-4 p-3 bg-white/10 rounded-lg border border-white/20">
+          <p className="text-xs text-white/70 font-medium mb-1">
+            IC Stars Network
+          </p>
+          <p className="text-xs text-white/50">
+            Complete the program to unlock SyncChat and join the community.
+          </p>
+        </div>
+      )}
+
       <footer className="mt-auto pt-6 text-xs text-white/80 border-t border-white/20">
-        v1.0 — Sprint 2
+        v2.0 | ICCA
       </footer>
     </div>
   );

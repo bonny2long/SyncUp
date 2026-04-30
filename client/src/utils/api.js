@@ -726,8 +726,9 @@ export async function deleteNotification(notificationId) {
 // CHAT
 // ============================================================
 
-export async function fetchChannels() {
-  const res = await fetch(`${API_BASE}/chat/channels`, {
+export async function fetchChannels(userId) {
+  const query = userId ? `?user_id=${userId}` : "";
+  const res = await fetch(`${API_BASE}/chat/channels${query}`, {
     headers: getUserHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch channels");
@@ -830,6 +831,81 @@ export async function fetchDMUsers(userId) {
   if (!res.ok) throw new Error("Failed to fetch DM users");
   return res.json();
 }
+
+// ============================================================
+// ANNOUNCEMENTS
+// ============================================================
+
+export const fetchAnnouncements = async () => {
+  const res = await fetch(`${API_BASE}/announcements`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch announcements");
+  return res.json();
+};
+
+export const createAnnouncement = async (data, userId) => {
+  const res = await fetch(`${API_BASE}/announcements?user_id=${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create announcement");
+  return res.json();
+};
+
+export const deleteAnnouncement = async (id, userId = null) => {
+  const query = userId ? `?user_id=${userId}` : "";
+  const res = await fetch(`${API_BASE}/announcements/${id}${query}`, {
+    method: "DELETE",
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete announcement");
+  return res.json();
+};
+
+// ============================================================
+// EVENTS
+// ============================================================
+
+export const fetchEvents = async (userId) => {
+  const query = userId ? `?user_id=${userId}` : "";
+  const res = await fetch(`${API_BASE}/events${query}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch events");
+  return res.json();
+};
+
+export const createEvent = async (data, userId) => {
+  const res = await fetch(`${API_BASE}/events?user_id=${userId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to create event");
+  return res.json();
+};
+
+export const rsvpEvent = async (eventId, userId, status = "attending") => {
+  const res = await fetch(`${API_BASE}/events/${eventId}/rsvp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ user_id: userId, status }),
+  });
+  if (!res.ok) throw new Error("Failed to RSVP");
+  return res.json();
+};
+
+export const deleteEvent = async (eventId, userId = null) => {
+  const query = userId ? `?user_id=${userId}` : "";
+  const res = await fetch(`${API_BASE}/events/${eventId}${query}`, {
+    method: "DELETE",
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete event");
+  return res.json();
+};
 
 // ============================================================
 // FILE UPLOAD

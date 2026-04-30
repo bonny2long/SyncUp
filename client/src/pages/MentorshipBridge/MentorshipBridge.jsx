@@ -6,29 +6,22 @@ import MentorView from "./MentorView/MentorView";
 export default function MentorshipBridge() {
   const { user } = useUser();
 
-  // Role-based routing
   if (user?.role === "intern") {
     return <InternView />;
   }
 
-  if (user?.role === "mentor") {
+  if (["mentor", "alumni", "resident"].includes(user?.role)) {
     return <MentorView />;
   }
 
-  // Fallback for users without role
   return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-neutral-dark mb-2">
-          Role Not Set
+          Role Not Configured
         </h2>
-        <p className="text-text-secondary mb-4">
-          Your account role needs to be configured to access mentorship
-          features.
-        </p>
-        <p className="text-sm text-text-secondary">
-          Please contact an administrator to set your role as either "intern" or
-          "mentor".
+        <p className="text-text-secondary">
+          Contact an administrator to configure your account role.
         </p>
       </div>
     </div>

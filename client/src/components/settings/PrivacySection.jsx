@@ -17,7 +17,7 @@ export default function PrivacySection() {
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
 
-  const isMentor = user?.role === "mentor";
+  const isMentor = ["mentor", "resident", "alumni"].includes(user?.role);
 
   useEffect(() => {
     if (user) {
@@ -157,11 +157,11 @@ export default function PrivacySection() {
           </div>
         </div>
 
-        {/* Mentorship (only for mentors) */}
+        {/* Mentorship (community mentors) */}
         {isMentor && (
           <div className="border-t border-border dark:border-gray-700 pt-6">
             <h4 className="text-sm font-medium text-neutral-dark dark:text-gray-300 mb-4">
-              Mentorship (Mentors only)
+              Mentorship (Community mentors)
             </h4>
             <div className="space-y-4">
               <ToggleSwitch

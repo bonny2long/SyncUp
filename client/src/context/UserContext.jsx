@@ -3,6 +3,23 @@ import { updatePresence } from "../utils/api";
 
 const UserContext = createContext(null);
 
+function normalizeUser(rawUser) {
+  if (!rawUser) return rawUser;
+
+  const role = rawUser.role || "intern";
+  const isCommunityRole = ["mentor", "resident", "alumni", "admin"].includes(
+    role,
+  );
+
+  return {
+    ...rawUser,
+    role,
+    has_commenced:
+      rawUser.has_commenced ?? (isCommunityRole ? true : false),
+    cycle: rawUser.cycle ?? null,
+  };
+}
+
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -11,7 +28,7 @@ export function UserProvider({ children }) {
     const stored = localStorage.getItem("syncup_user");
     if (stored) {
       try {
-        setUser(JSON.parse(stored));
+        setUser(normalizeUser(JSON.parse(stored)));
       } catch {
         localStorage.removeItem("syncup_user");
       }
@@ -20,13 +37,14 @@ export function UserProvider({ children }) {
   }, []);
 
   const login = (user) => {
-    localStorage.setItem("syncup_user", JSON.stringify(user));
-    setUser(user);
+    const normalized = normalizeUser(user);
+    localStorage.setItem("syncup_user", JSON.stringify(normalized));
+    setUser(normalized);
   };
 
   const updateUser = (updates) => {
     if (!user) return;
-    const updated = { ...user, ...updates };
+    const updated = normalizeUser({ ...user, ...updates });
     localStorage.setItem("syncup_user", JSON.stringify(updated));
     setUser(updated);
   };

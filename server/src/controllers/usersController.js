@@ -1,9 +1,38 @@
 import pool from "../config/db.js";
 
+const USER_SELECT_FIELDS = `
+  id,
+  name,
+  email,
+  role,
+  join_date,
+  bio,
+  profile_pic,
+  is_active,
+  has_commenced,
+  cycle,
+  email_notifications,
+  notify_join_requests,
+  notify_mentions,
+  notify_session_reminders,
+  notify_project_updates,
+  notify_weekly_summary,
+  profile_visibility,
+  show_email,
+  show_projects,
+  show_skills,
+  accept_mentorship,
+  auto_accept_teammates
+`;
+
 // GET /api/users
 export const getAllUsers = async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM users");
+    const [rows] = await pool.query(`
+      SELECT ${USER_SELECT_FIELDS}
+      FROM users
+      ORDER BY name ASC
+    `);
     res.json(rows);
   } catch (err) {
     console.error("Error fetching users:", err);
@@ -19,12 +48,9 @@ export const getUserProfile = async (req, res) => {
   try {
     // Get basic user info
     const [users] = await pool.query(
-      `SELECT id, name, email, role, join_date, bio, profile_pic,
-        email_notifications, notify_join_requests, notify_mentions,
-        notify_session_reminders, notify_project_updates, notify_weekly_summary,
-        profile_visibility, show_email, show_projects, show_skills,
-        accept_mentorship, auto_accept_teammates
-      FROM users WHERE id = ?`,
+      `SELECT ${USER_SELECT_FIELDS}
+       FROM users
+       WHERE id = ?`,
       [userId],
     );
 
@@ -234,65 +260,87 @@ export const getUserActivityTimeline = async (req, res) => {
 // Update user profile (name, email, bio), notification settings, and privacy settings
 export const updateUserProfile = async (req, res) => {
   const { userId } = req.params;
-  const {
-    name,
-    email,
-    bio,
-    notes,
-    role,
-    profile_pic,
-    email_notifications,
-    notify_join_requests,
-    notify_mentions,
-    notify_session_reminders,
-    notify_project_updates,
-    notify_weekly_summary,
-    profile_visibility,
-    show_email,
-    show_projects,
-    show_skills,
-    accept_mentorship,
-    auto_accept_teammates,
-  } = req.body;
+  const body = req.body || {};
 
   try {
+    const updates = {};
+
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.email !== undefined) updates.email = body.email;
+
+    const resolvedBio =
+      body.bio !== undefined ? body.bio
+      : body.notes !== undefined ? body.notes
+      : undefined;
+    if (resolvedBio !== undefined) updates.bio = resolvedBio || null;
+
+    if (body.role !== undefined) {
+      updates.role = body.role;
+      if (
+        body.has_commenced === undefined &&
+        ["mentor", "resident", "alumni", "admin"].includes(body.role)
+      ) {
+        updates.has_commenced = true;
+      }
+    }
+
+    if (body.profile_pic !== undefined) updates.profile_pic = body.profile_pic;
+    if (body.email_notifications !== undefined) {
+      updates.email_notifications = body.email_notifications;
+    }
+    if (body.notify_join_requests !== undefined) {
+      updates.notify_join_requests = body.notify_join_requests;
+    }
+    if (body.notify_mentions !== undefined) {
+      updates.notify_mentions = body.notify_mentions;
+    }
+    if (body.notify_session_reminders !== undefined) {
+      updates.notify_session_reminders = body.notify_session_reminders;
+    }
+    if (body.notify_project_updates !== undefined) {
+      updates.notify_project_updates = body.notify_project_updates;
+    }
+    if (body.notify_weekly_summary !== undefined) {
+      updates.notify_weekly_summary = body.notify_weekly_summary;
+    }
+    if (body.profile_visibility !== undefined) {
+      updates.profile_visibility = body.profile_visibility;
+    }
+    if (body.show_email !== undefined) updates.show_email = body.show_email;
+    if (body.show_projects !== undefined) {
+      updates.show_projects = body.show_projects;
+    }
+    if (body.show_skills !== undefined) updates.show_skills = body.show_skills;
+    if (body.accept_mentorship !== undefined) {
+      updates.accept_mentorship = body.accept_mentorship;
+    }
+    if (body.auto_accept_teammates !== undefined) {
+      updates.auto_accept_teammates = body.auto_accept_teammates;
+    }
+    if (body.is_active !== undefined) updates.is_active = body.is_active;
+    if (body.has_commenced !== undefined) {
+      updates.has_commenced = body.has_commenced;
+    }
+    if (body.cycle !== undefined) updates.cycle = body.cycle || null;
+
+    const updateEntries = Object.entries(updates);
+    if (updateEntries.length === 0) {
+      return res.status(400).json({ error: "No profile updates provided" });
+    }
+
+    const setClause = updateEntries.map(([key]) => `${key} = ?`).join(", ");
+
     await pool.query(
-      `UPDATE users SET 
-        name = ?, email = ?, bio = ?, role = ?, profile_pic = ?,
-        email_notifications = ?, notify_join_requests = ?, notify_mentions = ?,
-        notify_session_reminders = ?, notify_project_updates = ?, notify_weekly_summary = ?,
-        profile_visibility = ?, show_email = ?, show_projects = ?, show_skills = ?,
-        accept_mentorship = ?, auto_accept_teammates = ?
-      WHERE id = ?`,
-      [
-        name,
-        email,
-        notes || bio || null,
-        role,
-        profile_pic || null,
-        email_notifications ?? true,
-        notify_join_requests ?? true,
-        notify_mentions ?? true,
-        notify_session_reminders ?? true,
-        notify_project_updates ?? true,
-        notify_weekly_summary ?? false,
-        profile_visibility ?? "team",
-        show_email ?? false,
-        show_projects ?? true,
-        show_skills ?? true,
-        accept_mentorship ?? true,
-        auto_accept_teammates ?? false,
-        userId,
-      ],
+      `UPDATE users
+       SET ${setClause}
+       WHERE id = ?`,
+      [...updateEntries.map(([, value]) => value), userId],
     );
 
     const [users] = await pool.query(
-      `SELECT id, name, email, role, join_date, bio, profile_pic,
-        email_notifications, notify_join_requests, notify_mentions,
-        notify_session_reminders, notify_project_updates, notify_weekly_summary,
-        profile_visibility, show_email, show_projects, show_skills,
-        accept_mentorship, auto_accept_teammates
-      FROM users WHERE id = ?`,
+      `SELECT ${USER_SELECT_FIELDS}
+       FROM users
+       WHERE id = ?`,
       [userId],
     );
 

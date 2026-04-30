@@ -35,6 +35,12 @@ import {
   fetchGrowthStats,
   fetchMaintenanceSettings,
   updateMaintenanceSettings,
+  fetchAnnouncements,
+  createAnnouncement,
+  deleteAnnouncement,
+  fetchEvents,
+  createEvent,
+  deleteEvent,
 } from "../utils/api";
 import HelpModal from "../components/shared/HelpModal";
 import ConfirmModal from "../components/shared/ConfirmModal";
@@ -204,7 +210,7 @@ const ActionMenu = memo(function ActionMenu({ isOpen, onClose, actions }) {
 });
 
 export default function AdminDashboard() {
-  const { user, logout } = useUser();
+  const { user, logout, updateUser: updateCurrentUser } = useUser();
   const { addToast, handleError } = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -293,6 +299,26 @@ export default function AdminDashboard() {
     "We are doing some work on the app. Please check back soon.",
   );
   const [showAllActivity, setShowAllActivity] = useState(false);
+  const [announcements, setAnnouncements] = useState([]);
+  const [communityEvents, setCommunityEvents] = useState([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
+  const [loadingCommunityEvents, setLoadingCommunityEvents] = useState(false);
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: "",
+    content: "",
+    announcement_type: "news",
+    expires_at: "",
+  });
+  const [eventForm, setEventForm] = useState({
+    title: "",
+    description: "",
+    event_date: "",
+    location: "",
+    requires_rsvp: false,
+    max_attendees: "",
+  });
+  const [editUserRole, setEditUserRole] = useState("intern");
+  const [editUserCommenced, setEditUserCommenced] = useState(false);
 
   // Phase 1: Load critical data needed for initial overview render
   useEffect(() => {
@@ -311,7 +337,9 @@ export default function AdminDashboard() {
         setUpdates(updatesData);
 
         // Calculate real stats from critical data
-        const mentors = usersData.filter((u) => u.role === "mentor").length;
+        const mentors = usersData.filter((u) =>
+          ["mentor", "resident", "alumni"].includes(u.role),
+        ).length;
         const interns = usersData.filter((u) => u.role === "intern").length;
         const activeProjects = projectsData.filter(
           (p) => p.status === "active",
@@ -408,6 +436,51 @@ export default function AdminDashboard() {
     loadMaintenanceSettings();
   }, []);
 
+  const loadAnnouncements = useCallback(async () => {
+    try {
+      setLoadingAnnouncements(true);
+      const data = await fetchAnnouncements();
+      setAnnouncements(data);
+    } catch (err) {
+      console.error("Failed to load announcements:", err);
+      addToast("Failed to load announcements", "error");
+    } finally {
+      setLoadingAnnouncements(false);
+    }
+  }, [addToast]);
+
+  const loadCommunityEvents = useCallback(async () => {
+    try {
+      setLoadingCommunityEvents(true);
+      const data = await fetchEvents(user?.id);
+      setCommunityEvents(data);
+    } catch (err) {
+      console.error("Failed to load events:", err);
+      addToast("Failed to load events", "error");
+    } finally {
+      setLoadingCommunityEvents(false);
+    }
+  }, [addToast, user?.id]);
+
+  useEffect(() => {
+    if (activeTab === "announcements") {
+      loadAnnouncements();
+    }
+  }, [activeTab, loadAnnouncements]);
+
+  useEffect(() => {
+    if (activeTab === "events") {
+      loadCommunityEvents();
+    }
+  }, [activeTab, loadCommunityEvents]);
+
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    setEditUserRole(selectedUser.role || "intern");
+    setEditUserCommenced(Boolean(selectedUser.has_commenced));
+  }, [selectedUser]);
+
   // Handle click outside for menu
   useEffect(() => {
     function handleClickOutside(e) {
@@ -426,6 +499,8 @@ export default function AdminDashboard() {
     { id: "projects", label: "Projects" },
     { id: "mentorship", label: "Mentorship" },
     { id: "chat", label: "Chat" },
+    { id: "announcements", label: "Announcements" },
+    { id: "events", label: "Events" },
     { id: "errors", label: "Errors" },
     { id: "system", label: "System" },
     { id: "settings", label: "Settings" },
@@ -536,8 +611,11 @@ export default function AdminDashboard() {
   // Handle update user
   const handleUpdateUser = async (userId, data) => {
     try {
-      await updateUser(userId, data);
-      setUsers(users.map((u) => (u.id === userId ? { ...u, ...data } : u)));
+      const updatedUser = await updateUser(userId, data);
+      setUsers(users.map((u) => (u.id === userId ? updatedUser : u)));
+      if (user?.id === userId) {
+        updateCurrentUser(updatedUser);
+      }
       setSelectedUser(null);
       addToast("User updated successfully", "success");
     } catch (err) {
@@ -590,6 +668,97 @@ export default function AdminDashboard() {
       console.error("Failed to save settings:", err);
       addToast("Failed to save settings. Please try again.", "error");
     }
+  };
+
+  const handleCreateAnnouncement = async (e) => {
+    e.preventDefault();
+
+    try {
+      await createAnnouncement(
+        {
+          ...announcementForm,
+          expires_at: announcementForm.expires_at || null,
+        },
+        user.id,
+      );
+      setAnnouncementForm({
+        title: "",
+        content: "",
+        announcement_type: "news",
+        expires_at: "",
+      });
+      await loadAnnouncements();
+      addToast("Announcement created", "success");
+    } catch (err) {
+      console.error("Failed to create announcement:", err);
+      addToast("Failed to create announcement", "error");
+    }
+  };
+
+  const handleDeleteAnnouncement = async (announcementId) => {
+    setConfirmModal({
+      open: true,
+      title: "Delete Announcement",
+      message: "Are you sure you want to deactivate this announcement?",
+      onConfirm: async () => {
+        try {
+          await deleteAnnouncement(announcementId, user?.id);
+          await loadAnnouncements();
+          addToast("Announcement deleted", "success");
+        } catch (err) {
+          console.error("Failed to delete announcement:", err);
+          addToast("Failed to delete announcement", "error");
+        }
+        setConfirmModal({ ...confirmModal, open: false });
+      },
+    });
+  };
+
+  const handleCreateCommunityEvent = async (e) => {
+    e.preventDefault();
+
+    try {
+      await createEvent(
+        {
+          ...eventForm,
+          max_attendees:
+            eventForm.max_attendees ? Number(eventForm.max_attendees) : null,
+        },
+        user.id,
+      );
+      setEventForm({
+        title: "",
+        description: "",
+        event_date: "",
+        location: "",
+        requires_rsvp: false,
+        max_attendees: "",
+      });
+      await loadCommunityEvents();
+      addToast("Event created", "success");
+    } catch (err) {
+      console.error("Failed to create event:", err);
+      addToast("Failed to create event", "error");
+    }
+  };
+
+  const handleDeleteCommunityEvent = async (eventId) => {
+    setConfirmModal({
+      open: true,
+      title: "Delete Event",
+      message: "Are you sure you want to deactivate this event?",
+      onConfirm: async () => {
+        try {
+          await deleteEvent(eventId, user?.id);
+          await loadCommunityEvents();
+          addToast("Event deleted", "success");
+        } catch (err) {
+          console.error("Failed to delete event:", err);
+          addToast("Failed to delete event", "error");
+        }
+        setConfirmModal({ ...confirmModal, open: false });
+      },
+    });
   };
 
   // Handle error status update
@@ -1183,6 +1352,347 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {activeTab === "announcements" && (
+          <div className="grid grid-cols-1 xl:grid-cols-[380px,1fr] gap-6">
+            <form
+              onSubmit={handleCreateAnnouncement}
+              className="bg-surface rounded-xl border border-border p-5 space-y-4"
+            >
+              <div>
+                <h3 className="text-lg font-semibold text-primary">
+                  Create Announcement
+                </h3>
+                <p className="text-sm text-gray-400">
+                  Manage pinned resources and community news.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={announcementForm.title}
+                  onChange={(e) =>
+                    setAnnouncementForm((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Type</label>
+                <select
+                  value={announcementForm.announcement_type}
+                  onChange={(e) =>
+                    setAnnouncementForm((prev) => ({
+                      ...prev,
+                      announcement_type: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                >
+                  <option value="news">News</option>
+                  <option value="pinned">Pinned</option>
+                  <option value="event_promo">Event Promo</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Content</label>
+                <textarea
+                  value={announcementForm.content}
+                  onChange={(e) =>
+                    setAnnouncementForm((prev) => ({
+                      ...prev,
+                      content: e.target.value,
+                    }))
+                  }
+                  rows={5}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary resize-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Expires At
+                </label>
+                <input
+                  type="datetime-local"
+                  value={announcementForm.expires_at}
+                  onChange={(e) =>
+                    setAnnouncementForm((prev) => ({
+                      ...prev,
+                      expires_at: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
+              >
+                Publish Announcement
+              </button>
+            </form>
+
+            <div className="bg-surface rounded-xl border border-border overflow-hidden">
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-primary">Active Announcements</h3>
+                  <p className="text-sm text-gray-400">
+                    Pinned resources and recent posts shown in SyncChat.
+                  </p>
+                </div>
+                <button
+                  onClick={loadAnnouncements}
+                  className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-surface-highlight"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <div className="p-4 space-y-3">
+                {loadingAnnouncements ?
+                  <p className="text-sm text-gray-400">Loading announcements...</p>
+                : announcements.length === 0 ?
+                  <p className="text-sm text-gray-400">No announcements yet.</p>
+                : announcements.map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      className="border border-border rounded-lg p-4 bg-surface-highlight/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-medium text-primary">
+                              {announcement.title}
+                            </h4>
+                            <span className="px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-400">
+                              {announcement.announcement_type}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {announcement.author_name} |{" "}
+                            {new Date(announcement.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() =>
+                            handleDeleteAnnouncement(announcement.id)
+                          }
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <p className="text-sm text-primary mt-3 whitespace-pre-wrap">
+                        {announcement.content}
+                      </p>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "events" && (
+          <div className="grid grid-cols-1 xl:grid-cols-[380px,1fr] gap-6">
+            <form
+              onSubmit={handleCreateCommunityEvent}
+              className="bg-surface rounded-xl border border-border p-5 space-y-4"
+            >
+              <div>
+                <h3 className="text-lg font-semibold text-primary">
+                  Create Event
+                </h3>
+                <p className="text-sm text-gray-400">
+                  Publish upcoming ICCA events for the community feed.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={eventForm.title}
+                  onChange={(e) =>
+                    setEventForm((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={eventForm.description}
+                  onChange={(e) =>
+                    setEventForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  rows={4}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Event Date
+                </label>
+                <input
+                  type="datetime-local"
+                  value={eventForm.event_date}
+                  onChange={(e) =>
+                    setEventForm((prev) => ({
+                      ...prev,
+                      event_date: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={eventForm.location}
+                  onChange={(e) =>
+                    setEventForm((prev) => ({
+                      ...prev,
+                      location: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Max Attendees
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={eventForm.max_attendees}
+                  onChange={(e) =>
+                    setEventForm((prev) => ({
+                      ...prev,
+                      max_attendees: e.target.value,
+                    }))
+                  }
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-primary">
+                <input
+                  type="checkbox"
+                  checked={eventForm.requires_rsvp}
+                  onChange={(e) =>
+                    setEventForm((prev) => ({
+                      ...prev,
+                      requires_rsvp: e.target.checked,
+                    }))
+                  }
+                />
+                Require RSVP
+              </label>
+
+              <button
+                type="submit"
+                className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
+              >
+                Publish Event
+              </button>
+            </form>
+
+            <div className="bg-surface rounded-xl border border-border overflow-hidden">
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-primary">Upcoming Events</h3>
+                  <p className="text-sm text-gray-400">
+                    Active events currently visible in the community feed.
+                  </p>
+                </div>
+                <button
+                  onClick={loadCommunityEvents}
+                  className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-surface-highlight"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <div className="p-4 space-y-3">
+                {loadingCommunityEvents ?
+                  <p className="text-sm text-gray-400">Loading events...</p>
+                : communityEvents.length === 0 ?
+                  <p className="text-sm text-gray-400">No upcoming events yet.</p>
+                : communityEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="border border-border rounded-lg p-4 bg-surface-highlight/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-medium text-primary">
+                              {event.title}
+                            </h4>
+                            {event.requires_rsvp && (
+                              <span className="px-2 py-0.5 rounded text-xs bg-accent/20 text-accent">
+                                RSVP
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(event.event_date).toLocaleString()}
+                            {event.location ? ` | ${event.location}` : ""}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteCommunityEvent(event.id)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      {event.description && (
+                        <p className="text-sm text-primary mt-3">
+                          {event.description}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-3">
+                        RSVPs: {event.rsvp_count || 0}
+                        {event.max_attendees ? ` / ${event.max_attendees}` : ""}
+                      </p>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === "users" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1200,7 +1710,7 @@ export default function AdminDashboard() {
               />
               <StatCard
                 icon={Trophy}
-                label="Mentors"
+                label="Community Mentors"
                 value={stats.mentors}
                 color="purple"
               />
@@ -1225,6 +1735,8 @@ export default function AdminDashboard() {
                   >
                     <option value="all">All Roles</option>
                     <option value="intern">Intern</option>
+                    <option value="resident">Resident</option>
+                    <option value="alumni">Alumni</option>
                     <option value="mentor">Mentor</option>
                     <option value="admin">Admin</option>
                   </select>
@@ -1317,11 +1829,15 @@ export default function AdminDashboard() {
                         <td className="p-3">
                           <span
                             className={`px-2 py-0.5 rounded text-xs ${
-                              user.role === "mentor" ?
+                              user.role === "resident" ?
                                 "bg-purple-500/20 text-purple-400"
+                              : user.role === "alumni" ?
+                                "bg-yellow-500/20 text-yellow-400"
+                              : user.role === "mentor" ?
+                                "bg-blue-500/20 text-blue-400"
                               : user.role === "admin" ?
                                 "bg-red-500/20 text-red-400"
-                              : "bg-blue-500/20 text-blue-400"
+                              : "bg-green-500/20 text-green-400"
                             }`}
                           >
                             {user.role}
@@ -2851,7 +3367,7 @@ export default function AdminDashboard() {
                           } else {
                             addToast(data.error || "Failed to reset demo data", "error");
                           }
-                        } catch (err) {
+                        } catch {
                           addToast("Failed to reset demo data", "error");
                         }
                         setConfirmModal({ ...confirmModal, open: false });
@@ -2916,21 +3432,62 @@ export default function AdminDashboard() {
                     Role
                   </label>
                   <select
-                    defaultValue={selectedUser.role}
+                    value={editUserRole}
+                    onChange={(e) => setEditUserRole(e.target.value)}
                     id="editUserRole"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
                   >
                     <option value="intern">Intern</option>
+                    <option value="resident">Resident</option>
+                    <option value="alumni">Alumni</option>
                     <option value="mentor">Mentor</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">
+                    Cycle (e.g. C-58)
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue={selectedUser.cycle || ""}
+                    id="editUserCycle"
+                    placeholder="C-58"
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                  />
+                </div>
+                {editUserRole === "intern" && (
+                  <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
+                    <div>
+                      <span className="text-primary font-medium">
+                        Has Commenced
+                      </span>
+                      <p className="text-xs text-gray-400">
+                        Grants access to SyncChat and the IC Stars network
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      id="editUserCommenced"
+                      onClick={() => setEditUserCommenced((prev) => !prev)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        editUserCommenced ? "bg-accent" : "bg-gray-400"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          editUserCommenced ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">
                     Notes
                   </label>
                   <textarea
-                    defaultValue={selectedUser.notes || ""}
+                    defaultValue={selectedUser.notes || selectedUser.bio || ""}
                     id="editUserNotes"
                     rows={3}
                     placeholder="Admin notes..."
@@ -2983,10 +3540,10 @@ export default function AdminDashboard() {
                         document.getElementById("editUserName").value;
                       const email =
                         document.getElementById("editUserEmail").value;
-                      const role =
-                        document.getElementById("editUserRole").value;
                       const notes =
                         document.getElementById("editUserNotes").value;
+                      const cycle =
+                        document.getElementById("editUserCycle")?.value;
                       const isActiveToggle =
                         document.getElementById("editUserBanned");
                       const isBanned =
@@ -2994,9 +3551,12 @@ export default function AdminDashboard() {
                       handleUpdateUser(selectedUser.id, {
                         name,
                         email,
-                        role,
+                        role: editUserRole,
                         notes,
                         is_active: !isBanned,
+                        cycle: cycle || null,
+                        has_commenced:
+                          editUserRole === "intern" ? editUserCommenced : true,
                       });
                     }}
                     className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80"
@@ -3096,8 +3656,6 @@ export default function AdminDashboard() {
                   </button>
                   <button
                     onClick={() => {
-                      const name =
-                        document.getElementById("editProjectName").value;
                       const status =
                         document.getElementById("editProjectStatus").value;
                       handleUpdateProjectStatus(selectedProject.id, status);

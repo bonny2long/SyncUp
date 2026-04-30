@@ -1,5 +1,6 @@
 import React from "react";
 import { Calendar, Clock, Users } from "lucide-react";
+import RoleBadge from "../../../components/shared/RoleBadge";
 
 export default function MentorCard({
   mentor,
@@ -22,14 +23,19 @@ export default function MentorCard({
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h3 className="font-semibold text-neutral-dark text-lg group-hover:text-primary transition">
-            {mentor.name}
-          </h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-neutral-dark text-lg group-hover:text-primary transition">
+              {mentor.name}
+            </h3>
+            <RoleBadge role={mentor.role} size="xs" />
+          </div>
+          {mentor.cycle && (
+            <p className="text-xs text-text-secondary mt-0.5">
+              Commenced {mentor.cycle}
+            </p>
+          )}
           <p className="text-sm text-text-secondary mt-1">{mentor.email}</p>
         </div>
-        <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-          MENTOR
-        </span>
       </div>
 
       {/* Stats Section */}

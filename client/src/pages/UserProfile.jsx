@@ -18,6 +18,7 @@ import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { ChartError } from "../components/shared/ErrorBoundary";
+import RoleBadge from "../components/shared/RoleBadge";
 import SkillBadge from "../components/shared/SkillBadge";
 import { getErrorMessage } from "../utils/errorHandler";
 import {
@@ -34,6 +35,7 @@ import BadgeGrid from "../components/badges/BadgeGrid";
 import BadgeNotification from "../components/badges/BadgeNotification";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+const COMMUNITY_MENTOR_ROLES = ["mentor", "alumni", "resident"];
 
 export default function UserProfile() {
   const { userId } = useParams();
@@ -450,6 +452,16 @@ export default function UserProfile() {
                           </span>
                         )}
                       </p>
+                      <div className="flex items-center gap-2 flex-wrap mt-2">
+                        <RoleBadge role={user.role} />
+                        {user.cycle && (
+                          <span className="text-sm text-text-secondary">
+                            {user.role === "intern" ?
+                              `Cohort ${user.cycle}`
+                            : `Commenced ${user.cycle}`}
+                          </span>
+                        )}
+                      </div>
                       {user.bio && (
                         <p className="text-text-secondary text-sm mt-3 max-w-2xl italic">
                           "{user.bio}"
@@ -496,7 +508,7 @@ export default function UserProfile() {
 
                   : currentUser && currentUser.id !== user.id ?
                     <>
-                      {user.role === "mentor" && (
+                      {COMMUNITY_MENTOR_ROLES.includes(user.role) && (
                         <button
                           onClick={handleMentorshipRequest}
                           className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition font-medium"
@@ -701,8 +713,10 @@ export default function UserProfile() {
                                   {/* Validation buttons - only show for team members viewing teammate profiles */}
                                   {canValidate && (
                                     <div className="absolute -top-1 -right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      {/* Mentor endorsement - only mentors can give */}
-                                      {currentUser?.role === "mentor" && (
+                                      {/* Mentor endorsement - only community mentors can give */}
+                                      {COMMUNITY_MENTOR_ROLES.includes(
+                                        currentUser?.role,
+                                      ) && (
                                         <button
                                           onClick={() =>
                                             handleSkillValidation(
@@ -715,7 +729,7 @@ export default function UserProfile() {
                                             validatingSkill === skill.id
                                           }
                                           className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-surface-highlight text-text-secondary hover:bg-amber-200 hover:text-amber-800"
-                                          title="Endorse skill (mentors only)"
+                                          title="Endorse skill (community mentors)"
                                         >
                                           ★
                                         </button>

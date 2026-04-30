@@ -29,7 +29,10 @@ const formatDateForMySQL = (dateStr) => {
 export const getMentors = async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT id, name, email, role FROM users WHERE role = 'mentor'",
+      `SELECT id, name, email, role, cycle
+       FROM users
+       WHERE role IN ('mentor', 'alumni', 'resident')
+       ORDER BY role, name`,
     );
     res.json(rows);
   } catch (err) {
@@ -43,11 +46,14 @@ export const getMentorDetails = async (req, res) => {
   const { id } = req.params;
   try {
     const [basicRows] = await pool.query(
-      `SELECT id, name, email, role FROM users WHERE id = ? AND role = 'mentor'`,
+      `SELECT id, name, email, role, cycle
+       FROM users
+       WHERE id = ?
+         AND role IN ('mentor', 'alumni', 'resident')`,
       [id],
     );
     if (basicRows.length === 0) {
-      return res.status(404).json({ error: "Mentor not found" });
+      return res.status(404).json({ error: "Community mentor not found" });
     }
 
     const [availability] = await pool.query(
@@ -101,11 +107,12 @@ export const getAvailableMentors = async (req, res) => {
         u.name,
         u.email,
         u.role,
+        u.cycle,
         ma.available_date,
         ma.available_time
       FROM mentor_availability ma
       JOIN users u ON u.id = ma.mentor_id
-      WHERE u.role = 'mentor'
+      WHERE u.role IN ('mentor', 'alumni', 'resident')
         AND NOT EXISTS (
           SELECT 1 FROM mentorship_sessions s
           WHERE s.mentor_id = ma.mentor_id
@@ -132,12 +139,13 @@ export const getProjectMentors = async (req, res) => {
         u.name,
         u.email,
         u.role,
+        u.cycle,
         GROUP_CONCAT(DISTINCT p.title ORDER BY p.title SEPARATOR ', ') AS projects
       FROM project_members pm
       JOIN users u ON u.id = pm.user_id
       JOIN projects p ON pm.project_id = p.id
-      WHERE u.role = 'mentor'
-      GROUP BY u.id, u.name, u.email, u.role
+      WHERE u.role IN ('mentor', 'alumni', 'resident')
+      GROUP BY u.id, u.name, u.email, u.role, u.cycle
       `,
     );
     res.json(rows);

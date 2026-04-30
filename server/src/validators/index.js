@@ -231,8 +231,20 @@ export const userValidators = {
     body("email").optional().isEmail().withMessage("Invalid email format"),
     body("role")
       .optional()
-      .isIn(["intern", "mentor", "admin"])
+      .isIn(["intern", "mentor", "resident", "alumni", "admin"])
       .withMessage("Invalid role"),
+    body("has_commenced")
+      .optional()
+      .isBoolean()
+      .withMessage("has_commenced must be a boolean"),
+    body("is_active")
+      .optional()
+      .isBoolean()
+      .withMessage("is_active must be a boolean"),
+    body("cycle")
+      .optional({ nullable: true })
+      .isLength({ max: 10 })
+      .withMessage("Cycle must be 10 characters or fewer"),
     body("notes")
       .optional()
       .trim()
