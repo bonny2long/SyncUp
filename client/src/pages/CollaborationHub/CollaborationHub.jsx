@@ -146,6 +146,9 @@ export default function CollaborationHub() {
   // Role checks
   const isIntern = currentUser?.role === "intern";
   const isMentor = currentUser?.role === "mentor";
+  const canCreateProjects = ["intern", "resident", "alumni", "mentor"].includes(
+    currentUser?.role,
+  );
 
   // --- DATA FETCHING (Using Hook + Local Updates state) ---
   const {
@@ -334,7 +337,7 @@ export default function CollaborationHub() {
   return (
     <div className="flex flex-col gap-6">
       {/* Role-Specific Header Items */}
-      {isIntern && (
+      {canCreateProjects && (
         <Suspense
           fallback={
             <div className="h-32 bg-gray-100 rounded-xl animate-pulse" />

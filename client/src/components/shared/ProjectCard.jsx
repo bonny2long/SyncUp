@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, FileText, Award } from "lucide-react";
+import { Award, ExternalLink, FileText, Github, Users } from "lucide-react";
 
 const STATUS_COLORS = {
   planned: "bg-surface-highlight text-text-secondary dark:text-gray-300",
@@ -9,12 +9,55 @@ const STATUS_COLORS = {
   archived: "bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
+function truncateDescription(value, maxLength) {
+  if (!value) return "No description yet.";
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength).trim()}...`;
+}
+
 export default function ProjectCard({
   project,
   onClick,
   variant = "portfolio",
   isSelected = false,
 }) {
+  const ProjectLinks = ({ compact = false }) => {
+    const links = [
+      {
+        href: project.github_url,
+        label: "GitHub",
+        icon: Github,
+      },
+      {
+        href: project.live_url,
+        label: "Live",
+        icon: ExternalLink,
+      },
+    ].filter((link) => link.href);
+
+    if (links.length === 0) return null;
+
+    return (
+      <div className={`flex flex-wrap gap-2 ${compact ? "mt-3" : "mt-2"}`}>
+        {links.map((link) => (
+          <a
+            key={link.label}
+            href={link.href}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => event.stopPropagation()}
+            className={`inline-flex items-center gap-1 rounded-md border border-border bg-surface-highlight text-text-secondary hover:text-primary hover:border-primary/30 transition ${
+              compact ? "px-2 py-1 text-[11px]" : "px-2.5 py-1 text-xs"
+            }`}
+          >
+            {React.createElement(link.icon, { className: "w-3 h-3" })}
+            {link.label}
+          </a>
+        ))}
+      </div>
+    );
+  };
+
   // Portfolio variant - COMPACT design
   if (variant === "portfolio") {
     return (
@@ -52,6 +95,8 @@ export default function ProjectCard({
             {project.skill_count || 0}
           </span>
         </div>
+
+        <ProjectLinks compact />
       </div>
     );
   }
@@ -86,6 +131,8 @@ export default function ProjectCard({
       <p className="text-xs text-text-secondary mb-3 line-clamp-2">
         {truncateDescription(project.description, 80)}
       </p>
+
+      <ProjectLinks />
 
       <div className="flex flex-wrap items-center gap-3 text-[11px] text-text-secondary">
         <span>

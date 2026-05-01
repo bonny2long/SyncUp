@@ -29,6 +29,14 @@ export const projectValidators = {
       .optional()
       .isIn(["public", "seeking"])
       .withMessage("visibility must be 'public' or 'seeking'"),
+    body("github_url")
+      .optional({ nullable: true, checkFalsy: true })
+      .isURL({ protocols: ["http", "https"], require_protocol: true })
+      .withMessage("github_url must be a valid http(s) URL"),
+    body("live_url")
+      .optional({ nullable: true, checkFalsy: true })
+      .isURL({ protocols: ["http", "https"], require_protocol: true })
+      .withMessage("live_url must be a valid http(s) URL"),
     validate,
   ],
 
@@ -43,6 +51,26 @@ export const projectValidators = {
       .withMessage(
         "Status must be one of: planned, active, completed, archived",
       ),
+    validate,
+  ],
+
+  updateLinks: [
+    param("id")
+      .isInt({ min: 1 })
+      .withMessage("Project ID must be a positive integer"),
+    body("user_id")
+      .notEmpty()
+      .withMessage("user_id is required")
+      .isInt({ min: 1 })
+      .withMessage("user_id must be a positive integer"),
+    body("github_url")
+      .optional({ nullable: true, checkFalsy: true })
+      .isURL({ protocols: ["http", "https"], require_protocol: true })
+      .withMessage("github_url must be a valid http(s) URL"),
+    body("live_url")
+      .optional({ nullable: true, checkFalsy: true })
+      .isURL({ protocols: ["http", "https"], require_protocol: true })
+      .withMessage("live_url must be a valid http(s) URL"),
     validate,
   ],
 

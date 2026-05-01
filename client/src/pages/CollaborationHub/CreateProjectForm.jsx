@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { createProject } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
-import { UserPlus, Globe, X } from "lucide-react";
+import { ExternalLink, Github, UserPlus, X } from "lucide-react";
 
 export default function CreateProjectForm({ onCreated }) {
   const { user } = useUser();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
+  const [liveUrl, setLiveUrl] = useState("");
   const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState("");
   const [visibility, setVisibility] = useState(""); // "" = not selected, "seeking" or "public"
@@ -50,16 +52,20 @@ export default function CreateProjectForm({ onCreated }) {
         owner_id: user.id,
         skills: skills,
         visibility: visibility,
+        github_url: githubUrl.trim() || null,
+        live_url: liveUrl.trim() || null,
       });
 
       setTitle("");
       setDescription("");
+      setGithubUrl("");
+      setLiveUrl("");
       setSkills([]);
       setSkillInput("");
       setVisibility("");
       onCreated?.();
     } catch (err) {
-      setError("Failed to create project");
+      setError(err.message || "Failed to create project");
     } finally {
       setLoading(false);
     }
@@ -87,6 +93,30 @@ export default function CreateProjectForm({ onCreated }) {
         rows={3}
         className="border border-border rounded p-2 text-sm resize-none bg-surface-highlight text-neutral-dark placeholder-text-secondary"
       />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <label className="flex items-center gap-2 border border-border rounded p-2 bg-surface-highlight">
+          <Github className="w-4 h-4 text-text-secondary flex-shrink-0" />
+          <input
+            type="url"
+            placeholder="GitHub repo URL"
+            value={githubUrl}
+            onChange={(e) => setGithubUrl(e.target.value)}
+            className="min-w-0 flex-1 bg-transparent text-sm text-neutral-dark placeholder-text-secondary outline-none"
+          />
+        </label>
+
+        <label className="flex items-center gap-2 border border-border rounded p-2 bg-surface-highlight">
+          <ExternalLink className="w-4 h-4 text-text-secondary flex-shrink-0" />
+          <input
+            type="url"
+            placeholder="Live project URL"
+            value={liveUrl}
+            onChange={(e) => setLiveUrl(e.target.value)}
+            className="min-w-0 flex-1 bg-transparent text-sm text-neutral-dark placeholder-text-secondary outline-none"
+          />
+        </label>
+      </div>
 
       {/* VISIBILITY SELECTOR */}
       <div className="flex flex-col gap-2">

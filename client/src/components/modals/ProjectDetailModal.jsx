@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Send, X } from "lucide-react";
+import { ExternalLink, Github, Send, X } from "lucide-react";
 import ConfirmModal from "../shared/ConfirmModal";
 import {
   updateProjectStatus,
+  updateProjectLinks,
   addProjectMember,
   removeProjectMember,
   fetchProjectDiscussions,
@@ -33,6 +34,12 @@ export default function ProjectDetailModal({
   const [discussionError, setDiscussionError] = useState("");
   const [discussionDraft, setDiscussionDraft] = useState("");
   const [discussionPosting, setDiscussionPosting] = useState(false);
+  const [linkEditing, setLinkEditing] = useState(false);
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [linkDraft, setLinkDraft] = useState({
+    github_url: project?.github_url || "",
+    live_url: project?.live_url || "",
+  });
 
   // Confirmation state
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -59,6 +66,11 @@ export default function ProjectDetailModal({
     setDiscussionMessages([]);
     setDiscussionDraft("");
     setDiscussionError("");
+    setLinkEditing(false);
+    setLinkDraft({
+      github_url: project?.github_url || "",
+      live_url: project?.live_url || "",
+    });
   }, [project]);
 
   useEffect(() => {
@@ -190,15 +202,74 @@ export default function ProjectDetailModal({
     }
   };
 
+  const resetLinkDraft = () => {
+    const source = portfolioDetails?.project || localProject;
+    setLinkDraft({
+      github_url: source?.github_url || "",
+      live_url: source?.live_url || "",
+    });
+  };
+
+  const handleLinkSave = async (event) => {
+    event.preventDefault();
+    if (!currentUser?.id) return;
+
+    try {
+      setLinkSaving(true);
+      setError("");
+      const updatedProject = await updateProjectLinks(
+        project.id,
+        currentUser.id,
+        {
+          github_url: linkDraft.github_url.trim(),
+          live_url: linkDraft.live_url.trim(),
+        },
+      );
+
+      setLocalProject((prev) => ({ ...prev, ...updatedProject }));
+      setPortfolioDetails((prev) =>
+        prev?.project ?
+          { ...prev, project: { ...prev.project, ...updatedProject } }
+        : prev,
+      );
+      setLinkDraft({
+        github_url: updatedProject.github_url || "",
+        live_url: updatedProject.live_url || "",
+      });
+      setLinkEditing(false);
+      onProjectUpdate?.();
+    } catch (err) {
+      setError(err.message || "Could not update project links.");
+    } finally {
+      setLinkSaving(false);
+    }
+  };
+
   // Determine which updates/team to show
   const displayUpdates = portfolioDetails?.updates || updates;
   const displayTeam = portfolioDetails?.team || [];
+  const detailProject = portfolioDetails?.project || localProject;
+  const projectLinks = [
+    {
+      href: detailProject?.github_url || localProject.github_url,
+      label: "GitHub",
+      icon: Github,
+    },
+    {
+      href: detailProject?.live_url || localProject.live_url,
+      label: "Live Project",
+      icon: ExternalLink,
+    },
+  ].filter((link) => link.href);
   const canPostDiscussion =
     currentUser &&
     (currentUser.role === "admin" ||
       localProject.owner_id === currentUser.id ||
       localProject.is_member === 1 ||
       localProject.is_member === true);
+  const canEditProjectLinks =
+    currentUser &&
+    (currentUser.role === "admin" || localProject.owner_id === currentUser.id);
 
   // Status dropdown helper
   const getValidActions = () => {
@@ -254,6 +325,94 @@ export default function ProjectDetailModal({
             <span className="font-medium">Focus:</span> {skillIdeas.join(", ")}
           </p>
         )}
+
+        <div className="mb-3">
+          {linkEditing ? (
+            <form
+              onSubmit={handleLinkSave}
+              className="rounded-lg border border-border bg-surface-highlight/50 p-3 space-y-3"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <label className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+                  <Github className="w-4 h-4 text-text-secondary flex-shrink-0" />
+                  <input
+                    type="url"
+                    value={linkDraft.github_url}
+                    onChange={(event) =>
+                      setLinkDraft((prev) => ({
+                        ...prev,
+                        github_url: event.target.value,
+                      }))
+                    }
+                    placeholder="GitHub repo URL"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-neutral-dark outline-none placeholder-text-secondary"
+                  />
+                </label>
+                <label className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+                  <ExternalLink className="w-4 h-4 text-text-secondary flex-shrink-0" />
+                  <input
+                    type="url"
+                    value={linkDraft.live_url}
+                    onChange={(event) =>
+                      setLinkDraft((prev) => ({
+                        ...prev,
+                        live_url: event.target.value,
+                      }))
+                    }
+                    placeholder="Live project URL"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-neutral-dark outline-none placeholder-text-secondary"
+                  />
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="submit"
+                  disabled={linkSaving}
+                  className="px-3 py-1.5 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {linkSaving ? "Saving..." : "Save Links"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetLinkDraft();
+                    setLinkEditing(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-border text-sm text-neutral-dark hover:bg-surface"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              {projectLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-1.5 text-sm text-neutral-dark hover:border-primary/40 hover:text-primary transition"
+                >
+                  {React.createElement(link.icon, { className: "w-4 h-4" })}
+                  {link.label}
+                </a>
+              ))}
+              {canEditProjectLinks && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetLinkDraft();
+                    setLinkEditing(true);
+                  }}
+                  className="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:text-primary hover:bg-surface-highlight"
+                >
+                  {projectLinks.length > 0 ? "Edit Links" : "Add Links"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-1 border-b border-border mb-4 mt-3">
           {["overview", "activity", "discussion"].map((tab) => (

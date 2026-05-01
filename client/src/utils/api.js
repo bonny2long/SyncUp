@@ -131,6 +131,23 @@ export async function updateProjectStatus(id, status, userId = null) {
   return res.json();
 }
 
+export async function updateProjectLinks(id, userId, links) {
+  const res = await fetch(`${API_BASE}/projects/${id}/links`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({
+      user_id: userId,
+      github_url: links.github_url || null,
+      live_url: links.live_url || null,
+    }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to update project links");
+  }
+  return res.json();
+}
+
 // ----------------------------------------------------
 // ANALYTICS
 // ----------------------------------------------------

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
   Award,
@@ -13,6 +13,9 @@ import {
   Save,
   X,
   Camera,
+  ExternalLink,
+  Github,
+  Linkedin,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -55,7 +58,14 @@ export default function UserProfile() {
   const [newBadges, setNewBadges] = useState([]);
   const [showAllBadges, setShowAllBadges] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", bio: "" });
+  const [editForm, setEditForm] = useState({
+    name: "",
+    bio: "",
+    headline: "",
+    github_url: "",
+    linkedin_url: "",
+    personal_site_url: "",
+  });
   const [savingProfile, setSavingProfile] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarKey, setAvatarKey] = useState(0);
@@ -68,7 +78,7 @@ export default function UserProfile() {
   const [validatedSignals, setValidatedSignals] = useState({});
   const [validatingSkill, setValidatingSkill] = useState(null);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -85,9 +95,9 @@ export default function UserProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError, userId]);
 
-  const loadBadges = async () => {
+  const loadBadges = useCallback(async () => {
     if (!userId) return;
 
     try {
@@ -114,9 +124,9 @@ export default function UserProfile() {
     } catch (err) {
       handleError(err, "loadBadges");
     }
-  };
+  }, [handleError, userId]);
 
-  const loadSkillSignals = async () => {
+  const loadSkillSignals = useCallback(async () => {
     if (!userId || userId == currentUser?.id) return;
 
     try {
@@ -129,34 +139,7 @@ export default function UserProfile() {
     } catch (err) {
       handleError(err, "loadSkillSignals");
     }
-  };
-
-  const handleValidation = async (signalId, validationType, hasValidated) => {
-    if (!currentUser) return;
-    if (currentUser.id === Number(userId)) {
-      addToast({ type: "error", message: "Cannot validate your own skills" });
-      return;
-    }
-
-    setValidatingSkill(signalId);
-    try {
-      if (hasValidated) {
-        await removeSkillValidation(signalId, currentUser.id, validationType);
-        addToast({ type: "success", message: "Validation removed" });
-      } else {
-        await addSkillValidation(signalId, currentUser.id, validationType);
-        addToast({
-          type: "success",
-          message: `${validationType === "mentor_endorsement" ? "Endorsement given" : "Upvoted"}`,
-        });
-      }
-      await loadSkillSignals();
-    } catch (err) {
-      addToast({ type: "error", message: err.message || "Failed to validate" });
-    } finally {
-      setValidatingSkill(null);
-    }
-  };
+  }, [currentUser?.id, handleError, userId]);
 
   const handleSkillValidation = async (
     skillId,
@@ -204,13 +187,13 @@ export default function UserProfile() {
   useEffect(() => {
     loadProfile();
     loadBadges();
-  }, [userId]);
+  }, [loadBadges, loadProfile]);
 
   useEffect(() => {
     if (currentUser && userId) {
       loadSkillSignals();
     }
-  }, [currentUser, userId]);
+  }, [currentUser, loadSkillSignals, userId]);
 
   if (loading) {
     return (
@@ -254,6 +237,29 @@ export default function UserProfile() {
   }
 
   const { user, skills, projects, stats, activity_streak } = profile;
+  const credentialLinks = [
+    {
+      href: user.github_url,
+      label: "GitHub",
+      icon: Github,
+    },
+    {
+      href: user.linkedin_url,
+      label: "LinkedIn",
+      icon: Linkedin,
+    },
+    {
+      href: user.personal_site_url,
+      label: "Website",
+      icon: ExternalLink,
+    },
+  ].filter((link) => link.href);
+  const featuredProject =
+    projects.find((project) => project.status === "completed") ||
+    projects.find((project) => project.github_url || project.live_url) ||
+    projects.find((project) => project.status === "active") ||
+    projects[0] ||
+    null;
 
   // Handle mentorship request
   const handleMentorshipRequest = () => {
@@ -273,13 +279,27 @@ export default function UserProfile() {
   };
 
   const handleEditProfile = () => {
-    setEditForm({ name: user.name, bio: user.bio || "" });
+    setEditForm({
+      name: user.name,
+      bio: user.bio || "",
+      headline: user.headline || "",
+      github_url: user.github_url || "",
+      linkedin_url: user.linkedin_url || "",
+      personal_site_url: user.personal_site_url || "",
+    });
     setIsEditingProfile(true);
   };
 
   const handleCancelEdit = () => {
     setIsEditingProfile(false);
-    setEditForm({ name: "", bio: "" });
+    setEditForm({
+      name: "",
+      bio: "",
+      headline: "",
+      github_url: "",
+      linkedin_url: "",
+      personal_site_url: "",
+    });
   };
 
   const handleSaveProfile = async () => {
@@ -306,7 +326,8 @@ export default function UserProfile() {
       setIsEditingProfile(false);
       addToast({ type: "success", message: "Profile updated successfully!" });
     } catch (err) {
-      addToast({ type: "error", message: "Failed to update profile" });
+      const { message } = getErrorMessage(err);
+      addToast({ type: "error", message: message || "Failed to update profile" });
     } finally {
       setSavingProfile(false);
     }
@@ -433,11 +454,67 @@ export default function UserProfile() {
                       <p className="text-xs text-text-secondary">
                         {editForm.bio?.length || 0}/200 characters
                       </p>
+                      <input
+                        type="text"
+                        value={editForm.headline}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            headline: e.target.value,
+                          })
+                        }
+                        maxLength={160}
+                        placeholder="Professional headline"
+                        className="w-full text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <input
+                          type="url"
+                          value={editForm.github_url}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              github_url: e.target.value,
+                            })
+                          }
+                          placeholder="GitHub URL"
+                          className="text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        <input
+                          type="url"
+                          value={editForm.linkedin_url}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              linkedin_url: e.target.value,
+                            })
+                          }
+                          placeholder="LinkedIn URL"
+                          className="text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        <input
+                          type="url"
+                          value={editForm.personal_site_url}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              personal_site_url: e.target.value,
+                            })
+                          }
+                          placeholder="Personal site URL"
+                          className="text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
                     </div>
                   : <>
                       <h1 className="text-4xl font-bold text-neutral-dark">
                         {user.name}
                       </h1>
+                      {user.headline && (
+                        <p className="text-primary font-medium mt-1">
+                          {user.headline}
+                        </p>
+                      )}
                       <p className="text-text-secondary mt-1">
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}{" "}
                         •{" "}
@@ -466,6 +543,24 @@ export default function UserProfile() {
                         <p className="text-text-secondary text-sm mt-3 max-w-2xl italic">
                           "{user.bio}"
                         </p>
+                      )}
+                      {credentialLinks.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {credentialLinks.map((link) => (
+                            <a
+                              key={link.label}
+                              href={link.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-1.5 text-sm text-neutral-dark hover:text-primary hover:border-primary/40 transition"
+                            >
+                              {React.createElement(link.icon, {
+                                className: "w-4 h-4",
+                              })}
+                              {link.label}
+                            </a>
+                          ))}
+                        </div>
                       )}
                       {!user.bio &&
                         currentUser &&
@@ -584,6 +679,63 @@ export default function UserProfile() {
               </div>
             </div>
 
+            {/* Featured Project */}
+            {featuredProject && (
+              <section className="bg-surface rounded-lg border border-border p-6 mb-6">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                      Featured Project
+                    </p>
+                    <h2 className="text-xl font-bold text-primary">
+                      {featuredProject.title}
+                    </h2>
+                    <p className="text-sm text-text-secondary mt-2 max-w-3xl">
+                      {featuredProject.description || "No description yet."}
+                    </p>
+                    <div className="flex flex-wrap gap-3 text-xs text-text-secondary mt-4">
+                      <span>
+                        {featuredProject.team_size || 0} member
+                        {featuredProject.team_size === 1 ? "" : "s"}
+                      </span>
+                      <span>
+                        {featuredProject.skill_count || 0} skill
+                        {featuredProject.skill_count === 1 ? "" : "s"}
+                      </span>
+                      <span className="capitalize">
+                        {featuredProject.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 lg:justify-end">
+                    {featuredProject.github_url && (
+                      <a
+                        href={featuredProject.github_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                      >
+                        <Github className="w-4 h-4" />
+                        GitHub
+                      </a>
+                    )}
+                    {featuredProject.live_url && (
+                      <a
+                        href={featuredProject.live_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Live
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Growth Sources */}
             <div className="bg-surface rounded-lg border border-border p-4 mb-6">
               <p className="text-sm text-text-secondary text-center">
@@ -594,6 +746,45 @@ export default function UserProfile() {
                 Updates • {stats.mentorship_count || 0} Sessions
               </p>
             </div>
+
+            {/* Credential Stats */}
+            {user.role !== "intern" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-surface p-4 rounded-lg border border-border">
+                  <p className="text-xs uppercase font-semibold text-text-secondary">
+                    Mentorship
+                  </p>
+                  <p className="text-2xl font-bold text-neutral-dark mt-2">
+                    {stats.sessions_completed || 0}
+                  </p>
+                  <p className="text-xs text-text-secondary mt-1">
+                    completed sessions
+                  </p>
+                </div>
+                <div className="bg-surface p-4 rounded-lg border border-border">
+                  <p className="text-xs uppercase font-semibold text-text-secondary">
+                    Residents Helped
+                  </p>
+                  <p className="text-2xl font-bold text-neutral-dark mt-2">
+                    {stats.interns_mentored || 0}
+                  </p>
+                  <p className="text-xs text-text-secondary mt-1">
+                    unique interns mentored
+                  </p>
+                </div>
+                <div className="bg-surface p-4 rounded-lg border border-border">
+                  <p className="text-xs uppercase font-semibold text-text-secondary">
+                    Projects Advised
+                  </p>
+                  <p className="text-2xl font-bold text-neutral-dark mt-2">
+                    {stats.projects_advised || 0}
+                  </p>
+                  <p className="text-xs text-text-secondary mt-1">
+                    linked mentorship projects
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Badges Section - Interns only */}
             {user.role === "intern" && allBadges.length > 0 && (
@@ -699,6 +890,17 @@ export default function UserProfile() {
                               const canValidate =
                                 currentUser &&
                                 currentUser.id !== Number(userId);
+                              const signal = skillSignals.find(
+                                (item) => item.skill_id === skill.id,
+                              );
+                              const validationsForSignal =
+                                validatedSignals[signal?.signal_id] || [];
+                              const hasMentorEndorsement =
+                                validationsForSignal.includes(
+                                  "mentor_endorsement",
+                                );
+                              const hasUpvoted =
+                                validationsForSignal.includes("upvote");
 
                               return (
                                 <div key={skill.id} className="group relative">
@@ -722,7 +924,7 @@ export default function UserProfile() {
                                             handleSkillValidation(
                                               skill.id,
                                               "mentor_endorsement",
-                                              false,
+                                              hasMentorEndorsement,
                                             )
                                           }
                                           disabled={
@@ -740,7 +942,7 @@ export default function UserProfile() {
                                           handleSkillValidation(
                                             skill.id,
                                             "upvote",
-                                            false,
+                                            hasUpvoted,
                                           )
                                         }
                                         disabled={validatingSkill === skill.id}
@@ -814,6 +1016,28 @@ export default function UserProfile() {
                                 {project.title}
                               </h3>
                               <div className="flex items-center gap-3 flex-shrink-0">
+                                {project.github_url && (
+                                  <a
+                                    href={project.github_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs text-text-secondary hover:text-primary"
+                                    aria-label={`${project.title} GitHub`}
+                                  >
+                                    GitHub
+                                  </a>
+                                )}
+                                {project.live_url && (
+                                  <a
+                                    href={project.live_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs text-text-secondary hover:text-primary"
+                                    aria-label={`${project.title} live project`}
+                                  >
+                                    Live
+                                  </a>
+                                )}
                                 <span className="text-xs text-text-secondary">
                                   {project.team_size} member
                                   {project.team_size !== 1 ? "s" : ""} •{" "}

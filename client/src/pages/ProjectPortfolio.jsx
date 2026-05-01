@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useUser } from "../context/UserContext";
-import { useToast } from "../context/ToastContext";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { ChartError } from "../components/shared/ErrorBoundary";
 import ProjectCard from "../components/shared/ProjectCard"; // CHANGED: Use shared component
@@ -8,6 +7,7 @@ import ProjectDetailModal from "../components/modals/ProjectDetailModal";
 import Navbar from "../components/layout/Navbar";
 import Sidebar from "../components/layout/Sidebar";
 import { useProjects } from "../hooks/useProjects"; // NEW: Use shared hook
+import { Award, ExternalLink, Github, Users } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Projects" },
@@ -26,7 +26,6 @@ const SORT_OPTIONS = [
 
 export default function ProjectPortfolio() {
   const { user } = useUser();
-  const { addToast } = useToast();
 
   // USE SHARED HOOK instead of fetching manually
   const {
@@ -62,6 +61,16 @@ export default function ProjectPortfolio() {
         return new Date(b.start_date) - new Date(a.start_date);
     }
   });
+
+  const featuredProject =
+    sortedProjects.find((project) => project.status === "completed") ||
+    sortedProjects.find((project) => project.status === "active") ||
+    sortedProjects[0] ||
+    null;
+  const gridProjects =
+    featuredProject ?
+      sortedProjects.filter((project) => project.id !== featuredProject.id)
+    : sortedProjects;
 
   const handleProjectClick = (project) => {
     setSelectedProject(project);
@@ -155,10 +164,74 @@ export default function ProjectPortfolio() {
                         Create your first project in CollaborationHub
                       </p>
                     </div>
-                  : /* Projects Grid */
+                  : /* Featured Project + Projects Grid */
                     <>
+                      {featuredProject && (
+                        <section className="mb-6 rounded-xl border border-border bg-surface p-5 shadow-sm">
+                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                                Featured Project
+                              </p>
+                              <h2 className="text-xl font-semibold text-primary">
+                                {featuredProject.title}
+                              </h2>
+                              <p className="text-sm text-text-secondary mt-2 max-w-3xl">
+                                {featuredProject.description ||
+                                  "No description yet."}
+                              </p>
+                              <div className="flex flex-wrap gap-3 text-xs text-text-secondary mt-4">
+                                <span className="inline-flex items-center gap-1">
+                                  <Users className="w-3.5 h-3.5" />
+                                  {featuredProject.team_size || 0} members
+                                </span>
+                                <span className="inline-flex items-center gap-1">
+                                  <Award className="w-3.5 h-3.5" />
+                                  {featuredProject.skill_count || 0} skills
+                                </span>
+                                <span className="capitalize">
+                                  {featuredProject.status}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 lg:justify-end">
+                              {featuredProject.github_url && (
+                                <a
+                                  href={featuredProject.github_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                                >
+                                  <Github className="w-4 h-4" />
+                                  GitHub
+                                </a>
+                              )}
+                              {featuredProject.live_url && (
+                                <a
+                                  href={featuredProject.live_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  Live
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleProjectClick(featuredProject)}
+                                className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+                              >
+                                View Details
+                              </button>
+                            </div>
+                          </div>
+                        </section>
+                      )}
+
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {sortedProjects
+                        {gridProjects
                           .slice(0, displayCount)
                           .map((project) => (
                             <ProjectCard
@@ -171,14 +244,14 @@ export default function ProjectPortfolio() {
                       </div>
 
                       {/* Load More */}
-                      {displayCount < sortedProjects.length && (
+                      {displayCount < gridProjects.length && (
                         <div className="text-center mt-6">
                           <button
                             onClick={() => setDisplayCount((prev) => prev + 12)}
                             className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition font-medium"
                           >
                             Load{" "}
-                            {Math.min(12, sortedProjects.length - displayCount)}{" "}
+                            {Math.min(12, gridProjects.length - displayCount)}{" "}
                             More Projects
                           </button>
                         </div>
@@ -197,6 +270,7 @@ export default function ProjectPortfolio() {
         <ProjectDetailModal
           isOpen={showDetailModal}
           project={selectedProject}
+          currentUser={user}
           onClose={handleCloseModal}
           fetchPortfolioDetails={true}
           onProjectUpdate={refresh}

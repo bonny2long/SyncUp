@@ -4,6 +4,7 @@ import {
   addProjectMember,
   removeProjectMember,
   updateProjectStatus,
+  updateProjectLinks,
   createProject,
   attachProjectSkills,
   getProjectSkills,
@@ -129,6 +130,8 @@ router.delete("/:projectId/members", removeProjectMember);
  *         description: Validation error
  */
 router.put("/:id/status", projectValidators.updateStatus, updateProjectStatus);
+
+router.put("/:id/links", projectValidators.updateLinks, updateProjectLinks);
 
 router.get("/:id/skills", getProjectSkills);
 

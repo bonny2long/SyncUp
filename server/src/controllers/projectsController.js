@@ -45,6 +45,25 @@ async function getProjectAccess(projectId, userId) {
   };
 }
 
+function normalizeProjectUrl(value, label) {
+  if (!value) return null;
+
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    if (!["http:", "https:"].includes(url.protocol)) {
+      throw new Error("Invalid protocol");
+    }
+    return trimmed;
+  } catch {
+    const error = new Error(`${label} must be a valid http(s) URL`);
+    error.statusCode = 400;
+    throw error;
+  }
+}
+
 // GET /api/projects
 export const getProjects = async (req, res) => {
   const { user_id: userId } = req.query;
@@ -60,6 +79,9 @@ export const getProjects = async (req, res) => {
         p.status,
         p.owner_id,
         p.visibility,
+        p.github_url,
+        p.live_url,
+        p.start_date,
         p.start_date as created_at,
         owner.name AS owner_name,
         MAX(p.metadata) AS metadata,
@@ -95,7 +117,7 @@ export const getProjects = async (req, res) => {
       LEFT JOIN users usr ON pm.user_id = usr.id
       LEFT JOIN project_skills ps ON ps.project_id = p.id
       LEFT JOIN progress_updates upd ON upd.project_id = p.id
-      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.metadata, owner.name, p.start_date
+      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.github_url, p.live_url, p.metadata, owner.name, p.start_date
       ORDER BY p.start_date DESC;
     `,
       userId ? [userId] : params,
@@ -117,6 +139,8 @@ export const createProject = async (req, res) => {
     owner_id,
     skills = [],
     visibility = "seeking",
+    github_url,
+    live_url,
   } = req.body;
   const ownerId = owner_id;
   const metadata = {
@@ -133,6 +157,15 @@ export const createProject = async (req, res) => {
       .json({ error: "visibility must be 'public' or 'seeking'" });
   }
 
+  let normalizedGithubUrl = null;
+  let normalizedLiveUrl = null;
+  try {
+    normalizedGithubUrl = normalizeProjectUrl(github_url, "GitHub URL");
+    normalizedLiveUrl = normalizeProjectUrl(live_url, "Live URL");
+  } catch (err) {
+    return res.status(err.statusCode || 400).json({ error: err.message });
+  }
+
   const connection = await pool.getConnection();
 
   try {
@@ -141,14 +174,17 @@ export const createProject = async (req, res) => {
     // 1. Create Project with visibility
     const [result] = await connection.query(
       `
-      INSERT INTO projects (title, description, owner_id, visibility, metadata, start_date)
-      VALUES (?, ?, ?, ?, ?, NOW())
+      INSERT INTO projects
+        (title, description, owner_id, visibility, github_url, live_url, metadata, start_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
       `,
       [
         title.trim(),
         description || "",
         ownerId,
         visibility,
+        normalizedGithubUrl,
+        normalizedLiveUrl,
         JSON.stringify(metadata),
       ],
     );
@@ -522,6 +558,70 @@ export const updateProjectStatus = async (req, res) => {
   }
 };
 
+// Update project credential links
+export const updateProjectLinks = async (req, res) => {
+  const { id } = req.params;
+  const userId = Number(req.body.user_id || req.query.user_id || req.user?.id);
+  const { github_url, live_url } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: "user_id is required" });
+  }
+
+  let normalizedGithubUrl = null;
+  let normalizedLiveUrl = null;
+  try {
+    normalizedGithubUrl = normalizeProjectUrl(github_url, "GitHub URL");
+    normalizedLiveUrl = normalizeProjectUrl(live_url, "Live URL");
+  } catch (err) {
+    return res.status(err.statusCode || 400).json({ error: err.message });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT p.owner_id, u.role
+      FROM projects p
+      JOIN users u ON u.id = ?
+      WHERE p.id = ?
+      LIMIT 1
+      `,
+      [userId, id],
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Project or user not found" });
+    }
+
+    const project = rows[0];
+    const canEdit =
+      project.role === "admin" || Number(project.owner_id) === userId;
+
+    if (!canEdit) {
+      return res.status(403).json({
+        error: "Only the project owner or an admin can update project links",
+      });
+    }
+
+    await pool.query(
+      `UPDATE projects
+       SET github_url = ?, live_url = ?
+       WHERE id = ?`,
+      [normalizedGithubUrl, normalizedLiveUrl, id],
+    );
+
+    const [updatedRows] = await pool.query(
+      "SELECT * FROM projects WHERE id = ?",
+      [id],
+    );
+
+    res.json(updatedRows[0]);
+  } catch (err) {
+    console.error("Error updating project links:", err);
+    res.status(500).json({ error: "Failed to update project links" });
+  }
+};
+
 // GET /api/projects/:id/skills
 export const getProjectSkills = async (req, res) => {
   const { id } = req.params;
@@ -588,6 +688,9 @@ export const getUserProjects = async (req, res) => {
         p.start_date,
         p.end_date,
         p.status,
+        p.visibility,
+        p.github_url,
+        p.live_url,
         p.metadata,
         u.name as owner_name,
         COUNT(DISTINCT pm_all.user_id) as team_size,
@@ -601,7 +704,7 @@ export const getUserProjects = async (req, res) => {
       LEFT JOIN project_skills ps ON p.id = ps.project_id
       LEFT JOIN progress_updates pu ON p.id = pu.project_id AND pu.is_deleted = 0
       LEFT JOIN mentorship_sessions ms ON p.id = ms.project_id AND ms.status = 'completed'
-      GROUP BY p.id, p.title, p.description, p.owner_id, p.start_date, p.end_date, p.status, p.metadata, u.name
+      GROUP BY p.id, p.title, p.description, p.owner_id, p.start_date, p.end_date, p.status, p.visibility, p.github_url, p.live_url, p.metadata, u.name
       ORDER BY p.start_date DESC
       `,
       [userId],

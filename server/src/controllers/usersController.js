@@ -7,6 +7,10 @@ const USER_SELECT_FIELDS = `
   role,
   join_date,
   bio,
+  headline,
+  github_url,
+  linkedin_url,
+  personal_site_url,
   profile_pic,
   is_active,
   has_commenced,
@@ -65,6 +69,25 @@ async function postCommencementIntroduction(user) {
     "INSERT IGNORE INTO channel_members (channel_id, user_id) VALUES (?, ?)",
     [channelId, user.id],
   );
+}
+
+function normalizeProfileUrl(value, label) {
+  if (!value) return null;
+
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    if (!["http:", "https:"].includes(url.protocol)) {
+      throw new Error("Invalid protocol");
+    }
+    return trimmed;
+  } catch {
+    const error = new Error(`${label} must be a valid http(s) URL`);
+    error.statusCode = 400;
+    throw error;
+  }
 }
 
 // GET /api/users
@@ -130,15 +153,21 @@ export const getUserProfile = async (req, res) => {
         p.title,
         p.description,
         p.status,
+        p.visibility,
+        p.github_url,
+        p.live_url,
         p.start_date,
         p.end_date,
+        MAX(pu.created_at) as last_update,
         COUNT(DISTINCT pm_all.user_id) as team_size,
-        COUNT(DISTINCT ps.skill_id) as skill_count
+        COUNT(DISTINCT ps.skill_id) as skill_count,
+        COUNT(DISTINCT pu.id) as update_count
       FROM projects p
       JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ?
       LEFT JOIN project_members pm_all ON p.id = pm_all.project_id
       LEFT JOIN project_skills ps ON p.id = ps.project_id
-      GROUP BY p.id, p.title, p.description, p.status, p.start_date, p.end_date
+      LEFT JOIN progress_updates pu ON p.id = pu.project_id AND pu.is_deleted = 0
+      GROUP BY p.id, p.title, p.description, p.status, p.visibility, p.github_url, p.live_url, p.start_date, p.end_date
       ORDER BY p.start_date DESC
       LIMIT 10
       `,
@@ -174,6 +203,20 @@ export const getUserProfile = async (req, res) => {
       );
       stats = statsResult[0] || stats;
     }
+
+    const [mentorshipStats] = await pool.query(
+      `
+      SELECT
+        COUNT(DISTINCT CASE WHEN status = 'completed' THEN id END) as sessions_completed,
+        COUNT(DISTINCT CASE WHEN status = 'completed' AND mentor_id = ? THEN intern_id END) as interns_mentored,
+        COUNT(DISTINCT CASE WHEN status = 'completed' AND intern_id = ? THEN mentor_id END) as mentors_worked_with,
+        COUNT(DISTINCT CASE WHEN status = 'completed' AND mentor_id = ? AND project_id IS NOT NULL THEN project_id END) as projects_advised
+      FROM mentorship_sessions
+      WHERE mentor_id = ? OR intern_id = ?
+      `,
+      [userId, userId, userId, userId, userId],
+    );
+    stats = { ...stats, ...(mentorshipStats[0] || {}) };
 
     // Get activity streak (distinct days active in last 30 days)
     const [streakData] = await pool.query(
@@ -327,6 +370,30 @@ export const updateUserProfile = async (req, res) => {
       : body.notes !== undefined ? body.notes
       : undefined;
     if (resolvedBio !== undefined) updates.bio = resolvedBio || null;
+
+    if (body.headline !== undefined) {
+      updates.headline = body.headline ? String(body.headline).trim() : null;
+    }
+
+    try {
+      if (body.github_url !== undefined) {
+        updates.github_url = normalizeProfileUrl(body.github_url, "GitHub URL");
+      }
+      if (body.linkedin_url !== undefined) {
+        updates.linkedin_url = normalizeProfileUrl(
+          body.linkedin_url,
+          "LinkedIn URL",
+        );
+      }
+      if (body.personal_site_url !== undefined) {
+        updates.personal_site_url = normalizeProfileUrl(
+          body.personal_site_url,
+          "Personal site URL",
+        );
+      }
+    } catch (err) {
+      return res.status(err.statusCode || 400).json({ error: err.message });
+    }
 
     if (body.role !== undefined) {
       updates.role = body.role;
