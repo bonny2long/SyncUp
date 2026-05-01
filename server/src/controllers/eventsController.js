@@ -27,10 +27,18 @@ export const getEvents = async (req, res) => {
         e.created_at,
         u.name AS author_name,
         COUNT(DISTINCT r.user_id) AS rsvp_count,
-        MAX(CASE WHEN r.user_id = ? THEN r.rsvp_status END) AS user_rsvp
+        MAX(CASE WHEN r.user_id = ? THEN r.rsvp_status END) AS user_rsvp,
+        GROUP_CONCAT(
+          DISTINCT CASE
+            WHEN r.rsvp_status = 'attending' THEN CONCAT(ru.name, '::', ru.role, '::', COALESCE(ru.cycle, ''))
+          END
+          ORDER BY ru.name
+          SEPARATOR '||'
+        ) AS rsvp_attendees
       FROM events e
       JOIN users u ON e.author_id = u.id
       LEFT JOIN event_rsvps r ON e.id = r.event_id
+      LEFT JOIN users ru ON r.user_id = ru.id
       WHERE e.is_active = TRUE
         AND e.event_date >= NOW()
       GROUP BY
@@ -96,6 +104,55 @@ export const createEvent = async (req, res) => {
   } catch (err) {
     console.error("Error creating event:", err);
     res.status(500).json({ error: "Failed to create event" });
+  }
+};
+
+export const updateEvent = async (req, res) => {
+  const { id } = req.params;
+  const {
+    title,
+    description,
+    event_date,
+    location,
+    requires_rsvp,
+    max_attendees,
+  } = req.body;
+  const actingUserId = Number(req.query.user_id || req.user?.id);
+
+  if (!title || !event_date || !actingUserId) {
+    return res
+      .status(400)
+      .json({ error: "Title, event_date, and user_id are required" });
+  }
+
+  try {
+    if (!(await isAdminUser(actingUserId))) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const [result] = await pool.query(
+      `UPDATE events
+       SET title = ?, description = ?, event_date = ?, location = ?, requires_rsvp = ?, max_attendees = ?
+       WHERE id = ? AND is_active = TRUE`,
+      [
+        title,
+        description || null,
+        event_date,
+        location || null,
+        requires_rsvp || false,
+        max_attendees || null,
+        id,
+      ],
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error updating event:", err);
+    res.status(500).json({ error: "Failed to update event" });
   }
 };
 

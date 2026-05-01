@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { Send, X } from "lucide-react";
 import ConfirmModal from "../shared/ConfirmModal";
 import {
   updateProjectStatus,
   addProjectMember,
   removeProjectMember,
+  fetchProjectDiscussions,
+  postProjectDiscussion,
 } from "../../utils/api";
 import styles from "./ProjectDetailModal.module.css";
 
@@ -26,6 +28,11 @@ export default function ProjectDetailModal({
   const [error, setError] = useState("");
   const [portfolioDetails, setPortfolioDetails] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [discussionMessages, setDiscussionMessages] = useState([]);
+  const [discussionLoading, setDiscussionLoading] = useState(false);
+  const [discussionError, setDiscussionError] = useState("");
+  const [discussionDraft, setDiscussionDraft] = useState("");
+  const [discussionPosting, setDiscussionPosting] = useState(false);
 
   // Confirmation state
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -49,6 +56,9 @@ export default function ProjectDetailModal({
   useEffect(() => {
     setLocalProject(project);
     setActiveTab("overview");
+    setDiscussionMessages([]);
+    setDiscussionDraft("");
+    setDiscussionError("");
   }, [project]);
 
   useEffect(() => {
@@ -71,7 +81,27 @@ export default function ProjectDetailModal({
     }
 
     loadDetails();
-  }, [isOpen, project?.id, fetchPortfolioDetails]);
+  }, [isOpen, project, fetchPortfolioDetails]);
+
+  useEffect(() => {
+    if (!isOpen || !project?.id || !currentUser?.id) return;
+
+    async function loadDiscussion() {
+      try {
+        setDiscussionLoading(true);
+        setDiscussionError("");
+        const data = await fetchProjectDiscussions(project.id, currentUser.id);
+        setDiscussionMessages(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load project discussion:", err);
+        setDiscussionError("Project discussion could not be loaded.");
+      } finally {
+        setDiscussionLoading(false);
+      }
+    }
+
+    loadDiscussion();
+  }, [isOpen, project?.id, currentUser?.id]);
 
   if (!isOpen) return null;
 
@@ -90,7 +120,7 @@ export default function ProjectDetailModal({
       setLocalProject((p) => ({ ...p, status: next }));
       await updateProjectStatus(project.id, next, currentUser?.id);
       if (onProjectUpdate) onProjectUpdate();
-    } catch (err) {
+    } catch {
       setError("Could not update status.");
       setLocalProject(project);
     } finally {
@@ -131,16 +161,44 @@ export default function ProjectDetailModal({
             : currentUser.name,
         }));
       }
-    } catch (err) {
+    } catch {
       setError("Could not update membership.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDiscussionSubmit = async (event) => {
+    event.preventDefault();
+    if (!currentUser?.id || !discussionDraft.trim()) return;
+
+    try {
+      setDiscussionPosting(true);
+      setDiscussionError("");
+      const message = await postProjectDiscussion(
+        project.id,
+        currentUser.id,
+        discussionDraft.trim(),
+      );
+      setDiscussionMessages((prev) => [...prev, message]);
+      setDiscussionDraft("");
+    } catch (err) {
+      console.error("Failed to post project discussion:", err);
+      setDiscussionError(err.message || "Could not post discussion message.");
+    } finally {
+      setDiscussionPosting(false);
+    }
+  };
+
   // Determine which updates/team to show
   const displayUpdates = portfolioDetails?.updates || updates;
   const displayTeam = portfolioDetails?.team || [];
+  const canPostDiscussion =
+    currentUser &&
+    (currentUser.role === "admin" ||
+      localProject.owner_id === currentUser.id ||
+      localProject.is_member === 1 ||
+      localProject.is_member === true);
 
   // Status dropdown helper
   const getValidActions = () => {
@@ -198,7 +256,7 @@ export default function ProjectDetailModal({
         )}
 
         <div className="flex gap-1 border-b border-border mb-4 mt-3">
-          {["overview", "activity"].map((tab) => (
+          {["overview", "activity", "discussion"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -210,6 +268,8 @@ export default function ProjectDetailModal({
             >
               {tab === "activity" ?
                 `Activity${displayUpdates.length > 0 ? ` (${displayUpdates.length})` : ""}`
+              : tab === "discussion" ?
+                `Discussion${discussionMessages.length > 0 ? ` (${discussionMessages.length})` : ""}`
               : "Overview"}
             </button>
           ))}
@@ -257,7 +317,7 @@ export default function ProjectDetailModal({
 
                 {localProject.visibility === "public" && (
                   <span className="text-sm px-3 py-1 rounded-lg bg-blue-500/10 text-blue-500">
-                    Public · View Only
+                    Public - View Only
                   </span>
                 )}
               </div>
@@ -345,7 +405,7 @@ export default function ProjectDetailModal({
                         <span className="font-semibold text-secondary">
                           {u.user_name}
                         </span>{" "}
-                        — {new Date(u.created_at).toLocaleDateString()}
+                        - {new Date(u.created_at).toLocaleDateString()}
                       </p>
                       <p className="text-sm text-neutral-dark">{u.content}</p>
                     </div>
@@ -377,6 +437,97 @@ export default function ProjectDetailModal({
                   </div>
                 </div>
               )}
+          </div>
+        )}
+
+        {activeTab === "discussion" && (
+          <div className="space-y-4">
+            {!currentUser ? (
+              <p className="text-xs text-text-secondary">
+                Sign in to view project discussion.
+              </p>
+            ) : discussionLoading ? (
+              <div className="flex items-center justify-center h-24">
+                <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                  {discussionMessages.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border bg-surface-highlight/50 px-4 py-6 text-center">
+                      <p className="text-sm font-medium text-neutral-dark">
+                        No project discussion yet
+                      </p>
+                      <p className="text-xs text-text-secondary mt-1">
+                        Keep project-specific questions, blockers, and decisions here.
+                      </p>
+                    </div>
+                  ) : (
+                    discussionMessages.map((message) => (
+                      <div
+                        key={message.id}
+                        className="rounded-lg border border-border bg-surface-highlight p-3"
+                      >
+                        <div className="flex items-center justify-between gap-3 mb-1">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-neutral-dark truncate">
+                              {message.user_name}
+                            </p>
+                            <p className="text-xs text-text-secondary capitalize">
+                              {message.user_role}
+                              {message.user_cycle ?
+                                ` - ${message.user_cycle}`
+                              : ""}
+                            </p>
+                          </div>
+                          <span className="text-xs text-text-secondary flex-shrink-0">
+                            {new Date(message.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-neutral-dark whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {discussionError && (
+                  <p className="text-xs text-red-500">{discussionError}</p>
+                )}
+
+                {canPostDiscussion ? (
+                  <form
+                    onSubmit={handleDiscussionSubmit}
+                    className="flex items-end gap-2"
+                  >
+                    <textarea
+                      value={discussionDraft}
+                      onChange={(event) =>
+                        setDiscussionDraft(event.target.value)
+                      }
+                      rows={2}
+                      placeholder="Ask a project question or share a decision..."
+                      className="flex-1 min-h-[44px] max-h-28 resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark outline-none focus:border-primary"
+                    />
+                    <button
+                      type="submit"
+                      disabled={
+                        discussionPosting || discussionDraft.trim().length === 0
+                      }
+                      className="h-11 w-11 inline-flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Post project discussion"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </form>
+                ) : (
+                  <p className="text-xs text-text-secondary">
+                    Join this project to participate in the discussion.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         )}
 

@@ -16,6 +16,7 @@ import {
 } from "../../utils/api";
 import RoleBadge from "../../components/shared/RoleBadge";
 import CommunityFeed from "./CommunityFeed";
+import CommunityArchive from "./CommunityArchive";
 
 export default function Chat() {
   const location = useLocation();
@@ -84,6 +85,8 @@ export default function Chat() {
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
+  const formatCycle = (member) => member?.cycle || "";
+
   const loadPresence = useCallback(async () => {
     if (!user?.id) return;
 
@@ -96,15 +99,15 @@ export default function Chat() {
   }, [user?.id]);
 
   const loadChannelMessages = useCallback(async (channelId) => {
-    if (!channelId) return;
+    if (!channelId || !user?.id) return;
 
     try {
-      const data = await fetchChannelMessages(channelId);
+      const data = await fetchChannelMessages(channelId, 50, user.id);
       setMessages(data);
     } catch (err) {
       console.error("Error loading channel messages:", err);
     }
-  }, []);
+  }, [user?.id]);
 
   const loadDMMessages = useCallback(
     async (dmUserId) => {
@@ -154,7 +157,7 @@ export default function Chat() {
     } finally {
       setLoading(false);
     }
-  }, [addToast, user?.id]);
+  }, [addToast, location.search, user?.id]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -286,6 +289,7 @@ export default function Chat() {
   const communityPresence = presence.filter((member) => member.id !== user?.id);
   const onlineMembers = communityPresence.filter((member) => member.status === "online");
   const offlineMembers = communityPresence.filter((member) => member.status !== "online");
+  const isAnnouncementsChannel = activeChannel?.name === "announcements";
 
   if (loading) {
     return (
@@ -364,9 +368,7 @@ export default function Chat() {
                       </div>
                       {dmUser.cycle && (
                         <p className="text-xs text-text-secondary truncate">
-                          {dmUser.role === "intern" ?
-                            dmUser.cycle
-                          : `Commenced ${dmUser.cycle}`}
+                          {formatCycle(dmUser)}
                         </p>
                       )}
                     </div>
@@ -403,9 +405,7 @@ export default function Chat() {
                   <RoleBadge role={selectedDM.role} size="xs" />
                   {selectedDM.cycle && (
                     <span className="text-xs text-text-secondary">
-                      {selectedDM.role === "intern" ?
-                        selectedDM.cycle
-                      : `Commenced ${selectedDM.cycle}`}
+                      {formatCycle(selectedDM)}
                     </span>
                   )}
                 </div>
@@ -450,11 +450,21 @@ export default function Chat() {
                       <div
                         className={`flex flex-col max-w-[70%] ${isMe ? "items-end" : "items-start"}`}
                       >
-                        <div className="flex items-baseline gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           {!isMe && (
-                            <span className="font-semibold text-xs text-neutral-dark">
-                              {message.sender_name}
-                            </span>
+                            <>
+                              <span className="font-semibold text-xs text-neutral-dark">
+                                {message.sender_name}
+                              </span>
+                              {message.sender_role && (
+                                <RoleBadge role={message.sender_role} size="xs" />
+                              )}
+                              {message.sender_cycle && (
+                                <span className="text-xs text-text-secondary">
+                                  {message.sender_cycle}
+                                </span>
+                              )}
+                            </>
                           )}
                           <span className="text-xs text-text-secondary">
                             {formatTime(message.created_at)}
@@ -489,6 +499,8 @@ export default function Chat() {
                     </div>
                   );
                 })
+              : isAnnouncementsChannel ?
+                <CommunityArchive />
               : <div className="flex flex-col items-center justify-center h-full text-text-secondary">
                   <MessageSquare className="w-12 h-12 mb-2" />
                   <p>
@@ -603,7 +615,7 @@ export default function Chat() {
                     <RoleBadge role={member.role} size="xs" />
                     {member.cycle && (
                       <span className="text-xs text-text-secondary">
-                        {member.cycle}
+                        {formatCycle(member)}
                       </span>
                     )}
                   </div>
@@ -638,7 +650,14 @@ export default function Chat() {
                   <p className="text-sm font-medium text-neutral-dark truncate">
                     {member.name}
                   </p>
-                  <RoleBadge role={member.role} size="xs" />
+                  <div className="flex items-center gap-1">
+                    <RoleBadge role={member.role} size="xs" />
+                    {member.cycle && (
+                      <span className="text-xs text-text-secondary">
+                        {formatCycle(member)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </button>
             ))}

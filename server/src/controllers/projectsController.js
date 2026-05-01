@@ -6,6 +6,45 @@ import {
 } from "../services/notificationService.js";
 import { checkBadges } from "../services/checkBadges.js";
 
+async function getProjectAccess(projectId, userId) {
+  if (!userId) {
+    return { canRead: false, canPost: false };
+  }
+
+  const [rows] = await pool.query(
+    `
+    SELECT
+      p.owner_id,
+      p.visibility,
+      u.role,
+      EXISTS(
+        SELECT 1
+        FROM project_members pm
+        WHERE pm.project_id = p.id
+          AND pm.user_id = ?
+      ) AS is_member
+    FROM projects p
+    JOIN users u ON u.id = ?
+    WHERE p.id = ?
+    LIMIT 1
+    `,
+    [userId, userId, projectId],
+  );
+
+  const access = rows[0];
+  if (!access) return { canRead: false, canPost: false };
+
+  const isAdmin = access.role === "admin";
+  const isOwner = Number(access.owner_id) === Number(userId);
+  const isMember = Boolean(access.is_member);
+  const isPublic = access.visibility === "public";
+
+  return {
+    canRead: isAdmin || isOwner || isMember || isPublic,
+    canPost: isAdmin || isOwner || isMember,
+  };
+}
+
 // GET /api/projects
 export const getProjects = async (req, res) => {
   const { user_id: userId } = req.query;
@@ -708,6 +747,104 @@ export const getProjectMetrics = async (req, res) => {
   } catch (err) {
     console.error("Error fetching project metrics:", err);
     res.status(500).json({ error: "Failed to fetch metrics" });
+  }
+};
+
+// ============================================================
+// PROJECT DISCUSSIONS
+// ============================================================
+
+// GET /api/projects/:projectId/discussions
+export const getProjectDiscussions = async (req, res) => {
+  const { projectId } = req.params;
+  const userId = Number(req.query.user_id || req.user?.id);
+
+  try {
+    const access = await getProjectAccess(projectId, userId);
+    if (!access.canRead) {
+      return res.status(403).json({ error: "Project discussion access denied" });
+    }
+
+    const [rows] = await pool.query(
+      `
+      SELECT
+        pd.id,
+        pd.project_id,
+        pd.user_id,
+        pd.content,
+        pd.created_at,
+        pd.updated_at,
+        u.name AS user_name,
+        u.role AS user_role,
+        u.cycle AS user_cycle,
+        u.profile_pic AS user_pic
+      FROM project_discussions pd
+      JOIN users u ON u.id = pd.user_id
+      WHERE pd.project_id = ?
+        AND pd.is_deleted = FALSE
+      ORDER BY pd.created_at ASC
+      LIMIT 100
+      `,
+      [projectId],
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching project discussions:", err);
+    res.status(500).json({ error: "Failed to fetch project discussions" });
+  }
+};
+
+// POST /api/projects/:projectId/discussions
+export const createProjectDiscussion = async (req, res) => {
+  const { projectId } = req.params;
+  const userId = Number(req.body.user_id || req.query.user_id || req.user?.id);
+  const content = req.body.content?.trim();
+
+  if (!userId || !content) {
+    return res.status(400).json({ error: "user_id and content are required" });
+  }
+
+  try {
+    const access = await getProjectAccess(projectId, userId);
+    if (!access.canPost) {
+      return res.status(403).json({
+        error: "Only project members can post in this discussion",
+      });
+    }
+
+    const [result] = await pool.query(
+      `
+      INSERT INTO project_discussions (project_id, user_id, content)
+      VALUES (?, ?, ?)
+      `,
+      [projectId, userId, content],
+    );
+
+    const [rows] = await pool.query(
+      `
+      SELECT
+        pd.id,
+        pd.project_id,
+        pd.user_id,
+        pd.content,
+        pd.created_at,
+        pd.updated_at,
+        u.name AS user_name,
+        u.role AS user_role,
+        u.cycle AS user_cycle,
+        u.profile_pic AS user_pic
+      FROM project_discussions pd
+      JOIN users u ON u.id = pd.user_id
+      WHERE pd.id = ?
+      `,
+      [result.insertId],
+    );
+
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Error creating project discussion:", err);
+    res.status(500).json({ error: "Failed to post project discussion" });
   }
 };
 

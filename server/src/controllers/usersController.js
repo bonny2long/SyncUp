@@ -25,6 +25,48 @@ const USER_SELECT_FIELDS = `
   auto_accept_teammates
 `;
 
+async function getSystemSenderId(fallbackUserId) {
+  const [admins] = await pool.query(
+    "SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1",
+  );
+  return admins[0]?.id || fallbackUserId;
+}
+
+async function ensureIntroductionsChannel(senderId) {
+  await pool.query(
+    `INSERT IGNORE INTO channels
+      (name, description, created_by, is_private, channel_type, allowed_roles)
+     VALUES
+      ('introductions', 'Welcome new ICAA community members', ?, FALSE, 'community', NULL)`,
+    [senderId],
+  );
+
+  const [channels] = await pool.query(
+    "SELECT id FROM channels WHERE name = 'introductions' LIMIT 1",
+  );
+  return channels[0]?.id;
+}
+
+async function postCommencementIntroduction(user) {
+  const senderId = await getSystemSenderId(user.id);
+  const channelId = await ensureIntroductionsChannel(senderId);
+  if (!channelId) return;
+
+  const cycleText = user.cycle ? ` Cycle ${user.cycle}.` : "";
+  const content = `Please welcome ${user.name} to the ICAA community.${cycleText}`;
+
+  await pool.query(
+    `INSERT INTO messages (channel_id, sender_id, recipient_id, content)
+     VALUES (?, ?, NULL, ?)`,
+    [channelId, senderId, content],
+  );
+
+  await pool.query(
+    "INSERT IGNORE INTO channel_members (channel_id, user_id) VALUES (?, ?)",
+    [channelId, user.id],
+  );
+}
+
 // GET /api/users
 export const getAllUsers = async (req, res) => {
   try {
@@ -263,6 +305,18 @@ export const updateUserProfile = async (req, res) => {
   const body = req.body || {};
 
   try {
+    const [existingUsers] = await pool.query(
+      `SELECT ${USER_SELECT_FIELDS}
+       FROM users
+       WHERE id = ?`,
+      [userId],
+    );
+
+    if (existingUsers.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const existingUser = existingUsers[0];
     const updates = {};
 
     if (body.name !== undefined) updates.name = body.name;
@@ -323,6 +377,44 @@ export const updateUserProfile = async (req, res) => {
     }
     if (body.cycle !== undefined) updates.cycle = body.cycle || null;
 
+    const requestedCommencement = body.has_commenced === true;
+    const effectiveRole = updates.role ?? existingUser.role;
+    const effectiveCommenced =
+      updates.has_commenced ?? Boolean(existingUser.has_commenced);
+    const effectiveCycle =
+      updates.cycle !== undefined ? updates.cycle : existingUser.cycle;
+    const promotesIntern =
+      existingUser.role === "intern" &&
+      ((requestedCommencement && effectiveRole === "intern") ||
+        effectiveRole === "resident");
+
+    if (promotesIntern && !effectiveCycle) {
+      return res.status(400).json({
+        error: "Cycle is required before commencing an intern",
+      });
+    }
+
+    if (
+      requestedCommencement &&
+      existingUser.role === "intern" &&
+      effectiveRole === "intern"
+    ) {
+      updates.role = "resident";
+      updates.has_commenced = true;
+    }
+
+    if (
+      updates.role !== undefined &&
+      ["mentor", "resident", "alumni", "admin"].includes(updates.role) &&
+      updates.has_commenced === undefined
+    ) {
+      updates.has_commenced = true;
+    }
+
+    if (updates.role === "intern" && effectiveCommenced) {
+      updates.has_commenced = false;
+    }
+
     const updateEntries = Object.entries(updates);
     if (updateEntries.length === 0) {
       return res.status(400).json({ error: "No profile updates provided" });
@@ -348,7 +440,17 @@ export const updateUserProfile = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json(users[0]);
+    const updatedUser = users[0];
+    const wasUncommencedIntern =
+      existingUser.role === "intern" && !existingUser.has_commenced;
+    const isNewResident =
+      updatedUser.role === "resident" && Boolean(updatedUser.has_commenced);
+
+    if (wasUncommencedIntern && isNewResident) {
+      await postCommencementIntroduction(updatedUser);
+    }
+
+    res.json(updatedUser);
   } catch (err) {
     console.error("Error updating user profile:", err);
     res.status(500).json({ error: "Failed to update profile" });

@@ -4,6 +4,7 @@ import {
   createChannel,
   joinChannel,
   leaveChannel,
+  getIntroductionMessages,
   getChannelMessages,
   getDMMessages,
   sendMessage,
@@ -22,6 +23,7 @@ router.post("/channels/:channelId/join", joinChannel);
 router.delete("/channels/:channelId/leave", leaveChannel);
 
 // Messages
+router.get("/introductions", getIntroductionMessages);
 router.get("/channels/:channelId/messages", getChannelMessages);
 router.get("/dm/:userId", getDMMessages);
 router.post("/messages", chatValidators.sendMessage, sendMessage);

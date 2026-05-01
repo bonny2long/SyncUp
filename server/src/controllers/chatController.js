@@ -10,21 +10,19 @@ export const getChannels = async (req, res) => {
 
   try {
     let userRole = "intern";
-    let hasCommenced = false;
 
     if (user_id) {
       const [userRows] = await pool.query(
-        "SELECT role, has_commenced FROM users WHERE id = ?",
+        "SELECT role FROM users WHERE id = ?",
         [user_id],
       );
 
       if (userRows.length > 0) {
         userRole = userRows[0].role;
-        hasCommenced = Boolean(userRows[0].has_commenced);
       }
     }
 
-    if (userRole === "intern" && !hasCommenced) {
+    if (userRole === "intern") {
       return res.json([]);
     }
 
@@ -133,15 +131,62 @@ export const leaveChannel = async (req, res) => {
 // MESSAGES
 // =============================================
 
+// Get recent commencement introductions for the community HQ strip
+export const getIntroductionMessages = async (req, res) => {
+  const { limit = 5, user_id } = req.query;
+
+  try {
+    if (user_id) {
+      const [users] = await pool.query("SELECT role FROM users WHERE id = ?", [
+        user_id,
+      ]);
+      if (users[0]?.role === "intern") {
+        return res.status(403).json({
+          error: "Introductions are for commenced community members",
+        });
+      }
+    }
+
+    const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10);
+    const [rows] = await pool.query(
+      `
+      SELECT m.id, m.content, m.created_at,
+             u.name AS sender_name, u.role AS sender_role, u.cycle AS sender_cycle
+      FROM messages m
+      JOIN channels c ON m.channel_id = c.id
+      JOIN users u ON m.sender_id = u.id
+      WHERE c.name = 'introductions'
+      ORDER BY m.created_at DESC
+      LIMIT ?
+    `,
+      [safeLimit],
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching introductions:", err);
+    res.status(500).json({ error: "Failed to fetch introductions" });
+  }
+};
+
 // Get messages for a channel
 export const getChannelMessages = async (req, res) => {
   const { channelId } = req.params;
-  const { limit = 50 } = req.query;
+  const { limit = 50, user_id } = req.query;
 
   try {
+    if (user_id) {
+      const [users] = await pool.query("SELECT role FROM users WHERE id = ?", [
+        user_id,
+      ]);
+      if (users[0]?.role === "intern") {
+        return res.status(403).json({ error: "SyncChat is for commenced community members" });
+      }
+    }
+
     const [rows] = await pool.query(
       `
-      SELECT m.*, u.name as sender_name, u.role as sender_role, u.profile_pic as sender_pic
+      SELECT m.*, u.name as sender_name, u.role as sender_role, u.cycle as sender_cycle, u.profile_pic as sender_pic
       FROM messages m
       JOIN users u ON m.sender_id = u.id
       WHERE m.channel_id = ?
@@ -167,7 +212,7 @@ export const getDMMessages = async (req, res) => {
   try {
     const [rows] = await pool.query(
       `
-      SELECT m.*, u.name as sender_name, u.role as sender_role, u.profile_pic as sender_pic
+      SELECT m.*, u.name as sender_name, u.role as sender_role, u.cycle as sender_cycle, u.profile_pic as sender_pic
       FROM messages m
       JOIN users u ON m.sender_id = u.id
       WHERE (m.sender_id = ? AND m.recipient_id = ?)
@@ -199,6 +244,15 @@ export const sendMessage = async (req, res) => {
   }
 
   try {
+    if (channel_id) {
+      const [users] = await pool.query("SELECT role FROM users WHERE id = ?", [
+        user_id,
+      ]);
+      if (users[0]?.role === "intern") {
+        return res.status(403).json({ error: "SyncChat is for commenced community members" });
+      }
+    }
+
     const [result] = await pool.query(
       `INSERT INTO messages (channel_id, sender_id, recipient_id, content, file_url, file_name) 
        VALUES (?, ?, ?, ?, ?, ?)`,
@@ -214,7 +268,7 @@ export const sendMessage = async (req, res) => {
 
     const [rows] = await pool.query(
       `
-      SELECT m.*, u.name as sender_name, u.role as sender_role
+      SELECT m.*, u.name as sender_name, u.role as sender_role, u.cycle as sender_cycle
       FROM messages m
       JOIN users u ON m.sender_id = u.id
       WHERE m.id = ?
@@ -241,8 +295,7 @@ export const getPresence = async (req, res) => {
              u.id, u.name, u.role, u.profile_pic, u.cycle
       FROM user_presence up
       JOIN users u ON up.user_id = u.id
-      WHERE u.role != 'intern' 
-         OR (u.role = 'intern' AND u.has_commenced = TRUE)
+      WHERE u.role != 'intern'
       ORDER BY 
         CASE up.status WHEN 'online' THEN 0 ELSE 1 END,
         u.name ASC
@@ -285,7 +338,7 @@ export const updatePresence = async (req, res) => {
 
 // Get users I can DM (project teammates + all users)
 export const getDMUsers = async (req, res) => {
-  const { user_id } = req.query;
+  const { user_id, scope = "chat" } = req.query;
 
   try {
     const [requestingUser] = await pool.query(
@@ -293,13 +346,27 @@ export const getDMUsers = async (req, res) => {
       [user_id]
     );
 
+    const requesterRole = requestingUser[0]?.role || "intern";
     const isPreCommencedIntern =
-      requestingUser[0]?.role === 'intern' &&
+      requesterRole === 'intern' &&
       !requestingUser[0]?.has_commenced;
 
     let query, params;
 
-    if (isPreCommencedIntern) {
+    if (scope === "lobby" && requesterRole !== "intern") {
+      // Community helpers use the lobby to support incoming interns.
+      query = `
+        SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
+               COALESCE(up.status, 'offline') as status
+        FROM users u
+        LEFT JOIN user_presence up ON u.id = up.user_id
+        WHERE u.id != ?
+          AND u.role = 'intern'
+          AND COALESCE(u.has_commenced, FALSE) = FALSE
+        ORDER BY u.name
+      `;
+      params = [user_id];
+    } else if (isPreCommencedIntern) {
       // Pre-commencement interns only see mentors/alumni/residents/admin
       query = `
         SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
@@ -312,13 +379,14 @@ export const getDMUsers = async (req, res) => {
       `;
       params = [user_id];
     } else {
-      // Full community members see all other community members
+      // SyncChat is the commenced ICAA community; incoming interns stay in the lobby.
       query = `
         SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
                COALESCE(up.status, 'offline') as status
         FROM users u
         LEFT JOIN user_presence up ON u.id = up.user_id
         WHERE u.id != ?
+          AND u.role != 'intern'
         ORDER BY u.name
       `;
       params = [user_id];

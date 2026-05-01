@@ -69,14 +69,10 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     setShowHelp(true);
   };
 
-  const handleExportResume = () => {
-    const profileData = {
-      user,
-      skills: [],
-      projects: [],
-      stats: {},
-    };
+  const handleExportResume = async () => {
     try {
+      const res = await fetch(`/api/users/${user?.id}/profile`);
+      const profileData = await res.json();
       generateResumePDF(profileData);
     } catch (err) {
       console.error("Export failed:", err);
@@ -115,6 +111,7 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     skills: "Skill Tracker",
     portfolio: "Project Portfolio",
     chat: "SyncChat",
+    lobby: "Intern Lobby",
     settings: "Settings",
   };
   const pageTitle = titleMap[activeTab] || "SyncUp";

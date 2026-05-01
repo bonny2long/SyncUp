@@ -18,8 +18,6 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
     const isCommunityMember = ["alumni", "resident", "mentor"].includes(
       user?.role,
     );
-    const canAccessSyncChat =
-      isCommunityMember || (user?.role === "intern" && user?.has_commenced);
 
     const items = [
       {
@@ -29,9 +27,11 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
       },
     ];
 
-    if (canAccessSyncChat) {
+    if (isCommunityMember) {
       items.push({ id: "chat", label: "SyncChat", path: "/chat" });
-    } else {
+    }
+
+    if (user?.role === "intern") {
       items.push({ id: "lobby", label: "Intern Lobby", path: "/lobby" });
     }
 
@@ -48,7 +48,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
     items.push({ id: "portfolio", label: "Project Portfolio", path: "/portfolio" });
 
     return items;
-  }, [user?.role, user?.has_commenced]);
+  }, [user?.role]);
 
   const handleTabClick = (tab) => {
     navigate(tab.path);

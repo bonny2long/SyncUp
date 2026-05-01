@@ -11,6 +11,8 @@ import {
   getUserProjects,
   getProjectPortfolioDetails,
   getProjectMetrics,
+  getProjectDiscussions,
+  createProjectDiscussion,
   createJoinRequest,
   getProjectRequests,
   getUserProjectRequests,
@@ -135,6 +137,10 @@ router.get("/user/:userId", getUserProjects);
 router.get("/:projectId/portfolio-details", getProjectPortfolioDetails);
 
 router.get("/:projectId/metrics", getProjectMetrics);
+
+router.get("/:projectId/discussions", getProjectDiscussions);
+
+router.post("/:projectId/discussions", createProjectDiscussion);
 
 /**
  * @swagger

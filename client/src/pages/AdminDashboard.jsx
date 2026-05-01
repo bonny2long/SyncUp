@@ -37,9 +37,11 @@ import {
   updateMaintenanceSettings,
   fetchAnnouncements,
   createAnnouncement,
+  updateAnnouncement,
   deleteAnnouncement,
   fetchEvents,
   createEvent,
+  updateEvent,
   deleteEvent,
 } from "../utils/api";
 import HelpModal from "../components/shared/HelpModal";
@@ -309,6 +311,7 @@ export default function AdminDashboard() {
     announcement_type: "news",
     expires_at: "",
   });
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState(null);
   const [eventForm, setEventForm] = useState({
     title: "",
     description: "",
@@ -317,6 +320,7 @@ export default function AdminDashboard() {
     requires_rsvp: false,
     max_attendees: "",
   });
+  const [editingEventId, setEditingEventId] = useState(null);
   const [editUserRole, setEditUserRole] = useState("intern");
   const [editUserCommenced, setEditUserCommenced] = useState(false);
 
@@ -439,7 +443,7 @@ export default function AdminDashboard() {
   const loadAnnouncements = useCallback(async () => {
     try {
       setLoadingAnnouncements(true);
-      const data = await fetchAnnouncements();
+      const data = await fetchAnnouncements(user?.id);
       setAnnouncements(data);
     } catch (err) {
       console.error("Failed to load announcements:", err);
@@ -447,7 +451,7 @@ export default function AdminDashboard() {
     } finally {
       setLoadingAnnouncements(false);
     }
-  }, [addToast]);
+  }, [addToast, user?.id]);
 
   const loadCommunityEvents = useCallback(async () => {
     try {
@@ -620,7 +624,7 @@ export default function AdminDashboard() {
       addToast("User updated successfully", "success");
     } catch (err) {
       console.error("Failed to update user:", err);
-      addToast("Failed to update user. Please try again.", "error");
+      addToast(err.message || "Failed to update user. Please try again.", "error");
     }
   };
 
@@ -670,29 +674,93 @@ export default function AdminDashboard() {
     }
   };
 
+  const formatDateTimeLocal = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return offsetDate.toISOString().slice(0, 16);
+  };
+
+  const parseRsvpAttendees = (value) => {
+    if (!value) return [];
+    return String(value)
+      .split("||")
+      .filter(Boolean)
+      .map((attendee) => {
+        const [name, role, cycle] = attendee.split("::");
+        return { name, role, cycle };
+      });
+  };
+
+  const parseAnnouncementReaders = (value) => {
+    if (!value) return [];
+    return String(value)
+      .split("||")
+      .filter(Boolean)
+      .map((reader) => {
+        const [name, role, cycle, readAt] = reader.split("::");
+        return { name, role, cycle, readAt };
+      });
+  };
+
+  const resetAnnouncementForm = () => {
+    setAnnouncementForm({
+      title: "",
+      content: "",
+      announcement_type: "news",
+      expires_at: "",
+    });
+    setEditingAnnouncementId(null);
+  };
+
+  const resetEventForm = () => {
+    setEventForm({
+      title: "",
+      description: "",
+      event_date: "",
+      location: "",
+      requires_rsvp: false,
+      max_attendees: "",
+    });
+    setEditingEventId(null);
+  };
+
   const handleCreateAnnouncement = async (e) => {
     e.preventDefault();
 
     try {
-      await createAnnouncement(
-        {
-          ...announcementForm,
-          expires_at: announcementForm.expires_at || null,
-        },
-        user.id,
-      );
-      setAnnouncementForm({
-        title: "",
-        content: "",
-        announcement_type: "news",
-        expires_at: "",
-      });
+      const isEditing = Boolean(editingAnnouncementId);
+      const payload = {
+        ...announcementForm,
+        expires_at: announcementForm.expires_at || null,
+      };
+
+      if (isEditing) {
+        await updateAnnouncement(editingAnnouncementId, payload, user.id);
+      } else {
+        await createAnnouncement(payload, user.id);
+      }
+      resetAnnouncementForm();
       await loadAnnouncements();
-      addToast("Announcement created", "success");
+      addToast(
+        isEditing ? "Announcement updated" : "Announcement created",
+        "success",
+      );
     } catch (err) {
       console.error("Failed to create announcement:", err);
-      addToast("Failed to create announcement", "error");
+      addToast(err.message || "Failed to save announcement", "error");
     }
+  };
+
+  const handleEditAnnouncement = (announcement) => {
+    setEditingAnnouncementId(announcement.id);
+    setAnnouncementForm({
+      title: announcement.title || "",
+      content: announcement.content || "",
+      announcement_type: announcement.announcement_type || "news",
+      expires_at: formatDateTimeLocal(announcement.expires_at),
+    });
   };
 
   const handleDeleteAnnouncement = async (announcementId) => {
@@ -703,6 +771,9 @@ export default function AdminDashboard() {
       onConfirm: async () => {
         try {
           await deleteAnnouncement(announcementId, user?.id);
+          if (editingAnnouncementId === announcementId) {
+            resetAnnouncementForm();
+          }
           await loadAnnouncements();
           addToast("Announcement deleted", "success");
         } catch (err) {
@@ -718,28 +789,37 @@ export default function AdminDashboard() {
     e.preventDefault();
 
     try {
-      await createEvent(
-        {
-          ...eventForm,
-          max_attendees:
-            eventForm.max_attendees ? Number(eventForm.max_attendees) : null,
-        },
-        user.id,
-      );
-      setEventForm({
-        title: "",
-        description: "",
-        event_date: "",
-        location: "",
-        requires_rsvp: false,
-        max_attendees: "",
-      });
+      const isEditing = Boolean(editingEventId);
+      const payload = {
+        ...eventForm,
+        max_attendees:
+          eventForm.max_attendees ? Number(eventForm.max_attendees) : null,
+      };
+
+      if (isEditing) {
+        await updateEvent(editingEventId, payload, user.id);
+      } else {
+        await createEvent(payload, user.id);
+      }
+      resetEventForm();
       await loadCommunityEvents();
-      addToast("Event created", "success");
+      addToast(isEditing ? "Event updated" : "Event created", "success");
     } catch (err) {
       console.error("Failed to create event:", err);
-      addToast("Failed to create event", "error");
+      addToast(err.message || "Failed to save event", "error");
     }
+  };
+
+  const handleEditCommunityEvent = (event) => {
+    setEditingEventId(event.id);
+    setEventForm({
+      title: event.title || "",
+      description: event.description || "",
+      event_date: formatDateTimeLocal(event.event_date),
+      location: event.location || "",
+      requires_rsvp: Boolean(event.requires_rsvp),
+      max_attendees: event.max_attendees || "",
+    });
   };
 
   const handleDeleteCommunityEvent = async (eventId) => {
@@ -750,6 +830,9 @@ export default function AdminDashboard() {
       onConfirm: async () => {
         try {
           await deleteEvent(eventId, user?.id);
+          if (editingEventId === eventId) {
+            resetEventForm();
+          }
           await loadCommunityEvents();
           addToast("Event deleted", "success");
         } catch (err) {
@@ -1360,7 +1443,7 @@ export default function AdminDashboard() {
             >
               <div>
                 <h3 className="text-lg font-semibold text-primary">
-                  Create Announcement
+                  {editingAnnouncementId ? "Edit Announcement" : "Create Announcement"}
                 </h3>
                 <p className="text-sm text-gray-400">
                   Manage pinned resources and community news.
@@ -1438,8 +1521,17 @@ export default function AdminDashboard() {
                 type="submit"
                 className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
               >
-                Publish Announcement
+                {editingAnnouncementId ? "Update Announcement" : "Publish Announcement"}
               </button>
+              {editingAnnouncementId && (
+                <button
+                  type="button"
+                  onClick={resetAnnouncementForm}
+                  className="w-full px-4 py-2 border border-border text-primary rounded-lg hover:bg-surface-highlight transition"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </form>
 
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
@@ -1463,7 +1555,17 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gray-400">Loading announcements...</p>
                 : announcements.length === 0 ?
                   <p className="text-sm text-gray-400">No announcements yet.</p>
-                : announcements.map((announcement) => (
+                : announcements.map((announcement) => {
+                    const readers = parseAnnouncementReaders(
+                      announcement.read_receipts,
+                    );
+                    const readCount = Number(announcement.read_count || 0);
+                    const audienceCount = Number(
+                      announcement.audience_count || 0,
+                    );
+                    const unreadCount = Math.max(audienceCount - readCount, 0);
+
+                    return (
                     <div
                       key={announcement.id}
                       className="border border-border rounded-lg p-4 bg-surface-highlight/30"
@@ -1483,20 +1585,69 @@ export default function AdminDashboard() {
                             {new Date(announcement.created_at).toLocaleString()}
                           </p>
                         </div>
-                        <button
-                          onClick={() =>
-                            handleDeleteAnnouncement(announcement.id)
-                          }
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditAnnouncement(announcement)}
+                            className="text-primary hover:text-accent"
+                            aria-label={`Edit ${announcement.title}`}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleDeleteAnnouncement(announcement.id)
+                            }
+                            className="text-red-400 hover:text-red-300"
+                            aria-label={`Delete ${announcement.title}`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-sm text-primary mt-3 whitespace-pre-wrap">
                         {announcement.content}
                       </p>
+                      <div className="mt-3 border-t border-border pt-3">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <p className="text-xs font-semibold uppercase text-gray-400">
+                            Read Tracking
+                          </p>
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="px-2 py-1 rounded-full bg-green-500/15 text-green-400">
+                              {readCount} read
+                            </span>
+                            <span className="px-2 py-1 rounded-full bg-background border border-border text-gray-300">
+                              {unreadCount} unread
+                            </span>
+                          </div>
+                        </div>
+                        {readers.length > 0 ? (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {readers.map((reader) => (
+                              <span
+                                key={`${announcement.id}-${reader.name}-${reader.readAt}`}
+                                className="px-2 py-1 rounded-full bg-background border border-border text-xs text-primary"
+                                title={
+                                  reader.readAt ?
+                                    new Date(reader.readAt).toLocaleString()
+                                  : ""
+                                }
+                              >
+                                {reader.name}
+                                {reader.role ? ` (${reader.role})` : ""}
+                                {reader.cycle ? ` - ${reader.cycle}` : ""}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 mt-3">
+                            No reads yet.
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  ))
+                    );
+                  })
                 }
               </div>
             </div>
@@ -1511,7 +1662,7 @@ export default function AdminDashboard() {
             >
               <div>
                 <h3 className="text-lg font-semibold text-primary">
-                  Create Event
+                  {editingEventId ? "Edit Event" : "Create Event"}
                 </h3>
                 <p className="text-sm text-gray-400">
                   Publish upcoming ICCA events for the community feed.
@@ -1622,8 +1773,17 @@ export default function AdminDashboard() {
                 type="submit"
                 className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
               >
-                Publish Event
+                {editingEventId ? "Update Event" : "Publish Event"}
               </button>
+              {editingEventId && (
+                <button
+                  type="button"
+                  onClick={resetEventForm}
+                  className="w-full px-4 py-2 border border-border text-primary rounded-lg hover:bg-surface-highlight transition"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </form>
 
             <div className="bg-surface rounded-xl border border-border overflow-hidden">
@@ -1647,11 +1807,14 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gray-400">Loading events...</p>
                 : communityEvents.length === 0 ?
                   <p className="text-sm text-gray-400">No upcoming events yet.</p>
-                : communityEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className="border border-border rounded-lg p-4 bg-surface-highlight/30"
-                    >
+                : communityEvents.map((event) => {
+                    const attendees = parseRsvpAttendees(event.rsvp_attendees);
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="border border-border rounded-lg p-4 bg-surface-highlight/30"
+                      >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1669,12 +1832,22 @@ export default function AdminDashboard() {
                             {event.location ? ` | ${event.location}` : ""}
                           </p>
                         </div>
-                        <button
-                          onClick={() => handleDeleteCommunityEvent(event.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditCommunityEvent(event)}
+                            className="text-primary hover:text-accent"
+                            aria-label={`Edit ${event.title}`}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCommunityEvent(event.id)}
+                            className="text-red-400 hover:text-red-300"
+                            aria-label={`Delete ${event.title}`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                       {event.description && (
                         <p className="text-sm text-primary mt-3">
@@ -1685,8 +1858,34 @@ export default function AdminDashboard() {
                         RSVPs: {event.rsvp_count || 0}
                         {event.max_attendees ? ` / ${event.max_attendees}` : ""}
                       </p>
+                      {event.requires_rsvp && (
+                        <div className="mt-3 border-t border-border pt-3">
+                          <p className="text-xs font-semibold uppercase text-gray-400 mb-2">
+                            RSVP Roster
+                          </p>
+                          {attendees.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {attendees.map((attendee) => (
+                                <span
+                                  key={`${event.id}-${attendee.name}`}
+                                  className="px-2 py-1 rounded-full bg-background border border-border text-xs text-primary"
+                                >
+                                  {attendee.name}
+                                  {attendee.role ? ` (${attendee.role})` : ""}
+                                  {attendee.cycle ? ` - ${attendee.cycle}` : ""}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-400">
+                              No RSVPs yet.
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))
+                    );
+                  })
                 }
               </div>
             </div>
@@ -3460,10 +3659,10 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
                     <div>
                       <span className="text-primary font-medium">
-                        Has Commenced
+                        Commence as Resident
                       </span>
                       <p className="text-xs text-gray-400">
-                        Grants access to SyncChat and the IC Stars network
+                        Promotes this intern into the ICAA community and posts an introduction
                       </p>
                     </div>
                     <button
@@ -3551,7 +3750,10 @@ export default function AdminDashboard() {
                       handleUpdateUser(selectedUser.id, {
                         name,
                         email,
-                        role: editUserRole,
+                        role:
+                          editUserRole === "intern" && editUserCommenced ?
+                            "resident"
+                          : editUserRole,
                         notes,
                         is_active: !isBanned,
                         cycle: cycle || null,

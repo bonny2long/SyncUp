@@ -27,7 +27,7 @@ export async function reportError(errorType, message, details = {}) {
         const user = JSON.parse(userStr);
         userId = user.id;
       }
-    } catch (e) {
+    } catch {
       // Ignore parse errors
     }
   }
@@ -49,7 +49,7 @@ export async function reportError(errorType, message, details = {}) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-  } catch (err) {
+  } catch {
     // Silent fail - don't break the app
   }
 }
@@ -493,6 +493,28 @@ export async function attachProjectSkills(projectId, skillIds) {
   if (!res.ok) throw new Error("Failed to attach project skills");
 }
 
+export async function fetchProjectDiscussions(projectId, userId) {
+  const query = userId ? `?user_id=${userId}` : "";
+  const res = await fetch(`${API_BASE}/projects/${projectId}/discussions${query}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch project discussion");
+  return res.json();
+}
+
+export async function postProjectDiscussion(projectId, userId, content) {
+  const res = await fetch(`${API_BASE}/projects/${projectId}/discussions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ user_id: userId, content }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to post project discussion");
+  }
+  return res.json();
+}
+
 // ============================================================
 // PROJECT JOIN REQUESTS
 // ============================================================
@@ -762,9 +784,11 @@ export async function joinChannel(channelId, userId) {
   return res.json();
 }
 
-export async function fetchChannelMessages(channelId, limit = 50) {
+export async function fetchChannelMessages(channelId, limit = 50, userId = null) {
+  const params = new URLSearchParams({ limit });
+  if (userId) params.set("user_id", userId);
   const res = await fetch(
-    `${API_BASE}/chat/channels/${channelId}/messages?limit=${limit}`,
+    `${API_BASE}/chat/channels/${channelId}/messages?${params.toString()}`,
     { headers: getUserHeaders() },
   );
   if (!res.ok) throw new Error("Failed to fetch messages");
@@ -824,11 +848,25 @@ export async function updatePresence(userId, status, channelId = null) {
   return res.json();
 }
 
-export async function fetchDMUsers(userId) {
-  const res = await fetch(`${API_BASE}/chat/dm-users?user_id=${userId}`, {
+export async function fetchDMUsers(userId, scope = "chat") {
+  const params = new URLSearchParams({
+    user_id: userId,
+    scope,
+  });
+  const res = await fetch(`${API_BASE}/chat/dm-users?${params.toString()}`, {
     headers: getUserHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch DM users");
+  return res.json();
+}
+
+export async function fetchIntroductions(userId, limit = 5) {
+  const params = new URLSearchParams({ limit });
+  if (userId) params.set("user_id", userId);
+  const res = await fetch(`${API_BASE}/chat/introductions?${params.toString()}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch introductions");
   return res.json();
 }
 
@@ -836,11 +874,22 @@ export async function fetchDMUsers(userId) {
 // ANNOUNCEMENTS
 // ============================================================
 
-export const fetchAnnouncements = async () => {
-  const res = await fetch(`${API_BASE}/announcements`, {
+export const fetchAnnouncements = async (userId = null) => {
+  const query = userId ? `?user_id=${userId}` : "";
+  const res = await fetch(`${API_BASE}/announcements${query}`, {
     headers: getUserHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch announcements");
+  return res.json();
+};
+
+export const markAnnouncementRead = async (id, userId) => {
+  const res = await fetch(`${API_BASE}/announcements/${id}/read`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  if (!res.ok) throw new Error("Failed to mark announcement as read");
   return res.json();
 };
 
@@ -850,7 +899,23 @@ export const createAnnouncement = async (data, userId) => {
     headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create announcement");
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to create announcement");
+  }
+  return res.json();
+};
+
+export const updateAnnouncement = async (id, data, userId) => {
+  const res = await fetch(`${API_BASE}/announcements/${id}?user_id=${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to update announcement");
+  }
   return res.json();
 };
 
@@ -883,7 +948,23 @@ export const createEvent = async (data, userId) => {
     headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create event");
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to create event");
+  }
+  return res.json();
+};
+
+export const updateEvent = async (eventId, data, userId) => {
+  const res = await fetch(`${API_BASE}/events/${eventId}?user_id=${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to update event");
+  }
   return res.json();
 };
 
@@ -991,7 +1072,10 @@ export async function updateUser(userId, data) {
     body: JSON.stringify(data),
   });
   await handleApiError(res, `/users/${userId}/profile`);
-  if (!res.ok) throw new Error("Failed to update user");
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to update user");
+  }
   return res.json();
 }
 

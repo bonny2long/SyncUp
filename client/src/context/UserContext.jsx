@@ -14,8 +14,7 @@ function normalizeUser(rawUser) {
   return {
     ...rawUser,
     role,
-    has_commenced:
-      rawUser.has_commenced ?? (isCommunityRole ? true : false),
+    has_commenced: isCommunityRole ? (rawUser.has_commenced ?? true) : false,
     cycle: rawUser.cycle ?? null,
   };
 }

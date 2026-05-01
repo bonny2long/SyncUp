@@ -94,7 +94,7 @@ export default function InternLobby() {
 
     try {
       setLoading(true);
-      const dmUsersData = await fetchDMUsers(user.id);
+      const dmUsersData = await fetchDMUsers(user.id, "lobby");
       setDmUsers(dmUsersData);
 
       // Check URL search params for auto-selecting a user
@@ -234,7 +234,7 @@ export default function InternLobby() {
               Connections
             </span>
             <p className="text-xs text-text-secondary mt-1 max-w-[90%]">
-              Direct access to IC Stars community mentors.
+              Direct access to ICAA community mentors.
             </p>
           </div>
 
