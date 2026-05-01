@@ -16,10 +16,9 @@ INSERT INTO channels (name, description, created_by, is_private, channel_type, a
 ('alumni-network', 'Alumni community', 1, FALSE, 'restricted', '["alumni", "resident"]');
 
 -- Add existing community members to the shared channels
-INSERT INTO channel_members (channel_id, user_id)
+INSERT IGNORE INTO channel_members (channel_id, user_id)
 SELECT c.id, u.id
 FROM channels c
 CROSS JOIN users u
-WHERE u.role IN ('mentor', 'admin')
-  AND c.name IN ('introductions', 'opportunities', 'events')
-ON DUPLICATE KEY UPDATE joined_at = joined_at;
+WHERE u.role IN ('resident', 'alumni', 'admin')
+  AND c.name IN ('introductions', 'opportunities', 'events');

@@ -237,21 +237,14 @@ export const sendMessage = async (req, res) => {
 export const getPresence = async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT
-        COALESCE(up.status, 'offline') AS status,
-        up.last_seen,
-        up.current_channel_id,
-        u.id,
-        u.name,
-        u.role,
-        u.profile_pic,
-        u.cycle
-      FROM users u
-      LEFT JOIN user_presence up ON up.user_id = u.id
-      WHERE u.role != 'intern'
+      SELECT up.status, up.last_seen, up.current_channel_id,
+             u.id, u.name, u.role, u.profile_pic, u.cycle
+      FROM user_presence up
+      JOIN users u ON up.user_id = u.id
+      WHERE u.role != 'intern' 
          OR (u.role = 'intern' AND u.has_commenced = TRUE)
-      ORDER BY
-        CASE COALESCE(up.status, 'offline') WHEN 'online' THEN 0 ELSE 1 END,
+      ORDER BY 
+        CASE up.status WHEN 'online' THEN 0 ELSE 1 END,
         u.name ASC
     `);
     res.json(rows);
@@ -296,46 +289,36 @@ export const getDMUsers = async (req, res) => {
 
   try {
     const [requestingUser] = await pool.query(
-      "SELECT role, has_commenced FROM users WHERE id = ?",
-      [user_id],
+      'SELECT role, has_commenced FROM users WHERE id = ?',
+      [user_id]
     );
 
     const isPreCommencedIntern =
-      requestingUser[0]?.role === "intern" &&
+      requestingUser[0]?.role === 'intern' &&
       !requestingUser[0]?.has_commenced;
 
-    let query;
-    let params;
+    let query, params;
 
     if (isPreCommencedIntern) {
+      // Pre-commencement interns only see mentors/alumni/residents/admin
       query = `
-        SELECT DISTINCT
-          u.id,
-          u.name,
-          u.role,
-          u.profile_pic,
-          u.cycle,
-          COALESCE(up.status, 'offline') AS status
+        SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
+               COALESCE(up.status, 'offline') as status
         FROM users u
         LEFT JOIN user_presence up ON u.id = up.user_id
-        WHERE u.id != ?
+        WHERE u.id != ? 
           AND u.role IN ('mentor', 'alumni', 'resident', 'admin')
         ORDER BY u.name
       `;
       params = [user_id];
     } else {
+      // Full community members see all other community members
       query = `
-        SELECT DISTINCT
-          u.id,
-          u.name,
-          u.role,
-          u.profile_pic,
-          u.cycle,
-          COALESCE(up.status, 'offline') AS status
+        SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
+               COALESCE(up.status, 'offline') as status
         FROM users u
         LEFT JOIN user_presence up ON u.id = up.user_id
         WHERE u.id != ?
-          AND (u.role != 'intern' OR u.has_commenced = TRUE)
         ORDER BY u.name
       `;
       params = [user_id];

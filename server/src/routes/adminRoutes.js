@@ -302,7 +302,7 @@ router.post("/reset-demo", async (req, res) => {
 
     // Create Admin
     const [adminResult] = await connection.query(
-      `INSERT INTO users (name, email, password_hash, role, bio, join_date) VALUES (?, ?, ?, 'admin', ?, NOW())`,
+      `INSERT INTO users (name, email, password_hash, role, bio, join_date, has_commenced) VALUES (?, ?, ?, 'admin', ?, NOW(), TRUE)`,
       ["Admin User", "admin@syncup.dev", "demo123", "Platform Administrator"]
     );
     const adminId = adminResult.insertId;
@@ -320,13 +320,15 @@ router.post("/reset-demo", async (req, res) => {
     ];
     
     const mentorIds = [];
-    for (const mentor of mentors) {
+    for (let i = 0; i < mentors.length; i++) {
+      const mentor = mentors[i];
+      const role = i % 2 === 0 ? 'resident' : 'alumni';
       const [result] = await connection.query(
-        `INSERT INTO users (name, email, password_hash, role, bio, profile_visibility, join_date) VALUES (?, ?, ?, 'mentor', ?, 'anyone', NOW())`,
-        [mentor.name, mentor.email, "demo123", mentor.bio]
-        );
-        mentorIds.push(result.insertId);
-      }
+        `INSERT INTO users (name, email, password_hash, role, bio, profile_visibility, join_date, has_commenced) VALUES (?, ?, ?, ?, ?, 'anyone', NOW(), TRUE)`,
+        [mentor.name, mentor.email, "demo123", role, mentor.bio]
+      );
+      mentorIds.push(result.insertId);
+    }
 
       // Create mentor availability for each mentor (needed for mentors page)
       const times = ["09:00:00", "10:00:00", "11:00:00", "14:00:00", "15:00:00", "16:00:00"];
@@ -360,10 +362,12 @@ router.post("/reset-demo", async (req, res) => {
     ];
     
     const internIds = [];
-    for (const intern of interns) {
+    for (let i = 0; i < interns.length; i++) {
+      const intern = interns[i];
+      const hasCommenced = i < 5; // First 5 have commenced, next 5 haven't
       const [result] = await connection.query(
-        `INSERT INTO users (name, email, password_hash, role, bio, join_date) VALUES (?, ?, ?, 'intern', ?, NOW())`,
-        [intern.name, intern.email, "demo123", intern.bio]
+        `INSERT INTO users (name, email, password_hash, role, bio, join_date, has_commenced) VALUES (?, ?, ?, 'intern', ?, NOW(), ?)`,
+        [intern.name, intern.email, "demo123", intern.bio, hasCommenced]
       );
       internIds.push(result.insertId);
     }

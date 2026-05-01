@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { MessageSquare, Hash, Send, Paperclip, Users, Loader2, File, Image, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { useToast } from "../../context/ToastContext";
 import {
@@ -17,6 +18,7 @@ import RoleBadge from "../../components/shared/RoleBadge";
 import CommunityFeed from "./CommunityFeed";
 
 export default function Chat() {
+  const location = useLocation();
   const { user } = useUser();
   const { addToast } = useToast();
   const [channels, setChannels] = useState([]);
@@ -132,6 +134,19 @@ export default function Chat() {
       setChannels(channelsData);
       setPresence(presenceData);
       setDmUsers(dmUsersData);
+
+      const searchParams = new URLSearchParams(location.search);
+      const urlUserId = searchParams.get("user");
+      
+      if (urlUserId) {
+        const targetDMUser = dmUsersData.find((u) => u.id === Number(urlUserId));
+        if (targetDMUser) {
+          setActiveDM(targetDMUser);
+          setActiveChannel(null);
+          return;
+        }
+      }
+
       setActiveChannel((prev) => prev || channelsData[0] || null);
     } catch (err) {
       console.error("Error loading chat data:", err);

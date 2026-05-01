@@ -31,6 +31,8 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
 
     if (canAccessSyncChat) {
       items.push({ id: "chat", label: "SyncChat", path: "/chat" });
+    } else {
+      items.push({ id: "lobby", label: "Intern Lobby", path: "/lobby" });
     }
 
     items.push({ id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" });
@@ -83,16 +85,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
         ))}
       </nav>
 
-      {user?.role === "intern" && !user?.has_commenced && (
-        <div className="mt-4 p-3 bg-white/10 rounded-lg border border-white/20">
-          <p className="text-xs text-white/70 font-medium mb-1">
-            IC Stars Network
-          </p>
-          <p className="text-xs text-white/50">
-            Complete the program to unlock SyncChat and join the community.
-          </p>
-        </div>
-      )}
+
 
       <footer className="mt-auto pt-6 text-xs text-white/80 border-t border-white/20">
         v2.0 | ICCA

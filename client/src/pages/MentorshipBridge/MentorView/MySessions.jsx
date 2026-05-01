@@ -9,6 +9,7 @@ import { Calendar, Target, User, Clock } from "lucide-react";
 import SkillSelectModal from "../shared/SkillSelectModal";
 import ConfirmModal from "../../../components/shared/ConfirmModal";
 import RescheduleModal from "../../../components/shared/RescheduleModal";
+import SessionChat from "../shared/SessionChat";
 
 export default function MySessions({ sessions, loading, error, onRefresh }) {
   const { addToast } = useToast();
@@ -152,13 +153,21 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
 
       <div className="space-y-3">
         {sessions.map((session) => (
-          <SessionCard
-            key={session.id}
-            session={session}
-            onComplete={handleComplete}
-            onReschedule={handleReschedule}
-            onCancel={handleCancel}
-          />
+          <div key={session.id}>
+            <SessionCard
+              session={session}
+              onComplete={handleComplete}
+              onReschedule={handleReschedule}
+              onCancel={handleCancel}
+            />
+            <SessionChat
+              otherUser={{
+                id: session.intern_id,
+                name: session.intern_name,
+                role: "intern",
+              }}
+            />
+          </div>
         ))}
       </div>
 

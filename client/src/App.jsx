@@ -134,6 +134,19 @@ export default function App() {
               }
             />
             <Route
+              path="/lobby"
+              element={
+                <MaintenanceCheck>
+                  <ProtectedRoute
+                    disallowAdmin={true}
+                    requireIntern={true}
+                  >
+                    <Dashboard />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
+              }
+            />
+            <Route
               path="/mentorship"
               element={
                 <MaintenanceCheck>

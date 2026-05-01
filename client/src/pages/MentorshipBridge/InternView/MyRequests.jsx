@@ -5,6 +5,7 @@ import { useUser } from "../../../context/UserContext";
 import { Calendar, Clock, Target, XCircle, Users, ArrowRight } from "lucide-react";
 import ConfirmModal from "../../../components/shared/ConfirmModal";
 import RescheduleModal from "../../../components/shared/RescheduleModal";
+import SessionChat from "../shared/SessionChat";
 
 export default function MyRequests({
   pending,
@@ -198,13 +199,21 @@ export default function MyRequests({
           </div>
         : <div className="space-y-3">
             {accepted.map((session) => (
-              <RequestCard
-                key={session.id}
-                session={session}
-                type="accepted"
-                onCancel={handleCancel}
-                onReschedule={handleReschedule}
-              />
+              <div key={session.id}>
+                <RequestCard
+                  session={session}
+                  type="accepted"
+                  onCancel={handleCancel}
+                  onReschedule={handleReschedule}
+                />
+                <SessionChat
+                  otherUser={{
+                    id: session.mentor_id,
+                    name: session.mentor_name,
+                    role: session.mentor_role || "mentor",
+                  }}
+                />
+              </div>
             ))}
           </div>
         }

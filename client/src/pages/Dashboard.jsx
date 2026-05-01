@@ -13,6 +13,7 @@ const MentorshipBridge = React.lazy(
 const SkillTracker = React.lazy(() => import("./SkillTracker/SkillTracker"));
 const HealthStatus = React.lazy(() => import("../components/HealthStatus"));
 const Chat = React.lazy(() => import("./Chat/Chat"));
+const InternLobby = React.lazy(() => import("./InternLobby/InternLobby"));
 
 export default function Dashboard() {
   const location = useLocation();
@@ -33,6 +34,8 @@ export default function Dashboard() {
         return <HealthStatus />;
       case "chat":
         return <Chat />;
+      case "lobby":
+        return <InternLobby />;
       default:
         return <CollaborationHub />;
     }
@@ -59,7 +62,7 @@ export default function Dashboard() {
         <div key={activeTab} className="p-4 md:p-6 overflow-y-auto h-full">
           <main
             className={`${
-              activeTab === "chat" ? "h-full" : "max-w-7xl mx-auto"
+              activeTab === "chat" || activeTab === "lobby" ? "h-full" : "max-w-7xl mx-auto"
             } animate-fade-in`}
           >
             <Suspense
