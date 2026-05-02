@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ExternalLink, Github, Send, X } from "lucide-react";
+import { ExternalLink, FileText, Github, Send, X } from "lucide-react";
 import ConfirmModal from "../shared/ConfirmModal";
 import {
   updateProjectStatus,
@@ -9,7 +9,9 @@ import {
   removeProjectMember,
   fetchProjectDiscussions,
   postProjectDiscussion,
+  updateUser as updateUserProfile,
 } from "../../utils/api";
+import { useUser } from "../../context/UserContext";
 import styles from "./ProjectDetailModal.module.css";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
@@ -23,6 +25,7 @@ export default function ProjectDetailModal({
   fetchPortfolioDetails = false,
   onProjectUpdate,
 }) {
+  const { updateUser: updateCurrentUser } = useUser() || {};
   const [localProject, setLocalProject] = useState(project);
   const [loading, setLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -36,9 +39,18 @@ export default function ProjectDetailModal({
   const [discussionPosting, setDiscussionPosting] = useState(false);
   const [linkEditing, setLinkEditing] = useState(false);
   const [linkSaving, setLinkSaving] = useState(false);
+  const [featureSaving, setFeatureSaving] = useState(false);
+  const [isFeaturedProject, setIsFeaturedProject] = useState(
+    Number(currentUser?.featured_project_id) === Number(project?.id),
+  );
   const [linkDraft, setLinkDraft] = useState({
     github_url: project?.github_url || "",
     live_url: project?.live_url || "",
+    case_study_problem: project?.case_study_problem || "",
+    case_study_solution: project?.case_study_solution || "",
+    case_study_tech_stack: project?.case_study_tech_stack || "",
+    case_study_outcomes: project?.case_study_outcomes || "",
+    case_study_artifact_url: project?.case_study_artifact_url || "",
   });
 
   // Confirmation state
@@ -67,11 +79,19 @@ export default function ProjectDetailModal({
     setDiscussionDraft("");
     setDiscussionError("");
     setLinkEditing(false);
+    setIsFeaturedProject(
+      Number(currentUser?.featured_project_id) === Number(project?.id),
+    );
     setLinkDraft({
       github_url: project?.github_url || "",
       live_url: project?.live_url || "",
+      case_study_problem: project?.case_study_problem || "",
+      case_study_solution: project?.case_study_solution || "",
+      case_study_tech_stack: project?.case_study_tech_stack || "",
+      case_study_outcomes: project?.case_study_outcomes || "",
+      case_study_artifact_url: project?.case_study_artifact_url || "",
     });
-  }, [project]);
+  }, [currentUser?.featured_project_id, project]);
 
   useEffect(() => {
     if (!isOpen || !project || !fetchPortfolioDetails) return;
@@ -207,6 +227,11 @@ export default function ProjectDetailModal({
     setLinkDraft({
       github_url: source?.github_url || "",
       live_url: source?.live_url || "",
+      case_study_problem: source?.case_study_problem || "",
+      case_study_solution: source?.case_study_solution || "",
+      case_study_tech_stack: source?.case_study_tech_stack || "",
+      case_study_outcomes: source?.case_study_outcomes || "",
+      case_study_artifact_url: source?.case_study_artifact_url || "",
     });
   };
 
@@ -223,6 +248,11 @@ export default function ProjectDetailModal({
         {
           github_url: linkDraft.github_url.trim(),
           live_url: linkDraft.live_url.trim(),
+          case_study_problem: linkDraft.case_study_problem.trim(),
+          case_study_solution: linkDraft.case_study_solution.trim(),
+          case_study_tech_stack: linkDraft.case_study_tech_stack.trim(),
+          case_study_outcomes: linkDraft.case_study_outcomes.trim(),
+          case_study_artifact_url: linkDraft.case_study_artifact_url.trim(),
         },
       );
 
@@ -235,13 +265,39 @@ export default function ProjectDetailModal({
       setLinkDraft({
         github_url: updatedProject.github_url || "",
         live_url: updatedProject.live_url || "",
+        case_study_problem: updatedProject.case_study_problem || "",
+        case_study_solution: updatedProject.case_study_solution || "",
+        case_study_tech_stack: updatedProject.case_study_tech_stack || "",
+        case_study_outcomes: updatedProject.case_study_outcomes || "",
+        case_study_artifact_url: updatedProject.case_study_artifact_url || "",
       });
       setLinkEditing(false);
       onProjectUpdate?.();
     } catch (err) {
-      setError(err.message || "Could not update project links.");
+      setError(err.message || "Could not update project case study.");
     } finally {
       setLinkSaving(false);
+    }
+  };
+
+  const handleFeatureProject = async () => {
+    if (!currentUser?.id || !project?.id) return;
+
+    try {
+      setFeatureSaving(true);
+      setError("");
+      const updatedUser = await updateUserProfile(currentUser.id, {
+        featured_project_id: project.id,
+      });
+      setIsFeaturedProject(true);
+      updateCurrentUser?.({
+        featured_project_id: updatedUser.featured_project_id,
+      });
+      onProjectUpdate?.();
+    } catch (err) {
+      setError(err.message || "Could not feature this project.");
+    } finally {
+      setFeatureSaving(false);
     }
   };
 
@@ -260,7 +316,36 @@ export default function ProjectDetailModal({
       label: "Live Project",
       icon: ExternalLink,
     },
+    {
+      href:
+        detailProject?.case_study_artifact_url ||
+        localProject.case_study_artifact_url,
+      label: "Artifact",
+      icon: FileText,
+    },
   ].filter((link) => link.href);
+  const caseStudy = {
+    problem: detailProject?.case_study_problem || localProject.case_study_problem,
+    solution:
+      detailProject?.case_study_solution || localProject.case_study_solution,
+    techStack:
+      detailProject?.case_study_tech_stack ||
+      localProject.case_study_tech_stack,
+    outcomes:
+      detailProject?.case_study_outcomes || localProject.case_study_outcomes,
+  };
+  const techStackItems =
+    caseStudy.techStack ?
+      caseStudy.techStack
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
+  const hasCaseStudy =
+    Boolean(caseStudy.problem) ||
+    Boolean(caseStudy.solution) ||
+    Boolean(caseStudy.outcomes) ||
+    techStackItems.length > 0;
   const canPostDiscussion =
     currentUser &&
     (currentUser.role === "admin" ||
@@ -270,6 +355,11 @@ export default function ProjectDetailModal({
   const canEditProjectLinks =
     currentUser &&
     (currentUser.role === "admin" || localProject.owner_id === currentUser.id);
+  const canFeatureProject =
+    currentUser &&
+    (localProject.owner_id === currentUser.id ||
+      localProject.is_member === 1 ||
+      localProject.is_member === true);
 
   // Status dropdown helper
   const getValidActions = () => {
@@ -364,13 +454,83 @@ export default function ProjectDetailModal({
                   />
                 </label>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <textarea
+                  value={linkDraft.case_study_problem}
+                  onChange={(event) =>
+                    setLinkDraft((prev) => ({
+                      ...prev,
+                      case_study_problem: event.target.value,
+                    }))
+                  }
+                  rows={3}
+                  placeholder="Problem this project solves"
+                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark outline-none resize-none placeholder-text-secondary"
+                />
+                <textarea
+                  value={linkDraft.case_study_solution}
+                  onChange={(event) =>
+                    setLinkDraft((prev) => ({
+                      ...prev,
+                      case_study_solution: event.target.value,
+                    }))
+                  }
+                  rows={3}
+                  placeholder="Solution the team built"
+                  className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark outline-none resize-none placeholder-text-secondary"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
+                <FileText className="w-4 h-4 text-text-secondary flex-shrink-0" />
+                <input
+                  type="url"
+                  value={linkDraft.case_study_artifact_url}
+                  onChange={(event) =>
+                    setLinkDraft((prev) => ({
+                      ...prev,
+                      case_study_artifact_url: event.target.value,
+                    }))
+                  }
+                  placeholder="Artifact URL (demo video, docs, screenshot album)"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-neutral-dark outline-none placeholder-text-secondary"
+                />
+              </label>
+
+              <input
+                type="text"
+                value={linkDraft.case_study_tech_stack}
+                onChange={(event) =>
+                  setLinkDraft((prev) => ({
+                    ...prev,
+                    case_study_tech_stack: event.target.value,
+                  }))
+                }
+                placeholder="Tech stack, comma separated"
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark outline-none placeholder-text-secondary"
+              />
+
+              <textarea
+                value={linkDraft.case_study_outcomes}
+                onChange={(event) =>
+                  setLinkDraft((prev) => ({
+                    ...prev,
+                    case_study_outcomes: event.target.value,
+                  }))
+                }
+                rows={3}
+                placeholder="Outcomes, impact, or what changed"
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark outline-none resize-none placeholder-text-secondary"
+              />
+
               <div className="flex flex-wrap gap-2">
                 <button
                   type="submit"
                   disabled={linkSaving}
                   className="px-3 py-1.5 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 disabled:opacity-50"
                 >
-                  {linkSaving ? "Saving..." : "Save Links"}
+                  {linkSaving ? "Saving..." : "Save Case Study"}
                 </button>
                 <button
                   type="button"
@@ -398,6 +558,20 @@ export default function ProjectDetailModal({
                   {link.label}
                 </a>
               ))}
+              {canFeatureProject && (
+                <button
+                  type="button"
+                  onClick={handleFeatureProject}
+                  disabled={featureSaving || isFeaturedProject}
+                  className="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:text-primary hover:bg-surface-highlight disabled:opacity-60 disabled:cursor-default"
+                >
+                  {isFeaturedProject ?
+                    "Featured on Profile"
+                  : featureSaving ?
+                    "Featuring..."
+                  : "Feature on Profile"}
+                </button>
+              )}
               {canEditProjectLinks && (
                 <button
                   type="button"
@@ -407,7 +581,9 @@ export default function ProjectDetailModal({
                   }}
                   className="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:text-primary hover:bg-surface-highlight"
                 >
-                  {projectLinks.length > 0 ? "Edit Links" : "Add Links"}
+                  {hasCaseStudy || projectLinks.length > 0 ?
+                    "Edit Case Study"
+                  : "Add Case Study"}
                 </button>
               )}
             </div>
@@ -478,6 +654,62 @@ export default function ProjectDetailModal({
                   <span className="text-sm px-3 py-1 rounded-lg bg-blue-500/10 text-blue-500">
                     Public - View Only
                   </span>
+                )}
+              </div>
+            )}
+
+            {hasCaseStudy && (
+              <div className="rounded-xl border border-border bg-surface-highlight/40 p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h3 className="text-sm font-semibold text-primary">
+                    Case Study
+                  </h3>
+                  {techStackItems.length > 0 && (
+                    <div className="flex flex-wrap gap-1 justify-end">
+                      {techStackItems.slice(0, 6).map((item) => (
+                        <span
+                          key={item}
+                          className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                        >
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {caseStudy.problem && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                        Problem
+                      </p>
+                      <p className="text-sm text-neutral-dark whitespace-pre-wrap">
+                        {caseStudy.problem}
+                      </p>
+                    </div>
+                  )}
+                  {caseStudy.solution && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                        Solution
+                      </p>
+                      <p className="text-sm text-neutral-dark whitespace-pre-wrap">
+                        {caseStudy.solution}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {caseStudy.outcomes && (
+                  <div className="mt-3">
+                    <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                      Outcomes
+                    </p>
+                    <p className="text-sm text-neutral-dark whitespace-pre-wrap">
+                      {caseStudy.outcomes}
+                    </p>
+                  </div>
                 )}
               </div>
             )}

@@ -2,49 +2,266 @@
 
 ## Project Overview
 
-SyncUp is a full-stack intern collaboration and mentorship platform that tracks professional growth through an evidence-based Skill Signal pipeline. The platform connects interns, mentors, and alumni through project collaboration and structured mentorship sessions.
+SyncUp is a full-stack intern collaboration and mentorship platform that tracks professional growth through an evidence-based Skill Signal pipeline. The platform connects interns, residents, mentors, and alumni through project collaboration, structured mentorship sessions, and community communication.
 
 ## Architecture
 
 ### Frontend Architecture (React + Vite)
 
-The frontend demonstrates modern React patterns:
-
 - **React 19** with functional components and hooks
-- **Vite** for fast development and builds
-- **Tailwind CSS** for responsive styling
-- **AG Charts and Recharts** for data visualization
-- **React Context** for state management
-- **React Router** for navigation
+- **Vite 7** for fast development and builds
+- **Tailwind CSS v4** for responsive styling
+- **Recharts** and **AG Charts** for data visualization
+- **React Context** for state management (UserContext, ToastContext, ThemeContext, OnboardingContext)
+- **React Router DOM** for navigation
+- **Lucide React** for icons
 
 ### Backend Architecture (Node.js + Express)
 
-- **Express.js** RESTful API
-- **MySQL** database with connection pooling
-- **Swagger/OpenAPI** for API documentation
+- **Express 5** RESTful API
+- **MySQL 8** database with connection pooling
+- **Swagger/OpenAPI** for API documentation (available at `/api-docs`)
 - **Express Rate Limiting** for API protection
 - **Helmet** for security headers
+- **Multer** for file upload handling
+- **Express Validator** for request validation
+
+---
+
+## API Endpoints
+
+### Health
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check with DB connectivity |
+
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | User registration (invitation required) |
+| POST | `/api/auth/login` | User login |
+| GET | `/api/auth/me` | Get current user |
+| POST | `/api/auth/logout` | User logout |
+
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users` | Get all users |
+| GET | `/api/users/:userId/profile` | Get user profile |
+| GET | `/api/users/:userId/skill-inventory` | Get user skill inventory with signals |
+| GET | `/api/users/:userId/activity-timeline` | Get user activity timeline |
+| PUT | `/api/users/:userId/profile` | Update user profile |
+| PUT | `/api/users/:userId/password` | Change password |
+| DELETE | `/api/users/:userId` | Delete user account |
+
+### Projects
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/projects` | Get all projects |
+| GET | `/api/projects/skills` | Get all skills used in projects |
+| POST | `/api/projects` | Create project |
+| POST | `/api/projects/:id/skills` | Attach skills to project |
+| POST | `/api/projects/:projectId/members` | Add project member |
+| DELETE | `/api/projects/:projectId/members` | Remove project member |
+| PUT | `/api/projects/:id/status` | Update project status |
+| PUT | `/api/projects/:id/links` | Update project links |
+| GET | `/api/projects/:id/skills` | Get project skills |
+| GET | `/api/projects/user/:userId` | Get user's projects |
+| GET | `/api/projects/:projectId/portfolio-details` | Get portfolio details |
+| GET | `/api/projects/:projectId/metrics` | Get project metrics |
+| GET | `/api/projects/:projectId/discussions` | Get project discussions |
+| POST | `/api/projects/:projectId/discussions` | Create project discussion |
+| POST | `/api/projects/:projectId/join-request` | Submit join request |
+| GET | `/api/projects/:projectId/requests` | Get project join requests |
+| GET | `/api/projects/requests/user/:userId` | Get user's project requests |
+| GET | `/api/projects/:projectId/join-request/status/:userId` | Check join request status |
+| PUT | `/api/projects/:projectId/requests/:requestId/approve` | Approve join request |
+| PUT | `/api/projects/:projectId/requests/:requestId/reject` | Reject join request |
+| GET | `/api/projects/:id/team-momentum` | Get team momentum |
+
+### Progress Updates
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/progress_updates` | Get all progress updates |
+| POST | `/api/progress_updates` | Create progress update |
+| PUT | `/api/progress_updates/:id` | Update progress update |
+| DELETE | `/api/progress_updates/:id` | Delete progress update |
+| GET | `/api/progress_updates/project/:projectId` | Get updates for a project |
+
+### Mentorship
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/mentorship/mentors` | Get all mentors |
+| GET | `/api/mentorship/mentors/available` | Get available mentors |
+| GET | `/api/mentorship/mentor/:id/details` | Get mentor details |
+| GET | `/api/mentorship/mentors/project` | Get project mentors |
+| GET | `/api/mentorship/sessions` | Get all sessions |
+| POST | `/api/mentorship/sessions` | Create session request |
+| PUT | `/api/mentorship/sessions/:id` | Update session status |
+| PUT | `/api/mentorship/sessions/:id/details` | Update session details |
+| PUT | `/api/mentorship/sessions/:id/reschedule` | Reschedule session |
+| DELETE | `/api/mentorship/sessions/:id` | Delete session |
+| GET | `/api/mentorship/sessions/:id/skills` | Get session skills |
+| GET | `/api/mentorship/sessions/intern/:internId` | Get intern's sessions |
+| GET | `/api/mentorship/sessions/mentor/:mentorId` | Get mentor's sessions |
+| GET | `/api/mentorship/mentors/:id/availability` | Get mentor availability |
+
+### Skills
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/skills` | Get all skills |
+| GET | `/api/skills/user/:id/momentum` | Get user skill momentum |
+| GET | `/api/skills/user/:id/distribution` | Get skill distribution |
+| GET | `/api/skills/user/:id/activity` | Get skill activity |
+| GET | `/api/skills/user/:id/summary` | Get skill summary |
+| GET | `/api/skills/user/:id/recent` | Get recent skills |
+| GET | `/api/skills/user/:id/signals` | Get user skill signals with validation counts |
+| POST | `/api/skills/:signalId/validate` | Add validation (upvote/endorsement) |
+| DELETE | `/api/skills/:signalId/validate` | Remove validation |
+| GET | `/api/skills/:signalId/validations` | Get validation counts |
+| GET | `/api/skills/user/:userId/validations` | Get user's received validations |
+| GET | `/api/skills/user/:userId/has-validated` | Check which signals user validated |
+| GET | `/api/skills/verifications/pending` | Get pending verifications |
+| POST | `/api/skills/verifications/:id/verify` | Verify a skill claim |
+| POST | `/api/skills/verifications/:id/challenge` | Challenge a skill claim |
+
+### Chat
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/chat/channels` | Get channels |
+| POST | `/api/chat/channels` | Create channel |
+| POST | `/api/chat/channels/:channelId/join` | Join channel |
+| DELETE | `/api/chat/channels/:channelId/leave` | Leave channel |
+| GET | `/api/chat/introductions` | Get introduction messages |
+| GET | `/api/chat/channels/:channelId/messages` | Get channel messages |
+| GET | `/api/chat/dm/:userId` | Get DM messages |
+| POST | `/api/chat/messages` | Send message |
+| GET | `/api/chat/presence` | Get user presence |
+| POST | `/api/chat/presence` | Update presence |
+| GET | `/api/chat/dm-users` | Get DM users |
+
+### Announcements
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/announcements` | Get announcements |
+| POST | `/api/announcements` | Create announcement |
+| POST | `/api/announcements/:id/read` | Mark announcement read |
+| PUT | `/api/announcements/:id` | Update announcement |
+| DELETE | `/api/announcements/:id` | Delete announcement |
+
+### Events
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/events` | Get events |
+| POST | `/api/events` | Create event |
+| PUT | `/api/events/:id` | Update event |
+| POST | `/api/events/:id/rsvp` | RSVP to event |
+| DELETE | `/api/events/:id` | Delete event |
+
+### Notifications
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/notifications/:userId` | Get user notifications |
+| GET | `/api/notifications/:userId/unread-count` | Get unread count |
+| PUT | `/api/notifications/:id/read` | Mark as read |
+| PUT | `/api/notifications/:userId/read-all` | Mark all as read |
+| DELETE | `/api/notifications/:id` | Delete notification |
+
+### Badges
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/badges` | Get all badges |
+| GET | `/api/badges/users/:userId` | Get user's earned badges |
+| POST | `/api/badges/users/:userId/check` | Check/award badges |
+| GET | `/api/badges/users/:userId/stats` | Get user stats for badge criteria |
+
+### Upload
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/upload/upload` | Upload file (chat attachments) |
+| POST | `/api/upload/avatar` | Upload avatar |
+| GET | `/api/upload/avatar/:userId` | Get avatar |
+| DELETE | `/api/upload/avatar/:userId` | Delete avatar |
+
+### Errors
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/errors` | Get all errors (paginated) |
+| GET | `/api/errors/stats` | Get error statistics |
+| GET | `/api/errors/recent` | Get recent errors |
+| POST | `/api/errors` | Report error |
+| PUT | `/api/errors/:id` | Update error status |
+| DELETE | `/api/errors/:id` | Delete error |
+
+### Admin
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/admin/active-sessions` | Count online users |
+| GET | `/api/admin/stats` | Platform stats (users, projects, sessions, inactive) |
+| GET | `/api/admin/platform-stats` | Platform info (total counts, version, timezone) |
+| GET | `/api/admin/growth-stats` | Daily user/project growth (30 days) |
+| GET | `/api/admin/settings/maintenance` | Get maintenance mode status |
+| PUT | `/api/admin/settings/maintenance` | Toggle maintenance mode |
+| POST | `/api/admin/invitations` | Create invitation |
+| GET | `/api/admin/invitations` | List invitations |
+| DELETE | `/api/admin/invitations/:id` | Revoke invitation |
+| GET | `/api/admin/invitations/validate` | Validate invitation token |
+| POST | `/api/admin/register` | Register with invitation |
+| POST | `/api/admin/reset-demo` | Reset and seed demo data (API key protected) |
+
+### Analytics
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/analytics/projects/active` | Active projects |
+| GET | `/api/analytics/updates/weekly` | Weekly updates |
+| GET | `/api/analytics/mentors/engagement` | Mentor engagement |
+| GET | `/api/analytics/correlation/mentorship-growth` | Mentorship-growth correlation |
+| GET | `/api/analytics/correlation/effective-pairings` | Effective skill pairings |
+| GET | `/api/analytics/correlation/engagement-loops` | Engagement loops |
+
+---
 
 ## Database Schema
 
-### Core Tables
-
+### Users Table
 ```sql
--- Users table
 CREATE TABLE users (
   id INT PRIMARY KEY AUTO_INCREMENT,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   name VARCHAR(255) NOT NULL,
-  role ENUM('intern', 'mentor', 'admin') NOT NULL,
+  role ENUM('intern', 'mentor', 'resident', 'alumni', 'admin') NOT NULL,
   bio TEXT,
+  headline VARCHAR(255),
+  github_url VARCHAR(500),
+  linkedin_url VARCHAR(500),
+  personal_site_url VARCHAR(500),
+  featured_project_id INT,
+  has_commenced BOOLEAN DEFAULT FALSE,
+  cycle VARCHAR(50),
   profile_pic VARCHAR(500),
   is_active BOOLEAN DEFAULT TRUE,
+  -- Privacy settings
+  profile_visibility ENUM('public', 'private') DEFAULT 'public',
+  show_email BOOLEAN DEFAULT FALSE,
+  show_projects BOOLEAN DEFAULT TRUE,
+  show_skills BOOLEAN DEFAULT TRUE,
+  accept_mentorship BOOLEAN DEFAULT TRUE,
+  auto_accept_teammates BOOLEAN DEFAULT FALSE,
+  -- Notification preferences
+  email_notifications BOOLEAN DEFAULT TRUE,
+  notify_join_requests BOOLEAN DEFAULT TRUE,
+  notify_mentions BOOLEAN DEFAULT TRUE,
+  notify_session_reminders BOOLEAN DEFAULT TRUE,
+  notify_project_updates BOOLEAN DEFAULT TRUE,
+  notify_weekly_summary BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+```
 
--- Projects table
+### Projects Table
+```sql
 CREATE TABLE projects (
   id INT PRIMARY KEY AUTO_INCREMENT,
   title VARCHAR(255) NOT NULL,
@@ -52,292 +269,114 @@ CREATE TABLE projects (
   owner_id INT NOT NULL,
   status ENUM('planned', 'active', 'completed', 'archived', 'seeking_members') DEFAULT 'planned',
   visibility ENUM('public', 'private') DEFAULT 'public',
-  start_date DATE,
-  end_date DATE,
+  github_url VARCHAR(500),
+  live_url VARCHAR(500),
+  case_study_problem TEXT,
+  case_study_solution TEXT,
+  case_study_tech_stack TEXT,
+  case_study_outcomes TEXT,
+  case_study_artifact_url VARCHAR(500),
   metadata JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (owner_id) REFERENCES users(id)
-);
-
--- Project members
-CREATE TABLE project_members (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  project_id INT NOT NULL,
-  user_id INT NOT NULL,
-  role ENUM('owner', 'contributor', 'collaborator') DEFAULT 'collaborator',
-  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (project_id) REFERENCES projects(id),
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  UNIQUE KEY unique_membership (project_id, user_id)
-);
-
--- Skills catalog
-CREATE TABLE skills (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  skill_name VARCHAR(255) NOT NULL,
-  category VARCHAR(100),
-  UNIQUE KEY unique_skill (skill_name)
-);
-
--- Project skills (explicit skill scope)
-CREATE TABLE project_skills (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  project_id INT NOT NULL,
-  skill_id INT NOT NULL,
-  FOREIGN KEY (project_id) REFERENCES projects(id),
-  FOREIGN KEY (skill_id) REFERENCES skills(id),
-  UNIQUE KEY unique_project_skill (project_id, skill_id)
-);
-
--- User skill signals (append-only, single source of truth)
-CREATE TABLE user_skill_signals (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  skill_id INT NOT NULL,
-  source_type ENUM('project', 'update', 'mentorship') NOT NULL,
-  source_id INT NOT NULL,
-  signal_type ENUM('joined', 'update', 'completed', 'validated') NOT NULL,
-  weight INT DEFAULT 1,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (skill_id) REFERENCES skills(id),
-  UNIQUE KEY unique_signal (user_id, skill_id, source_type, source_id, signal_type)
-);
-
--- Mentorship sessions
-CREATE TABLE mentorship_sessions (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  intern_id INT NOT NULL,
-  mentor_id INT NOT NULL,
-  topic VARCHAR(255),
-  details TEXT,
-  session_focus ENUM('project_support', 'technical_guidance', 'career', 'leadership'),
-  scheduled_at DATETIME,
-  status ENUM('pending', 'accepted', 'completed', 'declined', 'rescheduled') DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (intern_id) REFERENCES users(id),
-  FOREIGN KEY (mentor_id) REFERENCES users(id)
-);
-
--- Session skills
-CREATE TABLE session_skills (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  session_id INT NOT NULL,
-  skill_id INT NOT NULL,
-  FOREIGN KEY (session_id) REFERENCES mentorship_sessions(id),
-  FOREIGN KEY (skill_id) REFERENCES skills(id),
-  UNIQUE KEY unique_session_skill (session_id, skill_id)
-);
-
--- Progress updates
-CREATE TABLE progress_updates (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  project_id INT NOT NULL,
-  user_id INT NOT NULL,
-  content TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (project_id) REFERENCES projects(id),
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- Chat channels
-CREATE TABLE chat_channels (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Chat messages
-CREATE TABLE chat_messages (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  channel_id INT NOT NULL,
-  sender_id INT NOT NULL,
-  content TEXT,
-  file_url VARCHAR(500),
-  file_name VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (channel_id) REFERENCES chat_channels(id),
-  FOREIGN KEY (sender_id) REFERENCES users(id)
-);
-
--- Direct messages
-CREATE TABLE chat_dm_messages (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user1_id INT NOT NULL,
-  user2_id INT NOT NULL,
-  sender_id INT NOT NULL,
-  content TEXT,
-  file_url VARCHAR(500),
-  file_name VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user1_id) REFERENCES users(id),
-  FOREIGN KEY (user2_id) REFERENCES users(id),
-  FOREIGN KEY (sender_id) REFERENCES users(id)
-);
-
--- User presence
-CREATE TABLE chat_presence (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  status ENUM('online', 'away', 'offline') DEFAULT 'offline',
-  channel_id INT,
-  last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- Badges
-CREATE TABLE badges (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(255) NOT NULL,
-  description TEXT,
-  icon VARCHAR(100),
-  category ENUM('project', 'mentorship', 'engagement') NOT NULL
-);
-
--- User badges
-CREATE TABLE user_badges (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  badge_id INT NOT NULL,
-  earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (badge_id) REFERENCES badges(id),
-  UNIQUE KEY unique_user_badge (user_id, badge_id)
-);
-
--- Notifications
-CREATE TABLE notifications (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  type VARCHAR(100) NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  message TEXT,
-  is_read BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
+
+### Core Tables
+| Table | Purpose |
+|-------|---------|
+| `project_members` | User-project membership (project_id, user_id, role, joined_at) |
+| `project_skills` | Skills associated with projects (project_id, skill_id) |
+| `project_discussions` | Project-specific discussions |
+| `project_join_requests` | Join request management |
+| `progress_updates` | Progress updates (project_id, user_id, content) |
+| `skills` | Master skill catalog (skill_name, category) |
+| `user_skill_signals` | Append-only signals (user_id, skill_id, source_type, source_id, signal_type, weight) |
+| `skill_validations` | Peer upvotes and mentor endorsements |
+| `skill_verifications` | Team member skill claim verification |
+| `mentorship_sessions` | Mentorship sessions (intern_id, mentor_id, topic, details, session_focus, scheduled_at, status) |
+| `mentorship_session_skills` | Skills practiced in sessions |
+| `notifications` | In-app notifications |
+| `channels` | Chat channels |
+| `channel_members` | Channel membership |
+| `messages` | Chat messages (channel + DM) |
+| `user_presence` | Online/offline/away status |
+| `announcements` | Org-wide announcements |
+| `announcement_reads` | Read tracking for announcements |
+| `events` | Community events |
+| `event_rsvps` | Event RSVPs |
+| `badges` | Badge definitions (name, description, icon, category) |
+| `user_badges` | Earned badges per user |
+| `system_errors` | Error tracking |
+| `platform_settings` | Key-value settings |
+| `admin_invitations` | Invitation-based registration |
+
+---
 
 ## Skill Signal Pipeline (A -> B -> C -> D)
 
-The core innovation is an evidence-based skill tracking system:
-
 ### A - Project Context
-Skills must be tied to concrete project scope. Project skills are explicitly defined in project_skills table.
+Skills must be tied to concrete project scope. Project skills are explicitly defined in `project_skills` table. Project metadata `skill_ideas` is informational only and does NOT generate signals.
 
 ### B - Mentorship Session
-Mentorship does NOT emit skill signals by default. Only explicit skill verification during session completion generates signals.
+Mentorship does NOT emit skill signals by default. Only explicit skill verification during session completion generates signals. This prevents mentorship from being a loophole for skill inflation.
 
 ### C - Progress Updates
-When a progress update is posted, signals are emitted for all project skills.
+When a progress update is posted, signals are emitted for all project skills via `emitSkillSignals()`. If no project_skills exist, no signals are emitted.
 
 ### D - Analytics Layer
-All skill charts read exclusively from user_skill_signals.
+All skill charts read exclusively from `user_skill_signals`. Distribution, momentum, and activity are derived from signals. No direct writes to aggregated tables.
 
-```javascript
-// skillSignalService.js - Centralized signal emission
-export async function emitSkillSignals({
-  userId,
-  sourceType,
-  sourceId,
-  signalType,
-  skillIds = [],
-  weight = 1,
-  connection,
-}) {
-  // Guardrails: Only one service writes to user_skill_signals
-  // Anti-gaming: Check for existing signals before inserting
-  // Uniqueness constraint prevents duplicates
-}
-```
+### Signal Types and Weights
+- **joined**: Weight for joining a project
+- **update**: Weight for posting progress updates
+- **completed**: Weight for completing milestones
+- **validated**: Higher weight for mentor-verified skills
 
-## API Routes
+### Guardrails
+- Only `skillSignalService` can write to `user_skill_signals`
+- All controllers must use `emitSkillSignals` function
+- Append-only design prevents data drift
+- Uniqueness constraints prevent duplicate signals
+- See [MENTORSHIP_GUARDRAILS.md](MENTORSHIP_GUARDRAILS.md) for full constraint documentation
 
-### Authentication
-- POST /auth/register
-- POST /auth/login
-- GET /auth/me
-- POST /auth/logout
+---
 
-### Users
-- GET /users
-- GET /users/:id/profile
-- PUT /users/:id
-- POST /users/:id/avatar
+## Services
 
-### Projects
-- GET /projects
-- POST /projects
-- GET /projects/:id
-- PUT /projects/:id
-- POST /projects/:id/join
-- POST /projects/:id/leave
-- POST /projects/:id/skills
+| Service | Purpose |
+|---------|---------|
+| `skillSignalService.js` | Centralized skill signal emission and momentum calculation |
+| `badgeService.js` | Badge eligibility checking and awarding |
+| `checkBadges.js` | Badge checking helper |
+| `notificationService.js` | Notification creation and delivery |
 
-### Progress Updates
-- GET /progress_updates
-- POST /progress_updates
+---
 
-### Mentorship
-- GET /mentorship/mentors
-- GET /mentorship/sessions
-- POST /mentorship/sessions
-- POST /mentorship/sessions/:id/complete
+## Middleware
 
-### Skills
-- GET /skills/user/:id/distribution
-- GET /skills/user/:id/momentum
-- GET /skills/user/:id/activity
-- GET /skills/user/:id/signals
+| Middleware | Purpose |
+|------------|---------|
+| `maintenanceMode.js` | Blocks non-admin requests when maintenance mode is active |
 
-### Chat
-- GET /chat/channels
-- POST /chat/channels
-- GET /chat/channels/:id/messages
-- POST /chat/messages
-
-### Badges
-- GET /badges
-- GET /badges/users/:id
-
-### Admin
-- GET /admin/stats
-- GET /admin/errors
-- GET /admin/health
-
-## Key Features Implemented
-
-1. **Authentication System**: User registration, login, role-based access control
-2. **Collaboration Hub**: Project management, team features, progress updates
-3. **Mentorship Bridge**: Mentor directory, session management, skill verification
-4. **Skill Tracker**: Evidence-based analytics with distribution, momentum, activity charts
-5. **Real-Time Chat**: Channels, direct messages, presence system
-6. **Badge System**: Achievement tracking and notifications
-7. **Admin Dashboard**: User management, analytics, error tracking, platform settings
+---
 
 ## Security Features
 
 - Password hashing
-- JWT session management
-- Rate limiting on API endpoints
+- Rate limiting (tiered: general, strict, create, sensitive, admin)
 - Helmet security headers
 - Input validation with express-validator
 - SQL injection prevention via parameterized queries
+- Invitation-based registration
+- Role-based access control
 
-## Skills Demonstrated
+---
 
-- React 19 with hooks and context
-- Node.js and Express API development
-- MySQL database design with complex relationships
-- RESTful API design
-- Authentication and authorization
-- Real-time features (polling-based)
-- Data visualization with AG Charts and Recharts
-- Skill tracking system design
-- Anti-gaming guardrails
-- Admin dashboard development
-- File upload handling
-- Swagger API documentation
+## Known Limitations
+
+- Local file storage (production would use cloud storage)
+- Polling-based real-time updates (production would use WebSockets)
+- No email notifications (user preference columns exist but no email service)
+- No third-party OAuth (email/password only)
+- Azure SQL driver installed but commented out; currently using MySQL

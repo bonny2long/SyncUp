@@ -1,161 +1,152 @@
 # Remaining Features - Priority List
 
-> **Last Updated:** 2026-02-13
+> **Last Updated:** 2026-05-02
 
 ---
 
-## What's Already Built ✅
+## What's Already Built
 
 | Feature | Status |
 |---------|--------|
-| CollaborationHub | ✅ |
-| MentorshipBridge | ✅ |
-| Skill Tracker | ✅ |
-| Project Portfolio | ✅ |
-| Search & Discovery | ✅ |
-| Activity Feed | ✅ |
-| Team Dashboard (Analytics) | ✅ |
-| Team Chat | ✅ |
-| Badges System | ✅ |
-| Smart Skill Suggestions | ✅ |
-| Input Validation | ✅ |
-| Rate Limiting | ✅ |
-| API Documentation | ✅ |
+| Collaboration Hub | Done |
+| Mentorship Bridge | Done |
+| Skill Tracker | Done |
+| Project Portfolio | Done |
+| SyncChat (Community Chat) | Done |
+| ICAA HQ (Announcements, Events, Welcomes) | Done |
+| Intern Lobby | Done |
+| Commencement System | Done |
+| Announcement Read Tracking | Done |
+| Event RSVP | Done |
+| Project Discussions | Done |
+| Project Case Studies | Done |
+| Profile Credential Layer | Done |
+| Credential Readiness Scoring | Done |
+| Skill Peer Validations | Done |
+| Badges System | Done |
+| Admin Dashboard | Done |
+| Invitation System | Done |
+| Error Tracking | Done |
+| Maintenance Mode | Done |
+| Onboarding Tour | Done |
+| Resume PDF Export | Done |
+| Swagger API Docs | Done |
+| File Uploads (Chat, Avatar) | Done |
+| Analytics Correlations | Done |
 
 ---
 
-## Remaining Features (Not Done)
+## Remaining Features
 
-### HIGH PRIORITY
+### HIGH PRIORITY (from ICAA Final Plan)
 
-#### 1. Skill Upvote/Validation System
-**What:** Allow team members to validate each other's skill signals
+#### 1. Welcome Message Metadata
+**What:** Store structured metadata for commencement welcomes instead of parsing from text.
 
-**Database:**
-```sql
-CREATE TABLE skill_validations (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  signal_id INT NOT NULL,
-  validator_id INT NOT NULL,
-  validation_type ENUM('upvote', 'mentor_endorsement') NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_validation (signal_id, validator_id, validation_type)
-);
-```
+**Current:** Welcome grouping parses name/cycle from message text.
+**Better:** Store `introduced_user_id`, `cycle`, and `commencement_id` as separate columns.
 
-**Frontend:**
-- Upvote button on skill signals
-- Validation count display
+#### 2. Welcome Read Tracking
+**What:** Track which users have seen grouped welcome messages.
 
-**Guardrails:**
-- Upvotes DON'T create new signals (preserve integrity)
-- Only project team members can upvote
+**Features:**
+- Once a user views a welcome group, it leaves their HQ strip
+- Admin can see who has not seen recent welcomes
 
----
+#### 3. Unread Announcement Roster
+**What:** Admin view showing which specific users have not read an announcement.
 
-#### 2. Mentorship Engagement UI
-**What:** Visual mentor leaderboard and engagement metrics
+**Current:** Read/unread counts and reader list exist.
+**Next:** Explicit unread roster for follow-up.
 
-**Status:** API endpoint exists (`/api/analytics/mentors/engagement`), needs UI component
+#### 4. Project Discussion Enhancements
+**What:** Richer project discussion experience.
 
-**Features needed:**
-- Leaderboard display
-- Response rate metrics
-- Impact visualization
+**Features:**
+- Unread counts or activity badges on project discussions
+- Edit/delete for project discussion messages
+- Notifications for team members when discussions are posted
+- Mentor access rules for projects they are advising
 
 ---
 
 ### MEDIUM PRIORITY
 
-#### 3. Activity Correlation Insights
-**What:** Show patterns across collaboration and mentorship
+#### 5. ICAA Brand Polish
+**What:** Apply ICAA branding guide to the entire platform.
+
+**Scope:**
+- Primary/accent/neutral color standardization
+- Typography treatment
+- Button and card identity pass
+- Badge visual system (Intern, Resident, Alumni, Mentor, Admin)
+- Admin and community surface styling
+
+#### 6. Rich Project Artifacts
+**What:** Go beyond URL-only artifacts for projects.
 
 **Features:**
-- Correlation: "Teams with mentorship grow X% faster"
-- "Most Effective Pairings" - skill combinations
-- "Engagement Loops" - mentorship → project → skill growth
+- Screenshot upload for projects
+- Demo video embedding
+- Document upload (PDF, docs)
+- Media gallery in project detail
 
----
-
-#### 4. Team Skill Synergy Views
-**What:** Show complementary skills across team members
+#### 7. Profile Page Polish
+**What:** Make profiles feel like professional member pages.
 
 **Features:**
-- Skills heatmap: Who has what, gaps, overlaps
-- "Skill Diversity Score" for each team
-- "Recommended Skills" based on team gaps
+- Better profile header design
+- Role/cycle badge placement across member lists, chat, admin rosters
+- Activity timeline (commenced, project joined, project completed, mentorship completed, badges earned)
+- Project highlights section
+- Credential readiness checklist improvements
 
----
+#### 8. HQ Analytics Summary
+**What:** Admin dashboard section for HQ operations metrics.
 
-#### 5. Career Readiness Score
-**What:** Score based on skill diversity, depth, consistency
-
-**Shows:**
-- Progress toward role (e.g., "75% ready for Senior Dev")
-- Gap analysis (missing skills)
-- Comparison to role requirements
-
-**Database:**
-```sql
-CREATE TABLE role_benchmarks (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  role_name VARCHAR(100) NOT NULL,
-  skill_id INT NOT NULL,
-  minimum_signals INT NOT NULL,
-  category ENUM('technical', 'soft', 'leadership') NOT NULL
-);
-
-CREATE TABLE user_role_progress (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  role_id INT NOT NULL,
-  completion_percentage DECIMAL(5,2) DEFAULT 0,
-  last_assessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+**Features:**
+- Active announcement count
+- Unread announcement count
+- Upcoming events
+- RSVP totals
+- Recent commencements
+- Announcement detail modal (instead of inline)
 
 ---
 
 ### LOWER PRIORITY
 
-#### 6. AI-Assisted Content Tagging
-**What:** Extract skill mentions from update content
-
-**Features:**
-- Heuristic keyword matching
-- "Did you mean...?" suggestions
-- Visual distinction: AI-suggested vs user-declared
-
----
-
-#### 7. Personal Growth Recommendations
-**What:** Actionable next steps based on data
+#### 9. Personal Growth Recommendations
+**What:** Actionable next steps based on skill data.
 
 **Features:**
 - "Your fastest growing skill" with continue suggestion
 - "Neglected skills" - skills you haven't practiced recently
 - "Team needs" - skills your team is looking for
 
----
-
-#### 8. Advanced Momentum Analytics
-**What:** Deeper insights into growth patterns
+#### 10. Team Skill Synergy Views
+**What:** Show complementary skills across team members.
 
 **Features:**
-- Seasonal trends: "Your skills grow faster in Q3"
-- Velocity tracking: "React skill momentum: +2.3 signals/week"
-- Prediction: "On track for X skill signals by Dec 2025"
+- Skills heatmap: Who has what, gaps, overlaps
+- "Skill Diversity Score" for each team
+- "Recommended Skills" based on team gaps
 
----
-
-#### 9. Platform Health Dashboard
-**What:** System-wide engagement metrics
+#### 11. Advanced Momentum Analytics
+**What:** Deeper insights into growth patterns.
 
 **Features:**
-- User activity funnels
-- Project completion rates
-- Mentorship effectiveness
-- Skill ecosystem health
+- Seasonal trends
+- Velocity tracking per skill
+- Prediction models
+
+#### 12. External GitHub API Integration
+**What:** Auto-import repos and activity from GitHub.
+
+**Features:**
+- Link GitHub account to profile
+- Auto-populate project repos from GitHub
+- Activity sync
 
 ---
 
@@ -163,23 +154,27 @@ CREATE TABLE user_role_progress (
 
 | Order | Feature | Effort | Impact |
 |-------|---------|--------|--------|
-| 1 | Skill Upvote System | Medium | High |
-| 2 | Mentorship Engagement UI | Low | Medium |
-| 3 | Activity Correlation | Medium | Medium |
-| 4 | Team Skill Synergy | Medium | Medium |
-| 5 | Career Readiness | High | Medium |
-| 6 | Personal Growth Recs | Low | Medium |
-| 7 | AI Content Tagging | Medium | Low |
-| 8 | Advanced Analytics | Medium | Low |
-| 9 | Platform Health | Low | Low |
+| 1 | Welcome Message Metadata | Low | High |
+| 2 | Welcome Read Tracking | Low | High |
+| 3 | Unread Announcement Roster | Low | Medium |
+| 4 | Project Discussion Enhancements | Medium | High |
+| 5 | ICAA Brand Polish | Medium | High |
+| 6 | Rich Project Artifacts | Medium | Medium |
+| 7 | Profile Page Polish | Medium | Medium |
+| 8 | HQ Analytics Summary | Low | Medium |
+| 9 | Personal Growth Recs | Low | Medium |
+| 10 | Team Skill Synergy | Medium | Low |
+| 11 | Advanced Analytics | Medium | Low |
+| 12 | GitHub API Integration | High | Low |
 
 ---
 
-## Quick Wins (Already Have APIs)
+## Quick Wins
 
-1. **Mentorship Engagement UI** - API exists, just needs display component
-2. **Personal Growth Recommendations** - Can use existing skill data
+1. **Welcome Metadata** - Small schema change, big correctness improvement
+2. **Unread Roster** - Query against existing announcement_reads table
+3. **HQ Analytics** - Aggregates of existing data
 
 ---
 
-*Document maintained as part of SyncUp development*
+*See [ICAA_FINAL_PLAN.md](ICAA_FINAL_PLAN.md) for the authoritative roadmap.*

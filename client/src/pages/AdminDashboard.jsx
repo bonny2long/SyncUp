@@ -23,7 +23,6 @@ import {
   deleteProject,
   updateProjectStatus,
   fetchHealth,
-  fetchActiveProjectsAnalytics,
   fetchErrors,
   fetchErrorStats,
   fetchRecentErrors,
@@ -47,6 +46,7 @@ import {
 import HelpModal from "../components/shared/HelpModal";
 import ConfirmModal from "../components/shared/ConfirmModal";
 import InvitationPanel from "../components/admin/InvitationPanel";
+import { calculateProfileCompleteness } from "../utils/profileCompleteness";
 const Chat = React.lazy(() => import("./Chat/Chat"));
 import {
   Users,
@@ -110,7 +110,7 @@ const StatCard = memo(function StatCard({
     <div className="bg-surface rounded-xl p-5 border border-border hover:border-accent/30 transition-all duration-200 hover:-translate-y-0.5">
       <div className="flex justify-between items-start mb-3">
         <span className={`${colorClasses[color] || "text-gray-400"}`}>
-          <Icon size={24} />
+          {React.createElement(Icon, { size: 24 })}
         </span>
         <span
           className={`w-2 h-2 rounded-full ${
@@ -138,7 +138,7 @@ const ActivityItem = memo(function ActivityItem({
     <div className="py-3 border-b border-border last:border-0 hover:bg-surface-highlight/30 px-2 rounded transition">
       <div className="flex items-center gap-3">
         <span className={color}>
-          <Icon size={18} />
+          {React.createElement(Icon, { size: 18 })}
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-sm text-primary truncate">{text}</p>
@@ -176,7 +176,7 @@ const AlertItem = memo(function AlertItem({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={iconColors[severity]}>
-            <Icon size={16} />
+            {React.createElement(Icon, { size: 16 })}
           </span>
           <span className="text-sm text-primary">{text}</span>
         </div>
@@ -218,7 +218,6 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const menuRef = useRef(null);
   const [stats, setStats] = useState({
@@ -263,7 +262,6 @@ export default function AdminDashboard() {
     perPage: 10,
   });
   const [healthData, setHealthData] = useState(null);
-  const [analyticsData, setAnalyticsData] = useState(null);
   const [errorStats, setErrorStats] = useState({
     total: 0,
     open: 0,
@@ -281,7 +279,6 @@ export default function AdminDashboard() {
   });
   const [selectedErrors, setSelectedErrors] = useState([]);
   const [activeSessions, setActiveSessions] = useState(0);
-  const [adminStats, setAdminStats] = useState({ inactiveUsers: 0 });
   const [platformStats, setPlatformStats] = useState(null);
   const [recentErrors, setRecentErrors] = useState([]);
   const [growthData, setGrowthData] = useState([]);
@@ -382,7 +379,6 @@ export default function AdminDashboard() {
       try {
         const [
           health,
-          analytics,
           errorStatsData,
           adminStatsData,
           activeSessionsData,
@@ -391,7 +387,6 @@ export default function AdminDashboard() {
           growthDataResult,
         ] = await Promise.all([
           fetchHealth().catch(() => null),
-          fetchActiveProjectsAnalytics().catch(() => null),
           fetchErrorStats().catch(() => ({ total: 0, open: 0, byType: [] })),
           fetchAdminStats().catch(() => ({ inactiveUsers: 0 })),
           fetchActiveSessions().catch(() => ({ activeSessions: 0 })),
@@ -403,9 +398,7 @@ export default function AdminDashboard() {
           }),
         ]);
         setHealthData(health);
-        setAnalyticsData(analytics);
         setErrorStats(errorStatsData);
-        setAdminStats(adminStatsData);
         setActiveSessions(activeSessionsData?.activeSessions || 0);
         setPlatformStats(platformStatsData);
         setRecentErrors(recentErrorsData || []);
@@ -490,7 +483,6 @@ export default function AdminDashboard() {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false);
-        setExportMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -1018,7 +1010,6 @@ export default function AdminDashboard() {
 
   // Mentorship analytics (memoized)
   const {
-    completedSessions,
     pendingSessions,
     completionRate,
     mentorPerformance,
@@ -2000,6 +1991,12 @@ export default function AdminDashboard() {
                       scope="col"
                       className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
                     >
+                      Credential
+                    </th>
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Joined
                     </th>
                     <th
@@ -2012,12 +2009,21 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {paginatedUsers.length > 0 ?
-                    paginatedUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="border-t border-border hover:bg-surface-highlight/50 transition cursor-pointer"
-                        onClick={() => setSelectedUser(user)}
-                      >
+                    paginatedUsers.map((user) => {
+                      const completeness = calculateProfileCompleteness(user);
+                      const credentialColor =
+                        completeness.percent >= 85 ?
+                          "bg-green-500/20 text-green-400"
+                        : completeness.percent >= 60 ?
+                          "bg-yellow-500/20 text-yellow-400"
+                        : "bg-red-500/20 text-red-400";
+
+                      return (
+                        <tr
+                          key={user.id}
+                          className="border-t border-border hover:bg-surface-highlight/50 transition cursor-pointer"
+                          onClick={() => setSelectedUser(user)}
+                        >
                         <td className="p-3 text-sm text-gray-400">{user.id}</td>
                         <td className="p-3 text-sm text-primary font-medium">
                           {user.name}
@@ -2053,6 +2059,21 @@ export default function AdminDashboard() {
                             <Check size={12} />{" "}
                             {user.is_active === false ? "Inactive" : "Active"}
                           </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-0.5 rounded text-xs font-medium ${credentialColor}`}
+                            >
+                              {completeness.percent}%
+                            </span>
+                            <div className="h-1.5 w-16 rounded-full bg-surface-highlight overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary"
+                                style={{ width: `${completeness.percent}%` }}
+                              />
+                            </div>
+                          </div>
                         </td>
                         <td className="p-3 text-sm text-gray-400">
                           {user.created_at ?
@@ -2108,9 +2129,10 @@ export default function AdminDashboard() {
                             )}
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   : <tr>
-                      <td colSpan={7}>
+                      <td colSpan={8}>
                         <div className="flex flex-col items-center justify-center py-12 text-center">
                           <Search className="w-10 h-10 text-gray-600 mb-3" />
                           <p className="text-white font-semibold mb-1">

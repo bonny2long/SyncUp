@@ -11,6 +11,7 @@ const USER_SELECT_FIELDS = `
   github_url,
   linkedin_url,
   personal_site_url,
+  featured_project_id,
   profile_pic,
   is_active,
   has_commenced,
@@ -94,7 +95,32 @@ function normalizeProfileUrl(value, label) {
 export const getAllUsers = async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT ${USER_SELECT_FIELDS}
+      SELECT
+        ${USER_SELECT_FIELDS},
+        (
+          SELECT COUNT(*)
+          FROM project_members pm
+          WHERE pm.user_id = users.id
+        ) AS profile_project_count,
+        (
+          SELECT COUNT(DISTINCT p.id)
+          FROM projects p
+          JOIN project_members pm ON pm.project_id = p.id
+          WHERE pm.user_id = users.id
+            AND (p.github_url IS NOT NULL OR p.live_url IS NOT NULL)
+        ) AS profile_linked_project_count,
+        (
+          SELECT COUNT(DISTINCT p.id)
+          FROM projects p
+          JOIN project_members pm ON pm.project_id = p.id
+          WHERE pm.user_id = users.id
+            AND (
+              p.case_study_problem IS NOT NULL
+              OR p.case_study_solution IS NOT NULL
+              OR p.case_study_tech_stack IS NOT NULL
+              OR p.case_study_outcomes IS NOT NULL
+            )
+        ) AS profile_case_study_count
       FROM users
       ORDER BY name ASC
     `);
@@ -156,6 +182,11 @@ export const getUserProfile = async (req, res) => {
         p.visibility,
         p.github_url,
         p.live_url,
+        p.case_study_problem,
+        p.case_study_solution,
+        p.case_study_tech_stack,
+        p.case_study_outcomes,
+        p.case_study_artifact_url,
         p.start_date,
         p.end_date,
         MAX(pu.created_at) as last_update,
@@ -167,7 +198,7 @@ export const getUserProfile = async (req, res) => {
       LEFT JOIN project_members pm_all ON p.id = pm_all.project_id
       LEFT JOIN project_skills ps ON p.id = ps.project_id
       LEFT JOIN progress_updates pu ON p.id = pu.project_id AND pu.is_deleted = 0
-      GROUP BY p.id, p.title, p.description, p.status, p.visibility, p.github_url, p.live_url, p.start_date, p.end_date
+      GROUP BY p.id, p.title, p.description, p.status, p.visibility, p.github_url, p.live_url, p.case_study_problem, p.case_study_solution, p.case_study_tech_stack, p.case_study_outcomes, p.case_study_artifact_url, p.start_date, p.end_date
       ORDER BY p.start_date DESC
       LIMIT 10
       `,
@@ -385,14 +416,49 @@ export const updateUserProfile = async (req, res) => {
           "LinkedIn URL",
         );
       }
-      if (body.personal_site_url !== undefined) {
-        updates.personal_site_url = normalizeProfileUrl(
-          body.personal_site_url,
-          "Personal site URL",
-        );
+    if (body.personal_site_url !== undefined) {
+      updates.personal_site_url = normalizeProfileUrl(
+        body.personal_site_url,
+        "Personal site URL",
+      );
       }
     } catch (err) {
       return res.status(err.statusCode || 400).json({ error: err.message });
+    }
+
+    if (body.featured_project_id !== undefined) {
+      if (!body.featured_project_id) {
+        updates.featured_project_id = null;
+      } else {
+        const featuredProjectId = Number(body.featured_project_id);
+        if (!Number.isInteger(featuredProjectId) || featuredProjectId < 1) {
+          return res
+            .status(400)
+            .json({ error: "featured_project_id must be a positive integer" });
+        }
+
+        const [featuredProjects] = await pool.query(
+          `
+          SELECT p.id
+          FROM projects p
+          LEFT JOIN project_members pm
+            ON pm.project_id = p.id
+            AND pm.user_id = ?
+          WHERE p.id = ?
+            AND (p.owner_id = ? OR pm.user_id IS NOT NULL)
+          LIMIT 1
+          `,
+          [userId, featuredProjectId, userId],
+        );
+
+        if (featuredProjects.length === 0) {
+          return res.status(400).json({
+            error: "Featured project must belong to this user",
+          });
+        }
+
+        updates.featured_project_id = featuredProjectId;
+      }
     }
 
     if (body.role !== undefined) {

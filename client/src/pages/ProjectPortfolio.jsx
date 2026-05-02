@@ -7,7 +7,7 @@ import ProjectDetailModal from "../components/modals/ProjectDetailModal";
 import Navbar from "../components/layout/Navbar";
 import Sidebar from "../components/layout/Sidebar";
 import { useProjects } from "../hooks/useProjects"; // NEW: Use shared hook
-import { Award, ExternalLink, Github, Users } from "lucide-react";
+import { Award, ExternalLink, FileText, Github, Users } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Projects" },
@@ -23,6 +23,26 @@ const SORT_OPTIONS = [
   { value: "updates", label: "Most Updates" },
   { value: "team", label: "Largest Team" },
 ];
+
+function getCaseStudyItems(project) {
+  const techStack =
+    project?.case_study_tech_stack ?
+      project.case_study_tech_stack
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
+
+  return {
+    techStack,
+    hasCaseStudy: Boolean(
+      project?.case_study_problem ||
+        project?.case_study_solution ||
+        project?.case_study_outcomes ||
+        techStack.length > 0,
+    ),
+  };
+}
 
 export default function ProjectPortfolio() {
   const { user } = useUser();
@@ -62,11 +82,21 @@ export default function ProjectPortfolio() {
     }
   });
 
+  const manuallyFeaturedProject = sortedProjects.find(
+    (project) => Number(project.id) === Number(user?.featured_project_id),
+  );
   const featuredProject =
+    manuallyFeaturedProject ||
+    sortedProjects.find(
+      (project) =>
+        project.status === "completed" && getCaseStudyItems(project).hasCaseStudy,
+    ) ||
+    sortedProjects.find((project) => getCaseStudyItems(project).hasCaseStudy) ||
     sortedProjects.find((project) => project.status === "completed") ||
     sortedProjects.find((project) => project.status === "active") ||
     sortedProjects[0] ||
     null;
+  const featuredCaseStudy = getCaseStudyItems(featuredProject);
   const gridProjects =
     featuredProject ?
       sortedProjects.filter((project) => project.id !== featuredProject.id)
@@ -180,6 +210,44 @@ export default function ProjectPortfolio() {
                                 {featuredProject.description ||
                                   "No description yet."}
                               </p>
+                              {featuredCaseStudy.hasCaseStudy && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 max-w-4xl">
+                                  {featuredProject.case_study_problem && (
+                                    <div className="rounded-lg border border-border bg-surface-highlight p-3">
+                                      <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                                        Problem
+                                      </p>
+                                      <p className="text-sm text-neutral-dark line-clamp-3">
+                                        {featuredProject.case_study_problem}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {featuredProject.case_study_solution && (
+                                    <div className="rounded-lg border border-border bg-surface-highlight p-3">
+                                      <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                                        Solution
+                                      </p>
+                                      <p className="text-sm text-neutral-dark line-clamp-3">
+                                        {featuredProject.case_study_solution}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {featuredCaseStudy.techStack.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                  {featuredCaseStudy.techStack
+                                    .slice(0, 8)
+                                    .map((item) => (
+                                      <span
+                                        key={item}
+                                        className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                                      >
+                                        {item}
+                                      </span>
+                                    ))}
+                                </div>
+                              )}
                               <div className="flex flex-wrap gap-3 text-xs text-text-secondary mt-4">
                                 <span className="inline-flex items-center gap-1">
                                   <Users className="w-3.5 h-3.5" />
@@ -216,6 +284,17 @@ export default function ProjectPortfolio() {
                                 >
                                   <ExternalLink className="w-4 h-4" />
                                   Live
+                                </a>
+                              )}
+                              {featuredProject.case_study_artifact_url && (
+                                <a
+                                  href={featuredProject.case_study_artifact_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  Artifact
                                 </a>
                               )}
                               <button

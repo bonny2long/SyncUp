@@ -64,6 +64,12 @@ function normalizeProjectUrl(value, label) {
   }
 }
 
+function normalizeProjectText(value) {
+  if (value === undefined) return undefined;
+  const trimmed = String(value || "").trim();
+  return trimmed || null;
+}
+
 // GET /api/projects
 export const getProjects = async (req, res) => {
   const { user_id: userId } = req.query;
@@ -81,6 +87,11 @@ export const getProjects = async (req, res) => {
         p.visibility,
         p.github_url,
         p.live_url,
+        p.case_study_problem,
+        p.case_study_solution,
+        p.case_study_tech_stack,
+        p.case_study_outcomes,
+        p.case_study_artifact_url,
         p.start_date,
         p.start_date as created_at,
         owner.name AS owner_name,
@@ -117,7 +128,7 @@ export const getProjects = async (req, res) => {
       LEFT JOIN users usr ON pm.user_id = usr.id
       LEFT JOIN project_skills ps ON ps.project_id = p.id
       LEFT JOIN progress_updates upd ON upd.project_id = p.id
-      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.github_url, p.live_url, p.metadata, owner.name, p.start_date
+      GROUP BY p.id, p.title, p.description, p.status, p.owner_id, p.visibility, p.github_url, p.live_url, p.case_study_problem, p.case_study_solution, p.case_study_tech_stack, p.case_study_outcomes, p.case_study_artifact_url, p.metadata, owner.name, p.start_date
       ORDER BY p.start_date DESC;
     `,
       userId ? [userId] : params,
@@ -141,6 +152,11 @@ export const createProject = async (req, res) => {
     visibility = "seeking",
     github_url,
     live_url,
+    case_study_problem,
+    case_study_solution,
+    case_study_tech_stack,
+    case_study_outcomes,
+    case_study_artifact_url,
   } = req.body;
   const ownerId = owner_id;
   const metadata = {
@@ -159,9 +175,14 @@ export const createProject = async (req, res) => {
 
   let normalizedGithubUrl = null;
   let normalizedLiveUrl = null;
+  let normalizedArtifactUrl = null;
   try {
     normalizedGithubUrl = normalizeProjectUrl(github_url, "GitHub URL");
     normalizedLiveUrl = normalizeProjectUrl(live_url, "Live URL");
+    normalizedArtifactUrl = normalizeProjectUrl(
+      case_study_artifact_url,
+      "Artifact URL",
+    );
   } catch (err) {
     return res.status(err.statusCode || 400).json({ error: err.message });
   }
@@ -175,8 +196,22 @@ export const createProject = async (req, res) => {
     const [result] = await connection.query(
       `
       INSERT INTO projects
-        (title, description, owner_id, visibility, github_url, live_url, metadata, start_date)
-      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+        (
+          title,
+          description,
+          owner_id,
+          visibility,
+          github_url,
+          live_url,
+          case_study_problem,
+          case_study_solution,
+          case_study_tech_stack,
+          case_study_outcomes,
+          case_study_artifact_url,
+          metadata,
+          start_date
+        )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `,
       [
         title.trim(),
@@ -185,6 +220,11 @@ export const createProject = async (req, res) => {
         visibility,
         normalizedGithubUrl,
         normalizedLiveUrl,
+        normalizeProjectText(case_study_problem),
+        normalizeProjectText(case_study_solution),
+        normalizeProjectText(case_study_tech_stack),
+        normalizeProjectText(case_study_outcomes),
+        normalizedArtifactUrl,
         JSON.stringify(metadata),
       ],
     );
@@ -562,7 +602,15 @@ export const updateProjectStatus = async (req, res) => {
 export const updateProjectLinks = async (req, res) => {
   const { id } = req.params;
   const userId = Number(req.body.user_id || req.query.user_id || req.user?.id);
-  const { github_url, live_url } = req.body;
+  const {
+    github_url,
+    live_url,
+    case_study_problem,
+    case_study_solution,
+    case_study_tech_stack,
+    case_study_outcomes,
+    case_study_artifact_url,
+  } = req.body;
 
   if (!userId) {
     return res.status(400).json({ error: "user_id is required" });
@@ -570,9 +618,14 @@ export const updateProjectLinks = async (req, res) => {
 
   let normalizedGithubUrl = null;
   let normalizedLiveUrl = null;
+  let normalizedArtifactUrl = null;
   try {
     normalizedGithubUrl = normalizeProjectUrl(github_url, "GitHub URL");
     normalizedLiveUrl = normalizeProjectUrl(live_url, "Live URL");
+    normalizedArtifactUrl = normalizeProjectUrl(
+      case_study_artifact_url,
+      "Artifact URL",
+    );
   } catch (err) {
     return res.status(err.statusCode || 400).json({ error: err.message });
   }
@@ -605,9 +658,25 @@ export const updateProjectLinks = async (req, res) => {
 
     await pool.query(
       `UPDATE projects
-       SET github_url = ?, live_url = ?
+       SET
+         github_url = ?,
+         live_url = ?,
+         case_study_problem = ?,
+         case_study_solution = ?,
+         case_study_tech_stack = ?,
+         case_study_outcomes = ?,
+         case_study_artifact_url = ?
        WHERE id = ?`,
-      [normalizedGithubUrl, normalizedLiveUrl, id],
+      [
+        normalizedGithubUrl,
+        normalizedLiveUrl,
+        normalizeProjectText(case_study_problem),
+        normalizeProjectText(case_study_solution),
+        normalizeProjectText(case_study_tech_stack),
+        normalizeProjectText(case_study_outcomes),
+        normalizedArtifactUrl,
+        id,
+      ],
     );
 
     const [updatedRows] = await pool.query(
@@ -617,8 +686,8 @@ export const updateProjectLinks = async (req, res) => {
 
     res.json(updatedRows[0]);
   } catch (err) {
-    console.error("Error updating project links:", err);
-    res.status(500).json({ error: "Failed to update project links" });
+    console.error("Error updating project case study:", err);
+    res.status(500).json({ error: "Failed to update project case study" });
   }
 };
 
@@ -691,6 +760,11 @@ export const getUserProjects = async (req, res) => {
         p.visibility,
         p.github_url,
         p.live_url,
+        p.case_study_problem,
+        p.case_study_solution,
+        p.case_study_tech_stack,
+        p.case_study_outcomes,
+        p.case_study_artifact_url,
         p.metadata,
         u.name as owner_name,
         COUNT(DISTINCT pm_all.user_id) as team_size,
@@ -704,7 +778,7 @@ export const getUserProjects = async (req, res) => {
       LEFT JOIN project_skills ps ON p.id = ps.project_id
       LEFT JOIN progress_updates pu ON p.id = pu.project_id AND pu.is_deleted = 0
       LEFT JOIN mentorship_sessions ms ON p.id = ms.project_id AND ms.status = 'completed'
-      GROUP BY p.id, p.title, p.description, p.owner_id, p.start_date, p.end_date, p.status, p.visibility, p.github_url, p.live_url, p.metadata, u.name
+      GROUP BY p.id, p.title, p.description, p.owner_id, p.start_date, p.end_date, p.status, p.visibility, p.github_url, p.live_url, p.case_study_problem, p.case_study_solution, p.case_study_tech_stack, p.case_study_outcomes, p.case_study_artifact_url, p.metadata, u.name
       ORDER BY p.start_date DESC
       `,
       [userId],

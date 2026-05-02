@@ -10,6 +10,11 @@ export default function CreateProjectForm({ onCreated }) {
   const [description, setDescription] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [liveUrl, setLiveUrl] = useState("");
+  const [caseStudyProblem, setCaseStudyProblem] = useState("");
+  const [caseStudySolution, setCaseStudySolution] = useState("");
+  const [caseStudyTechStack, setCaseStudyTechStack] = useState("");
+  const [caseStudyOutcomes, setCaseStudyOutcomes] = useState("");
+  const [caseStudyArtifactUrl, setCaseStudyArtifactUrl] = useState("");
   const [skills, setSkills] = useState([]);
   const [skillInput, setSkillInput] = useState("");
   const [visibility, setVisibility] = useState(""); // "" = not selected, "seeking" or "public"
@@ -54,12 +59,22 @@ export default function CreateProjectForm({ onCreated }) {
         visibility: visibility,
         github_url: githubUrl.trim() || null,
         live_url: liveUrl.trim() || null,
+        case_study_problem: caseStudyProblem.trim() || null,
+        case_study_solution: caseStudySolution.trim() || null,
+        case_study_tech_stack: caseStudyTechStack.trim() || null,
+        case_study_outcomes: caseStudyOutcomes.trim() || null,
+        case_study_artifact_url: caseStudyArtifactUrl.trim() || null,
       });
 
       setTitle("");
       setDescription("");
       setGithubUrl("");
       setLiveUrl("");
+      setCaseStudyProblem("");
+      setCaseStudySolution("");
+      setCaseStudyTechStack("");
+      setCaseStudyOutcomes("");
+      setCaseStudyArtifactUrl("");
       setSkills([]);
       setSkillInput("");
       setVisibility("");
@@ -116,6 +131,59 @@ export default function CreateProjectForm({ onCreated }) {
             className="min-w-0 flex-1 bg-transparent text-sm text-neutral-dark placeholder-text-secondary outline-none"
           />
         </label>
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface-highlight/50 p-3 space-y-2">
+        <div>
+          <p className="text-xs font-semibold text-neutral-dark">
+            Case study starter
+          </p>
+          <p className="text-xs text-text-secondary">
+            Optional now. You can complete this later from project details.
+          </p>
+        </div>
+
+        <textarea
+          placeholder="Problem this project solves"
+          value={caseStudyProblem}
+          onChange={(e) => setCaseStudyProblem(e.target.value)}
+          rows={2}
+          className="w-full border border-border rounded p-2 text-sm resize-none bg-surface text-neutral-dark placeholder-text-secondary"
+        />
+
+        <textarea
+          placeholder="Solution you built"
+          value={caseStudySolution}
+          onChange={(e) => setCaseStudySolution(e.target.value)}
+          rows={2}
+          className="w-full border border-border rounded p-2 text-sm resize-none bg-surface text-neutral-dark placeholder-text-secondary"
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <input
+            type="text"
+            placeholder="Tech stack, comma separated"
+            value={caseStudyTechStack}
+            onChange={(e) => setCaseStudyTechStack(e.target.value)}
+            className="border border-border rounded p-2 text-sm bg-surface text-neutral-dark placeholder-text-secondary"
+          />
+
+          <input
+            type="url"
+            placeholder="Artifact URL (demo video, docs, screenshot album)"
+            value={caseStudyArtifactUrl}
+            onChange={(e) => setCaseStudyArtifactUrl(e.target.value)}
+            className="border border-border rounded p-2 text-sm bg-surface text-neutral-dark placeholder-text-secondary"
+          />
+        </div>
+
+        <textarea
+          placeholder="Outcomes, impact, or what changed"
+          value={caseStudyOutcomes}
+          onChange={(e) => setCaseStudyOutcomes(e.target.value)}
+          rows={2}
+          className="w-full border border-border rounded p-2 text-sm resize-none bg-surface text-neutral-dark placeholder-text-secondary"
+        />
       </div>
 
       {/* VISIBILITY SELECTOR */}

@@ -2,17 +2,19 @@ Original location: /client/README.md
 
 # SyncUp Frontend
 
-Frontend application for the SyncUp platform, built with React and Vite, styled using Tailwind CSS v4.
+Frontend application for the SyncUp / ICAA platform, built with React 19 and Vite 7, styled using Tailwind CSS v4.
 
 ## Tech Stack
 
 - React 19 - UI component library
 - Vite 7 - Build tool and development server
 - Tailwind CSS v4 - Utility-first CSS framework
+- Recharts - Charting library
 - AG Charts - High-performance charting library
 - Lucide React - Beautiful and consistent icons
+- React Router DOM - Client-side routing
 - PostCSS - CSS processing
-- Autoprefixer - Vendor prefix automation
+- jsPDF + jsPDF-AutoTable - PDF resume export
 
 ## Design System
 
@@ -36,20 +38,32 @@ client/
 │   ├── components/      # Reusable UI components
 │   │   ├── layout/      # Layout components (Navbar, Sidebar)
 │   │   ├── ui/          # Generic UI components
-│   │   ├── ProjectPortfolio/ # Project-specific components
+│   │   ├── settings/    # Settings page sections
+│   │   ├── badges/      # Badge display components
+│   │   ├── admin/       # Admin-specific components
 │   │   ├── SkillTracker/ # Skill tracking visualizations
 │   │   ├── modals/      # Modal dialogs
-│   │   ├── shared/      # Shared components (SkillMultiSelect)
-│   │   └── HealthStatus.jsx # Backend health indicator
-│   ├── context/         # React Context (UserContext)
+│   │   └── shared/      # Shared components (ProjectCard, RoleBadge, etc.)
+│   ├── context/         # React Context providers
+│   │   ├── UserContext.jsx      # Authentication state
+│   │   ├── ToastContext.jsx     # Toast notifications
+│   │   ├── ThemeContext.jsx     # Theme switching
+│   │   └── OnboardingContext.jsx # Onboarding tour state
 │   ├── pages/           # Page-level components
 │   │   ├── CollaborationHub/ # Project discovery and updates
 │   │   ├── MentorshipBridge/ # Mentor directory and sessions
 │   │   ├── SkillTracker/ # Skill analytics dashboard
-│   │   ├── Dashboard.jsx # Main overview
+│   │   ├── Chat/        # SyncChat and community features
+│   │   ├── Dashboard.jsx # Main overview (hub container)
+│   │   ├── AdminDashboard.jsx # Admin panel
+│   │   ├── InternLobby.jsx # Intern pre-commencement space
 │   │   ├── Login.jsx    # Authentication page
+│   │   ├── Register.jsx # Invitation-based registration
+│   │   ├── UserProfile.jsx # User profile management
 │   │   ├── ProjectPortfolio.jsx # User project showcase
-│   │   └── UserProfile.jsx # User profile management
+│   │   ├── Settings.jsx # User settings
+│   │   └── Maintenance.jsx # Maintenance mode page
+│   ├── hooks/           # Custom React hooks
 │   ├── utils/           # API utilities and helpers
 │   ├── App.jsx          # Root application component
 │   ├── main.jsx         # Application entry point
@@ -101,11 +115,29 @@ client/
 
 ## Environment Variables
 
-Create a `.env` file in the client directory with the following variables:
+Create a `.env` file in the client directory:
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+VITE_API_BASE=http://localhost:5000/api
 ```
+
+## Pages and Routes
+
+| Route | Component | Access |
+|-------|-----------|--------|
+| `/` | HomeRedirect | Redirects to /admin or /collaboration |
+| `/login` | Login | Public |
+| `/register` | Register | Invitation required |
+| `/maintenance` | Maintenance | Public |
+| `/collaboration` | CollaborationHub | Non-admin only |
+| `/chat` | Chat (SyncChat) | Community members + commenced interns |
+| `/lobby` | InternLobby | Interns only (non-admin) |
+| `/mentorship` | MentorshipBridge | Non-admin only |
+| `/skills` | SkillTracker | Interns only (non-admin) |
+| `/profile/:userId` | UserProfile | Authenticated |
+| `/portfolio` | ProjectPortfolio | Authenticated |
+| `/settings` | Settings | Authenticated |
+| `/admin` | AdminDashboard | Admin only |
 
 ## Contributing
 

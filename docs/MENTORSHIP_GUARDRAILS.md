@@ -18,7 +18,7 @@ These guardrails exist to prevent conceptual drift and protect the product philo
 
 ### 1.3 Intent Comes Before Context
 - Every mentorship session must declare why it exists before what it references.
-- Session intent is required.
+- Session intent (session_focus) is required.
 - Project context is optional.
 - Skills are conditional.
 - Never infer intent from a project link.
@@ -59,10 +59,8 @@ These guardrails exist to prevent conceptual drift and protect the product philo
 - This preserves trust in the Skill Tracker.
 
 ### 3.2 Mentorship Skill Emission Rules
-- Mentorship sessions may emit skill signals only if session_focus is:
-  - project_support
-  - technical_guidance
-- AND skills are explicitly selected or inferred from structured activity.
+- Mentorship sessions do NOT emit skill signals by default.
+- Only when a mentor completes a technical/project_support session AND explicitly selects skills via SkillSelectModal do signals emit.
 - All other session types:
   - Do not emit skill signals.
   - Still count toward engagement and participation metrics.
@@ -75,7 +73,12 @@ These guardrails exist to prevent conceptual drift and protect the product philo
   - Do not modify technical skill growth.
 - This keeps skills honest and meaningful.
 
-## 4. What We Explicitly Do NOT Do (For Now)
+### 3.4 Peer Validations Do Not Create New Signals
+- Peer upvotes and mentor endorsements attach to existing signals.
+- They increase validation counts but do not create new user_skill_signals rows.
+- This preserves the integrity of the signal pipeline.
+
+## 4. What We Explicitly Do NOT Do
 - No manual skill logging.
 - No free-form intent categories.
 - No forced project linkage.
@@ -89,4 +92,5 @@ These guardrails exist to prevent conceptual drift and protect the product philo
   - Session intent inferred instead of declared.
   - Project deletion breaking mentorship history.
   - UI that hides or auto-selects session focus.
+  - Peer validations creating new signal rows.
 - These indicate guardrail violations.

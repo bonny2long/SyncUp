@@ -37,6 +37,26 @@ export const projectValidators = {
       .optional({ nullable: true, checkFalsy: true })
       .isURL({ protocols: ["http", "https"], require_protocol: true })
       .withMessage("live_url must be a valid http(s) URL"),
+    body("case_study_problem")
+      .optional({ nullable: true, checkFalsy: true })
+      .isLength({ max: 2000 })
+      .withMessage("case_study_problem must be less than 2000 characters"),
+    body("case_study_solution")
+      .optional({ nullable: true, checkFalsy: true })
+      .isLength({ max: 2000 })
+      .withMessage("case_study_solution must be less than 2000 characters"),
+    body("case_study_tech_stack")
+      .optional({ nullable: true, checkFalsy: true })
+      .isLength({ max: 500 })
+      .withMessage("case_study_tech_stack must be less than 500 characters"),
+    body("case_study_outcomes")
+      .optional({ nullable: true, checkFalsy: true })
+      .isLength({ max: 2000 })
+      .withMessage("case_study_outcomes must be less than 2000 characters"),
+    body("case_study_artifact_url")
+      .optional({ nullable: true, checkFalsy: true })
+      .isURL({ protocols: ["http", "https"], require_protocol: true })
+      .withMessage("case_study_artifact_url must be a valid http(s) URL"),
     validate,
   ],
 
@@ -71,6 +91,26 @@ export const projectValidators = {
       .optional({ nullable: true, checkFalsy: true })
       .isURL({ protocols: ["http", "https"], require_protocol: true })
       .withMessage("live_url must be a valid http(s) URL"),
+    body("case_study_problem")
+      .optional({ nullable: true, checkFalsy: true })
+      .isLength({ max: 2000 })
+      .withMessage("case_study_problem must be less than 2000 characters"),
+    body("case_study_solution")
+      .optional({ nullable: true, checkFalsy: true })
+      .isLength({ max: 2000 })
+      .withMessage("case_study_solution must be less than 2000 characters"),
+    body("case_study_tech_stack")
+      .optional({ nullable: true, checkFalsy: true })
+      .isLength({ max: 500 })
+      .withMessage("case_study_tech_stack must be less than 500 characters"),
+    body("case_study_outcomes")
+      .optional({ nullable: true, checkFalsy: true })
+      .isLength({ max: 2000 })
+      .withMessage("case_study_outcomes must be less than 2000 characters"),
+    body("case_study_artifact_url")
+      .optional({ nullable: true, checkFalsy: true })
+      .isURL({ protocols: ["http", "https"], require_protocol: true })
+      .withMessage("case_study_artifact_url must be a valid http(s) URL"),
     validate,
   ],
 
@@ -273,6 +313,10 @@ export const userValidators = {
       .optional({ nullable: true })
       .isLength({ max: 10 })
       .withMessage("Cycle must be 10 characters or fewer"),
+    body("featured_project_id")
+      .optional({ nullable: true, checkFalsy: true })
+      .isInt({ min: 1 })
+      .withMessage("featured_project_id must be a positive integer"),
     body("notes")
       .optional()
       .trim()

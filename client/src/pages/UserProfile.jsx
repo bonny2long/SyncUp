@@ -14,8 +14,10 @@ import {
   X,
   Camera,
   ExternalLink,
+  FileText,
   Github,
   Linkedin,
+  CheckCircle,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -24,11 +26,13 @@ import { ChartError } from "../components/shared/ErrorBoundary";
 import RoleBadge from "../components/shared/RoleBadge";
 import SkillBadge from "../components/shared/SkillBadge";
 import { getErrorMessage } from "../utils/errorHandler";
+import { calculateProfileCompleteness } from "../utils/profileCompleteness";
 import {
   getUserSkillSignals,
   getUserValidatedSignals,
   addSkillValidation,
   removeSkillValidation,
+  updateUser as updateUserProfile,
   uploadAvatar,
   getAvatarUrl,
 } from "../utils/api";
@@ -67,6 +71,7 @@ export default function UserProfile() {
     personal_site_url: "",
   });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [featuringProjectId, setFeaturingProjectId] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarKey, setAvatarKey] = useState(0);
   const avatarInputRef = useRef(null);
@@ -237,6 +242,7 @@ export default function UserProfile() {
   }
 
   const { user, skills, projects, stats, activity_streak } = profile;
+  const isOwnProfile = currentUser?.id === user.id;
   const credentialLinks = [
     {
       href: user.github_url,
@@ -254,12 +260,36 @@ export default function UserProfile() {
       icon: ExternalLink,
     },
   ].filter((link) => link.href);
+  const projectHasCaseStudy = (project) =>
+    Boolean(
+      project.case_study_problem ||
+        project.case_study_solution ||
+        project.case_study_tech_stack ||
+        project.case_study_outcomes,
+    );
+  const manuallyFeaturedProject = projects.find(
+    (project) => Number(project.id) === Number(user.featured_project_id),
+  );
   const featuredProject =
+    manuallyFeaturedProject ||
+    projects.find(
+      (project) =>
+        project.status === "completed" && projectHasCaseStudy(project),
+    ) ||
+    projects.find(projectHasCaseStudy) ||
     projects.find((project) => project.status === "completed") ||
     projects.find((project) => project.github_url || project.live_url) ||
     projects.find((project) => project.status === "active") ||
     projects[0] ||
     null;
+  const featuredTechStack =
+    featuredProject?.case_study_tech_stack ?
+      featuredProject.case_study_tech_stack
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
+  const profileCompleteness = calculateProfileCompleteness(user, projects);
 
   // Handle mentorship request
   const handleMentorshipRequest = () => {
@@ -330,6 +360,34 @@ export default function UserProfile() {
       addToast({ type: "error", message: message || "Failed to update profile" });
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  const handleFeatureProject = async (projectId) => {
+    if (!currentUser || currentUser.id !== user.id) return;
+
+    try {
+      setFeaturingProjectId(projectId);
+      const updatedUser = await updateUserProfile(user.id, {
+        featured_project_id: projectId,
+      });
+      setProfile((prev) => ({
+        ...prev,
+        user: {
+          ...prev.user,
+          featured_project_id: updatedUser.featured_project_id,
+        },
+      }));
+      updateUser({ featured_project_id: updatedUser.featured_project_id });
+      addToast({ type: "success", message: "Featured project updated" });
+    } catch (err) {
+      const { message } = getErrorMessage(err);
+      addToast({
+        type: "error",
+        message: message || "Failed to feature project",
+      });
+    } finally {
+      setFeaturingProjectId(null);
     }
   };
 
@@ -685,7 +743,9 @@ export default function UserProfile() {
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
-                      Featured Project
+                      {manuallyFeaturedProject ?
+                        "Featured Project"
+                      : "Suggested Featured Project"}
                     </p>
                     <h2 className="text-xl font-bold text-primary">
                       {featuredProject.title}
@@ -693,6 +753,43 @@ export default function UserProfile() {
                     <p className="text-sm text-text-secondary mt-2 max-w-3xl">
                       {featuredProject.description || "No description yet."}
                     </p>
+                    {(featuredProject.case_study_problem ||
+                      featuredProject.case_study_solution) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                        {featuredProject.case_study_problem && (
+                          <div className="rounded-lg border border-border bg-surface-highlight p-3">
+                            <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                              Problem
+                            </p>
+                            <p className="text-sm text-neutral-dark line-clamp-3">
+                              {featuredProject.case_study_problem}
+                            </p>
+                          </div>
+                        )}
+                        {featuredProject.case_study_solution && (
+                          <div className="rounded-lg border border-border bg-surface-highlight p-3">
+                            <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
+                              Solution
+                            </p>
+                            <p className="text-sm text-neutral-dark line-clamp-3">
+                              {featuredProject.case_study_solution}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {featuredTechStack.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {featuredTechStack.slice(0, 8).map((item) => (
+                          <span
+                            key={item}
+                            className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-3 text-xs text-text-secondary mt-4">
                       <span>
                         {featuredProject.team_size || 0} member
@@ -731,6 +828,17 @@ export default function UserProfile() {
                         Live
                       </a>
                     )}
+                    {featuredProject.case_study_artifact_url && (
+                      <a
+                        href={featuredProject.case_study_artifact_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Artifact
+                      </a>
+                    )}
                   </div>
                 </div>
               </section>
@@ -746,6 +854,56 @@ export default function UserProfile() {
                 Updates • {stats.mentorship_count || 0} Sessions
               </p>
             </div>
+
+            {/* Credential Readiness */}
+            {isOwnProfile && (
+              <section className="bg-surface rounded-lg border border-border p-5 mb-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-neutral-dark">
+                      Credential Readiness
+                    </h2>
+                    <p className="text-sm text-text-secondary mt-1">
+                      {profileCompleteness.statusLabel} -{" "}
+                      {profileCompleteness.completeCount} of{" "}
+                      {profileCompleteness.totalCount} profile signals complete
+                    </p>
+                  </div>
+                  <div className="min-w-[160px]">
+                    <div className="flex items-center justify-between text-xs text-text-secondary mb-1">
+                      <span>Profile strength</span>
+                      <span>{profileCompleteness.percent}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-surface-highlight overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${profileCompleteness.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {profileCompleteness.items.map((item) => (
+                    <div
+                      key={item.key}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+                        item.complete ?
+                          "border-green-500/20 bg-green-500/10 text-green-700"
+                        : "border-border bg-surface-highlight text-text-secondary"
+                      }`}
+                    >
+                      <CheckCircle
+                        className={`w-4 h-4 flex-shrink-0 ${
+                          item.complete ? "text-green-600" : "text-gray-400"
+                        }`}
+                      />
+                      <span>{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Credential Stats */}
             {user.role !== "intern" && (
@@ -1037,6 +1195,41 @@ export default function UserProfile() {
                                   >
                                     Live
                                   </a>
+                                )}
+                                {project.case_study_artifact_url && (
+                                  <a
+                                    href={project.case_study_artifact_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-xs text-text-secondary hover:text-primary"
+                                    aria-label={`${project.title} artifact`}
+                                  >
+                                    Artifact
+                                  </a>
+                                )}
+                                {projectHasCaseStudy(project) && (
+                                  <span className="text-xs font-medium text-primary">
+                                    Case study
+                                  </span>
+                                )}
+                                {isOwnProfile && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleFeatureProject(project.id)}
+                                    disabled={
+                                      featuringProjectId === project.id ||
+                                      Number(user.featured_project_id) ===
+                                        Number(project.id)
+                                    }
+                                    className="text-xs font-medium text-primary hover:text-primary/80 disabled:text-text-secondary disabled:cursor-default"
+                                  >
+                                    {Number(user.featured_project_id) ===
+                                    Number(project.id) ?
+                                      "Featured"
+                                    : featuringProjectId === project.id ?
+                                      "Saving..."
+                                    : "Feature"}
+                                  </button>
                                 )}
                                 <span className="text-xs text-text-secondary">
                                   {project.team_size} member

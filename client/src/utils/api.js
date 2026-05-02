@@ -139,11 +139,16 @@ export async function updateProjectLinks(id, userId, links) {
       user_id: userId,
       github_url: links.github_url || null,
       live_url: links.live_url || null,
+      case_study_problem: links.case_study_problem || null,
+      case_study_solution: links.case_study_solution || null,
+      case_study_tech_stack: links.case_study_tech_stack || null,
+      case_study_outcomes: links.case_study_outcomes || null,
+      case_study_artifact_url: links.case_study_artifact_url || null,
     }),
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error(error.error || "Failed to update project links");
+    throw new Error(error.error || "Failed to update project case study");
   }
   return res.json();
 }

@@ -1,6 +1,6 @@
 # Skill Tracker Signal Pipeline
 
-A → B → C → D Architecture and Guardrails
+A -> B -> C -> D Architecture and Guardrails
 
 ## Purpose
 
@@ -18,32 +18,30 @@ Charts are derived from signals.
 No feature is allowed to write directly into aggregates or computed metrics tables.
 
 Single source of truth:
-user_skill_signals (append-only)
+`user_skill_signals` (append-only)
 
 ## Data Model
 
-skills
-
+### skills
 - id
 - skill_name
 - category
 
-project_skills
-
+### project_skills
 - project_id
 - skill_id
-  Represents the explicit skill scope of a project.
 
-progress_updates
+Represents the explicit skill scope of a project.
 
+### progress_updates
 - id
 - project_id
 - user_id
 - content
-  Represents work updates for a project.
 
-mentorship_sessions
+Represents work updates for a project.
 
+### mentorship_sessions
 - id
 - intern_id
 - mentor_id
@@ -51,21 +49,29 @@ mentorship_sessions
 - project_id (optional)
 - status
 
-user_skill_signals (append-only)
-
+### user_skill_signals (append-only)
 - id
 - user_id
 - skill_id
 - source_type: project | update | mentorship
 - source_id: id of the originating record
-- signal_type: joined | update | completed
+- signal_type: joined | update | completed | validated
 - weight: internal weighting only
 - created_at
 
 Uniqueness constraint:
-(user_id, skill_id, source_type, source_id, signal_type)
+`(user_id, skill_id, source_type, source_id, signal_type)`
 
 This prevents accidental duplicate inserts.
+
+### skill_validations
+- id
+- signal_id
+- validator_id
+- validation_type: upvote | mentor_endorsement
+- created_at
+
+Peer validations that attach to existing signals without creating new ones.
 
 ## Guardrail Principle
 
@@ -77,9 +83,9 @@ Controllers call emitSkillSignals.
 
 This makes correctness enforceable.
 
-## A → B → C → D Pipeline
+## A -> B -> C -> D Pipeline
 
-### A — Project context exists
+### A -- Project context exists
 
 Goal:
 Skills must be tied to a concrete scope, not user guesses.
@@ -94,7 +100,7 @@ These ideas are informational only and do not enter Skill Tracker.
 Hard rule:
 project.metadata.skill_ideas never generates signals.
 
-### B — Mentorship session happens
+### B -- Mentorship session happens
 
 Goal:
 Mentorship should not be a loophole that injects skills without real evidence.
@@ -107,24 +113,28 @@ emitSkillSignals returns early for sourceType=mentorship.
 
 Even if session_focus is technical, mentorship does not emit skills until a later sprint introduces explicit skill selection or structured outcomes.
 
+Exception:
+When a mentor completes a technical session and explicitly selects skills via SkillSelectModal, those skills emit signals with higher weight.
+
 Allowed now:
-Mentorship can be used as context for future features.
-Mentorship can be shown in dashboards separately.
-Mentorship can drive nudges later.
+- Mentorship can be used as context for future features.
+- Mentorship can be shown in dashboards separately.
+- Mentorship can drive nudges later.
+- Explicit skill verification during session completion generates signals.
 
 Not allowed now:
-Mentorship creating any user_skill_signals rows.
+- Mentorship creating any user_skill_signals rows without explicit skill selection.
+- Session focus alone generating signals.
 
-### C — Progress update happens
+### C -- Progress update happens
 
 Goal:
-Real work activity should emit signals against the project’s declared skills.
+Real work activity should emit signals against the project's declared skills.
 
 Trigger:
 POST /api/progress_updates
 
 Flow:
-
 1. Insert progress update row
 2. Fetch project skills from project_skills
 3. emitSkillSignals with sourceType=update, signalType=update, skillIds from project_skills
@@ -134,38 +144,40 @@ Guardrail:
 If no project_skills exist for the project, emitSkillSignals becomes a no-op.
 No skills means no signals.
 
-### D — Analytics layer reads signals
+### D -- Analytics layer reads signals
 
 Goal:
 Every chart is derived from user_skill_signals.
 No other table is used for skill analytics.
 
 Read patterns:
-
 - Distribution (totals per skill)
-- Momentum (time buckets)
+- Momentum (time buckets, week-over-week deltas)
 - Activity (recent signals)
+- Summary (skill snapshot with trend readiness)
+- Recent (recently active skills)
 
 No writes in this layer.
 
 ## emitSkillSignals Contract
 
 Signature:
+```
 emitSkillSignals({
-userId,
-sourceType, // project | update | mentorship
-sourceId,
-signalType, // joined | update | completed
-context, // optional metadata
-skillIds, // required except mentorship
-weight,
-connection // optional transaction connection
+  userId,
+  sourceType,     // project | update | mentorship
+  sourceId,
+  signalType,     // joined | update | completed | validated
+  context,        // optional metadata
+  skillIds,       // required except mentorship
+  weight,
+  connection      // optional transaction connection
 })
+```
 
 Rules:
-
-- Missing userId or sourceType or sourceId or signalType → no-op
-- Mentorship → always no-op for now
+- Missing userId or sourceType or sourceId or signalType -> no-op
+- Mentorship without explicit skill selection -> always no-op
 - sourceType project or update requires skillIds array
 - skillIds are deduplicated before insert
 - Inserts are append-only
@@ -174,14 +186,15 @@ Rules:
 ## What counts as valid skill evidence
 
 Valid now:
-
-- Project membership or updates, tied to project_skills
+- Project membership, tied to project_skills
+- Progress updates, tied to project_skills
+- Explicit skill verification during mentorship session completion
 
 Not valid now:
-
 - Mentorship session focus alone
 - Project metadata skill_ideas
 - Free text content in progress updates
+- Self-reported skill claims (without verification)
 
 ## Failure Modes Prevented
 
@@ -189,28 +202,27 @@ Not valid now:
 - Duplicate inserts from repeated calls
 - Charts drifting from source-of-truth events
 - Aggregates becoming stale or inconsistent
+- Peer upvotes creating duplicate signals (validations attach to existing signals)
 
 ## Out of Scope
 
-These are explicitly not part of A → B → C → D right now:
-
+These are explicitly not part of A -> B -> C -> D right now:
 - Manual skill entry
-- Mentor endorsements
-- Gamification scores
-- Portfolio exports
 - AI nudges
 - NLP-based inference from text content
+- Gamification scores
+- Portfolio exports (these read from Skill Tracker, they don't write to it)
 
 Those features may be added later, but they must still route through emitSkillSignals.
 
-## Definition of Done for A → B → C → D
+## Definition of Done for A -> B -> C -> D
 
 A:
 Project skills exist and are queryable.
 
 B:
 Mentorship sessions exist with session_focus and optional project_id.
-No mentorship signal inserts occur.
+No mentorship signal inserts occur without explicit skill selection.
 
 C:
 Progress update inserts create signals for all project skills.

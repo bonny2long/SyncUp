@@ -93,6 +93,14 @@ This file captures the major product and engineering work completed today, plus 
 - Project cards, project detail modal, and Project Portfolio now expose GitHub/live links.
 - Project Portfolio now has a stronger featured-project section for public-facing work.
 - Residents can access project creation again from Collaboration Hub.
+- Added structured case-study fields to projects:
+  - Problem
+  - Solution
+  - Tech stack
+  - Outcomes
+  - Artifact URL
+- Project create/edit/detail now supports case-study content.
+- Portfolio and profile featured project sections now highlight case-study content when present.
 
 ### Profile Credential Layer
 
@@ -101,6 +109,7 @@ This file captures the major product and engineering work completed today, plus 
   - GitHub URL
   - LinkedIn URL
   - Personal site URL
+- Added manual featured project selection.
 - Profile pages now show credential links near the member identity block.
 - Added a featured project section to the profile.
 - Added mentor/resident credential stats:
@@ -109,6 +118,17 @@ This file captures the major product and engineering work completed today, plus 
   - Projects advised
 - Recent project lists now surface GitHub/live links.
 - Profile URL saves now validate URLs and show better failure feedback.
+- Users can now explicitly mark which project should be featured instead of relying only on auto-selection.
+- Added credential readiness scoring for users:
+  - headline
+  - profile link
+  - cycle
+  - project participation
+  - featured project
+  - project repo/live link
+  - project case study
+- Users now see their own credential checklist on the profile page.
+- Admin Dashboard now shows a compact credential completion percentage in the Users table.
 
 ### Navigation And UX Fixes
 
@@ -125,8 +145,14 @@ This file captures the major product and engineering work completed today, plus 
 - `users.github_url`
 - `users.linkedin_url`
 - `users.personal_site_url`
+- `users.featured_project_id`
 - `projects.github_url`
 - `projects.live_url`
+- `projects.case_study_problem`
+- `projects.case_study_solution`
+- `projects.case_study_tech_stack`
+- `projects.case_study_outcomes`
+- `projects.case_study_artifact_url`
 - `announcement_reads`
 - `project_discussions`
 - Community announcement/event support tables were connected into the active flow.
@@ -138,6 +164,8 @@ Migration files added during this phase include:
 - `server/src/database/project_discussions.sql`
 - `server/src/database/project_urls.sql`
 - `server/src/database/user_credential_profile.sql`
+- `server/src/database/project_case_studies.sql`
+- `server/src/database/user_featured_project.sql`
 
 ## Verification Run Today
 
@@ -155,7 +183,7 @@ Known note: full eslint on `AdminDashboard.jsx` still reports older unrelated li
 - Announcements Archive: active HQ history and event browsing.
 - Project Detail Discussion: project-specific work and decisions.
 - Project Portfolio: public-facing project showcase with repo/demo links.
-- Profile Page: member credential page with links, featured project, and mentorship stats.
+- Profile Page: member credential page with links, featured project, project case-study content, and mentorship stats.
 - Mentorship Bridge: mentorship session requests and session-specific chat.
 - Admin Dashboard: manage users, HQ announcements, events, RSVP visibility, and read tracking.
 
@@ -193,12 +221,10 @@ Known note: full eslint on `AdminDashboard.jsx` still reports older unrelated li
 - Add edit/delete for project discussion messages.
 - Add project discussion notifications for team members.
 - Decide whether mentors can always view/post on projects they are advising.
-- Add richer project case study fields:
-  - Problem
-  - Solution
-  - Tech stack
+- Add richer project artifacts:
   - Screenshots
-  - Outcomes
+  - Demo videos
+  - Uploaded documents
 
 ### Admin Dashboard
 
@@ -241,6 +267,6 @@ Known note: full eslint on `AdminDashboard.jsx` still reports older unrelated li
 
 Build the case-study layer next:
 
-1. Add richer project detail fields for public case studies.
-2. Let users choose their featured project instead of auto-selecting it.
+1. Add screenshot/artifact upload instead of URL-only artifacts.
+2. Add filters/admin sorting for low-completeness credential profiles.
 3. Then do ICAA brand polish and the identity badge system together.

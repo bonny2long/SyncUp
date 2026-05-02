@@ -15,6 +15,15 @@ function truncateDescription(value, maxLength) {
   return `${value.slice(0, maxLength).trim()}...`;
 }
 
+function hasCaseStudy(project) {
+  return Boolean(
+    project.case_study_problem ||
+      project.case_study_solution ||
+      project.case_study_tech_stack ||
+      project.case_study_outcomes,
+  );
+}
+
 export default function ProjectCard({
   project,
   onClick,
@@ -32,6 +41,11 @@ export default function ProjectCard({
         href: project.live_url,
         label: "Live",
         icon: ExternalLink,
+      },
+      {
+        href: project.case_study_artifact_url,
+        label: "Artifact",
+        icon: FileText,
       },
     ].filter((link) => link.href);
 
@@ -79,6 +93,13 @@ export default function ProjectCard({
             {project.status}
           </span>
         </div>
+
+        {hasCaseStudy(project) && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary mb-2">
+            <FileText className="w-3 h-3" />
+            Case study
+          </span>
+        )}
 
         {/* Compact stats in one line */}
         <div className="flex items-center gap-3 text-xs text-text-secondary">
@@ -131,6 +152,12 @@ export default function ProjectCard({
       <p className="text-xs text-text-secondary mb-3 line-clamp-2">
         {truncateDescription(project.description, 80)}
       </p>
+
+      {hasCaseStudy(project) && (
+        <p className="text-[11px] font-medium text-primary mb-2">
+          Case study ready
+        </p>
+      )}
 
       <ProjectLinks />
 

@@ -1,71 +1,172 @@
-# SyncUp
+# SyncUp / ICAA
 
 The Intern Collaboration and Mentorship Reflection System
 
-SyncUp is a full-stack platform designed to connect interns, mentors, and alumni through real-world project collaboration and structured mentorship. Unlike traditional platforms that rely on manual skill logging, SyncUp uses an evidence-based Skill Signal pipeline to track professional growth.
+SyncUp is a full-stack professional community platform connecting interns, residents, mentors, and alumni through real-world project collaboration, structured mentorship, and evidence-based skill tracking.
 
 ---
 
-## The Vision: A Reflection System
+## The Vision
 
-SyncUp is built on the philosophy that professional growth should be a mirror of real activity, not a manual checklist.
+Professional growth should be a mirror of real activity, not a manual checklist. SyncUp derives skills from demonstrated work -- projects, progress updates, and verified mentorship sessions -- so that every skill displayed is backed by verifiable evidence.
 
-- Evidence-Based: Skills are derived from project work, updates, and verified mentorship.
-- High Integrity: Guardrails ensure that only relevant, validated activities contribute to skill growth.
-- Decoupled Hubs: Mentorship and Projects exist as independent but intersecting systems to support diverse career paths.
+### Core Principles
+
+- **Evidence-Based Growth**: Skills are earned through demonstrated work, not self-reported.
+- **Integrity First**: Guardrails prevent conceptual drift (e.g., career advice does not boost technical skills).
+- **Decoupled Hubs**: Mentorship, projects, and community chat are independent but intersecting systems.
+- **Credential-Focused**: Profiles and portfolios serve as professional credentials for members to showcase their work.
 
 ---
 
-## Key Features (The Three Hubs)
+## Platform Layers
 
-### 1. Collaboration Hub
+### 1. Intern Lobby
+Pre-commencement space for interns. Interns here have not yet joined the broader community. They can explore mentorship, view projects, and prepare for their transition.
 
-- Project Discovery: Browse and join intern-led projects.
-- Progress Feed: Post real-time updates with dynamic skill tagging.
-- Team Management: Collaborative project ownership and membership tracking.
+### 2. SyncChat (Community Layer)
+Post-commencement community communication hub:
+- **Channels**: #general, #announcements, #introductions, #opportunities, #events, and custom channels
+- **Direct Messages**: 1:1 private messaging between any community members
+- **ICAA HQ**: Pinned announcements, upcoming events, and new member welcomes in a scrollable strip
+- **File Attachments**: Upload and share files in messages
+- **Presence**: Online/offline/away status with real-time indicators
+- **Announcement Archive**: Browse active and past announcements with read/unread tracking
 
-### 2. Mentorship Bridge
+### 3. Collaboration Hub (Work Layer)
+Project-based collaboration workspace:
+- **Project Discovery**: Browse, filter, and join projects by status and skills
+- **Project Creation**: Create projects with title, description, visibility, skills, GitHub/live URLs, and case study fields
+- **Join Requests**: Submit and manage join requests; project owners approve/decline
+- **Progress Feed**: Post, edit, and delete progress updates per project
+- **Project Discussions**: Dedicated discussion threads inside project detail modals (Overview, Activity, Discussion tabs)
+- **Team Dashboard**: Team-wide skill coverage, top contributors, achievements, key insights, and activity feed
+- **Project Cards**: Show status, team count, update count, 7-day activity mini-bars, member chips
 
-- Mentor Directory: Connect with experienced mentors and alumni.
-- Independent Sessions: Request guidance on career, technical, or life leadership.
-- Skill Verification: Mentors verify technical skills during session completion to provide high-weight signals.
+### 4. Mentorship Bridge
+End-to-end mentorship matching and session management:
+- **Mentor Directory**: Search mentors, view profiles, bios, availability, and session stats
+- **Session Requests**: Pick a mentor, set topic/details/date-time, and submit
+- **Session Management**: Filter by status (pending/accepted/completed/declined/rescheduled), inline edit, reschedule, delete
+- **Skill Verification**: Mentors verify specific skills during session completion (high-weight skill signals)
+- **Mentor Leaderboard**: Rankings based on completed sessions
+- **Session Chat**: Dedicated chat within individual mentorship sessions
 
-### 3. Skill Tracker
+### 5. Skill Tracker (Credential Layer)
+Read-only analytics derived from real activity. No manual ratings or gamification:
+- **Skill Distribution**: Weighted signals per skill; auto-insight highlights dominant skill or balanced focus
+- **Skill Momentum**: Week-over-week change for top skills; shows increases, decreases, or steady progress
+- **Activity Sources**: Stacked weekly bars showing which source (projects, updates, mentorship) drove activity
+- **Skill Signals**: View all signals with source, weight, and timestamp
+- **Peer Validations**: Team members can upvote/endorse skill signals
+- **Skill Verifications**: Team member skill claim workflow (verify/challenge)
 
-- Skill Distribution: Visualize total skill volume across all activities.
-- Skill Momentum: Track week-over-week growth and identify fastest-rising skills.
-- Activity Sources: See exactly what is driving growth (Projects vs. Updates vs. Mentorship).
+### 6. Project Portfolio
+Public-facing project showcase:
+- **Featured Project**: Highlight your best work at the top (manual selection)
+- **Case Studies**: Problem, solution, tech stack, outcomes, artifact URL
+- **Project Links**: GitHub and live/demo URLs on project cards and detail views
+- **Project Metrics**: Activity metrics and team composition per project
+
+### 7. User Profiles
+Professional member credential pages:
+- **Identity**: Name, role badge, cycle, professional headline
+- **Credential Links**: GitHub, LinkedIn, personal site URLs
+- **Featured Project**: Manually selected project showcase
+- **Skills**: Skill distribution with signal counts and validation status
+- **Projects**: Active and completed project list with links
+- **Badges**: Earned achievement badges
+- **Mentorship Stats**: Sessions completed, residents/interns helped, projects advised (for mentors/residents)
+- **Credential Readiness**: Checklist showing profile completeness (headline, links, cycle, projects, case study)
+
+### 8. Admin Dashboard
+Platform administration:
+- **Overview**: Platform statistics, growth charts, recent activity, alerts
+- **Users**: Paginated table with filters (role, status, commenced), search, edit, delete, credential completion percentage
+- **Projects**: All projects with status filters, actions
+- **HQ Management**: Create/edit/deactivate announcements and events, view read tracking and RSVP rosters
+- **Mentorship Analytics**: Session statistics, completion rates, mentor leaderboard
+- **Error Tracking**: Logged errors with filters, bulk actions, export
+- **System Health**: Database, API, and system status
+- **Settings**: Platform config, feature flags, maintenance mode
+- **Invitations**: Create, view, revoke invitation-based registrations
+
+---
+
+## Roles and Access
+
+| Role | Access |
+|------|--------|
+| **Intern** | Intern Lobby, Collaboration Hub, Mentorship Bridge, Skill Tracker, Project Portfolio |
+| **Resident** | Collaboration Hub, SyncChat, Mentorship Bridge, Project Portfolio, Skill Tracker |
+| **Alumni** | Collaboration Hub, SyncChat, Mentorship Bridge, Project Portfolio, Skill Tracker |
+| **Mentor** | Collaboration Hub, SyncChat, Mentorship Bridge, Project Portfolio, Skill Tracker |
+| **Admin** | Admin Dashboard (full access), Project Portfolio |
+
+### Commencement Flow
+Interns start in the Intern Lobby. When an admin commences an intern, they transition to resident status, gain access to SyncChat, and a welcome message is posted to #introductions.
 
 ---
 
 ## Tech Stack
 
-| Layer          | Technologies                                      |
-| -------------- | ------------------------------------------------- |
-| Frontend       | React 19, Vite, Tailwind CSS, Recharts, AG Charts |
-| Backend        | Node.js, Express                                  |
-| Database       | MySQL (Local), Azure SQL (Production)             |
-| State/Auth    | React Context + LocalStorage                      |
+| Layer | Technologies |
+|-------|-------------|
+| Frontend | React 19, Vite 7, Tailwind CSS v4, Recharts, AG Charts, Lucide React |
+| Backend | Node.js, Express 5, MySQL 8 |
+| State/Auth | React Context + LocalStorage |
+| Charts | Recharts, AG Charts Community |
+| PDF | jsPDF + jsPDF-AutoTable |
+| API Docs | Swagger/OpenAPI |
 
 ---
 
-## Roadmap Status
+## Architecture: Signal Pipeline
 
-- **Phase 1 & 2 (Complete)**: Dynamic Skill Tagging, Mentor Endorsements, and Decoupled Mentorship.
-- **Phase 3 (Planning Complete)**: Smart Suggestions, AI-Assisted Tagging, and Career Readiness Dashboard.
-- **Phase 4 (Planning Complete)**: Peer Validation (Social Signals) and Team Momentum Analytics.
+SyncUp uses an A -> B -> C -> D evidence-based signal pipeline:
+
+- **A (Project Context)**: Skills are explicitly defined in `project_skills`. Project metadata `skill_ideas` is informational only and never generates signals.
+- **B (Mentorship)**: Mentorship does NOT emit skill signals by default. Only explicit skill verification during session completion generates signals.
+- **C (Progress Updates)**: Posting a progress update emits signals for all project skills via `emitSkillSignals`.
+- **D (Analytics)**: All skill charts read exclusively from `user_skill_signals` (append-only, single source of truth).
+
+See [architecture.md](architecture.md) for the full pipeline specification.
 
 ---
 
-## Project Structure
+## Database Schema
 
-```
-SyncUp/
-├── client/          # React frontend application
-├── server/          # Node.js/Express backend API
-├── docs/            # Project documentation (Architecture, Guardrails, Handoff)
-└── index.html       # Landing page
-```
+### Core Tables
+
+| Table | Purpose |
+|-------|---------|
+| `users` | User accounts with roles, commencement, cycle, profile links, privacy settings |
+| `projects` | Projects with status, visibility, GitHub/live URLs, case study fields |
+| `project_members` | User-project membership mapping |
+| `project_skills` | Skills associated with projects |
+| `project_discussions` | Project-specific discussion threads |
+| `project_join_requests` | Join request management |
+| `progress_updates` | Progress/status updates on projects |
+| `skills` | Master skill catalog |
+| `user_skill_signals` | Append-only activity signals (single source of truth) |
+| `skill_validations` | Peer upvotes and mentor endorsements |
+| `skill_verifications` | Team member skill claim verification |
+| `mentorship_sessions` | Scheduled mentorship sessions |
+| `mentorship_session_skills` | Skills practiced in sessions |
+| `notifications` | In-app notifications |
+| `channels` | Chat channels |
+| `channel_members` | Channel membership |
+| `messages` | Chat messages (channel + DM) |
+| `user_presence` | Online/offline status |
+| `announcements` | Org-wide announcements |
+| `announcement_reads` | Read tracking for announcements |
+| `events` | Community events |
+| `event_rsvps` | Event RSVPs |
+| `badges` | Badge definitions (14+ badges) |
+| `user_badges` | Earned badges per user |
+| `system_errors` | Error tracking and reporting |
+| `platform_settings` | Key-value platform settings |
+| `admin_invitations` | Invitation-based registration |
 
 ---
 
@@ -76,41 +177,66 @@ SyncUp/
 - Node.js v20+
 - MySQL 8.0+
 
-### Installation & Setup
+### Installation
 
-1. **Clone the repository**:
+```bash
+git clone https://github.com/your-username/SyncUp.git
+cd SyncUp
 
-   ```bash
-   git clone https://github.com/your-username/SyncUp.git
-   cd SyncUp
-   ```
+# Install dependencies
+cd client && npm install
+cd ../server && npm install
 
-2. **Install Dependencies**:
+# Configure environment
+# Edit client/.env and server/.env (see README_client.md and README_server.md)
 
-   ```bash
-   # Frontend
-   cd client && npm install
-   # Backend
-   cd ../server && npm install
-   ```
+# Start development servers
+# Terminal 1: cd server && npm run dev
+# Terminal 2: cd client && npm run dev
+```
 
-3. **Environment Configuration**:
-   Configure `.env` files in both `/client` and `/server` (see internal READMEs for details).
+### Environment Variables
 
-4. **Start Development Servers**:
-   ```bash
-   # Terminal 1 (Backend)
-   cd server && npm run dev
-   # Terminal 2 (Frontend)
-   cd client && npm run dev
-   ```
+**Client** (`client/.env`):
+```
+VITE_API_BASE=http://localhost:5000/api
+```
+
+**Server** (`server/.env`):
+```
+DB_HOST=localhost
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_NAME=syncup_local
+PORT=5000
+```
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [README.md](README.md) | This file -- product overview and getting started |
+| [architecture.md](architecture.md) | Skill Signal pipeline (A -> B -> C -> D) specification |
+| [TECHNICAL_SUMMARY.md](TECHNICAL_SUMMARY.md) | Technical reference with API endpoints and schema |
+| [README_server.md](README_server.md) | Backend setup and development guide |
+| [README_client.md](README_client.md) | Frontend setup and development guide |
+| [README_SkillTracker.md](README_SkillTracker.md) | Skill Tracker design principles and philosophy |
+| [MENTORSHIP_GUARDRAILS.md](MENTORSHIP_GUARDRAILS.md) | Mentorship system constraints and design rules |
+| [REMAINING_FEATURES.md](REMAINING_FEATURES.md) | Feature roadmap and priority list |
+| [skill-tracker.md](skill-tracker.md) | Analytics layer (D-layer) API specification |
+| [skill-trend-transitions.md](skill-trend-transitions.md) | Momentum calculation details |
+| [ICAA_FINAL_PLAN.md](ICAA_FINAL_PLAN.md) | ICAA production roadmap (source of truth) |
+| [ICAA_WORKLOG_2026-05-01.md](ICAA_WORKLOG_2026-05-01.md) | Worklog for 2026-05-01 |
+| [archive/](archive/) | Historical session summaries and superseded plans |
 
 ---
 
 ## Contributors
 
-- **Bonny Makaniankhondo** - Full-Stack Developer
-- **Sofie Garcia** - Front-End Developer and Research Lead
+- **Bonny Makaniankhondo** -- Full-Stack Developer
+- **Sofie Garcia** -- Front-End Developer and Research Lead
 
 ---
 

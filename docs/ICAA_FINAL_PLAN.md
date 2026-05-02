@@ -70,11 +70,13 @@ Add two fields to projects:
 - `github_url`
 - `live_url`
 
-Optional later fields:
+Case-study fields added next:
 
-- `case_study_url`
-- `demo_video_url`
-- `featured_image_url`
+- `case_study_problem`
+- `case_study_solution`
+- `case_study_tech_stack`
+- `case_study_outcomes`
+- `case_study_artifact_url`
 
 Backend/API:
 
@@ -87,6 +89,7 @@ Frontend:
 - Add GitHub and Live URL inputs where projects are created or edited.
 - Show link buttons on project cards.
 - Show links in Project Detail modal.
+- Capture and display case-study fields in create/edit/detail flows.
 
 Why first:
 
@@ -163,6 +166,8 @@ New profile fields to consider:
 - `headline`
 - `featured_project_id`
 
+The first version now supports manual featured project selection so members can choose the project that represents them best.
+
 ### 4. Mentorship Stats For Profiles
 
 Goal: show contribution and community leadership.
@@ -182,11 +187,10 @@ Goal: make the credential layer feel complete.
 
 ### Portfolio Improvements
 
-- Project detail case-study layout.
 - Project screenshots or images.
 - Better empty states.
 - Public/private visibility rules.
-- Featured project selection.
+- Rich media upload for artifacts instead of URL-only artifacts.
 
 ### Profile Improvements
 
@@ -194,6 +198,7 @@ Goal: make the credential layer feel complete.
 - Role/cycle badge placement.
 - Project highlights.
 - Skill evidence.
+- Credential readiness checklist.
 - Timeline of activity:
   - commenced
   - project joined
@@ -204,6 +209,7 @@ Goal: make the credential layer feel complete.
 ### Admin Support
 
 - Admin can see profile completeness.
+- Admin can identify members missing credential profile pieces.
 - Admin can feature community projects.
 - Admin can review public-facing portfolio data.
 
@@ -318,6 +324,9 @@ Turn profile and portfolio into the first version of the ICAA credential layer.
    - headline
 6. Add featured project section to Profile page.
 7. Add mentorship stats to resident/alumni/mentor profiles.
+8. Add project case-study fields and display them in Portfolio, Project Detail, and Profile.
+9. Let members manually choose their featured profile project.
+10. Add credential readiness indicators for members and admins.
 
 ## Not Doing Yet
 

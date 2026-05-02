@@ -1,6 +1,6 @@
-# SyncUp
+# SyncUp / ICAA
 
-Intern collaboration and mentorship platform with evidence-based skill tracking.
+Intern collaboration, mentorship, and professional community platform with evidence-based skill tracking.
 
 ## Quick Start
 
@@ -19,22 +19,30 @@ cd ../server && npm install
 
 ## Features
 
-- Project collaboration with team management
-- Mentorship session booking and tracking
-- Evidence-based skill tracking system
-- Real-time chat with channels and DMs
+- Intern Lobby and Commencement System
+- SyncChat with ICAA HQ (announcements, events, welcomes)
+- Project collaboration with team management, discussions, and case studies
+- Mentorship session booking, tracking, and skill verification
+- Evidence-based skill tracking with peer validations
+- Project Portfolio with GitHub/live URLs
+- Professional profile credential pages
 - Badge achievements system
-- Admin dashboard
+- Admin dashboard with HQ management
+- Invitation-based registration
 
 ## Documentation
 
-- docs/README.md - Overview and setup
-- docs/TECHNICAL_SUMMARY.md - Technical details
-- docs/PROJECT_SUMMARY.md - Comprehensive documentation
-- docs/architecture.md - Skill Signal pipeline
+See [docs/README.md](docs/README.md) for the full documentation index and getting started guide.
+
+Key docs:
+- [docs/README.md](docs/README.md) - Product overview, architecture, and setup
+- [docs/TECHNICAL_SUMMARY.md](docs/TECHNICAL_SUMMARY.md) - API endpoints and schema reference
+- [docs/architecture.md](docs/architecture.md) - Skill Signal pipeline specification
+- [docs/ICAA_FINAL_PLAN.md](docs/ICAA_FINAL_PLAN.md) - ICAA production roadmap
+- [docs/MENTORSHIP_GUARDRAILS.md](docs/MENTORSHIP_GUARDRAILS.md) - Design constraints
 
 ## Tech Stack
 
-- React 19 + Vite + Tailwind CSS
-- Node.js + Express
-- MySQL (Azure SQL in production)
+- React 19 + Vite 7 + Tailwind CSS v4
+- Node.js + Express 5
+- MySQL 8 (Azure SQL in production)
