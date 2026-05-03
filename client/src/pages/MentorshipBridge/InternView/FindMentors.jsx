@@ -80,6 +80,8 @@ export default function FindMentors({ onSessionRequested }) {
         role: mentorRow.role,
         cycle: mentorRow.cycle || null,
         projects: mentorRow.projects || "", // Project tab specific
+        completed_sessions: Number(mentorRow.completed_sessions) || 0,
+        last_session_at: mentorRow.last_session_at || null,
         availabilityCount: mentorRow.available_date ? 1 : 0,
         nextAvailable:
           mentorRow.available_date ?
@@ -108,10 +110,29 @@ export default function FindMentors({ onSessionRequested }) {
       if (mentorRow.cycle && !existing.cycle) {
         existing.cycle = mentorRow.cycle;
       }
+      existing.completed_sessions = Math.max(
+        Number(existing.completed_sessions) || 0,
+        Number(mentorRow.completed_sessions) || 0,
+      );
+      if (
+        mentorRow.last_session_at &&
+        (!existing.last_session_at ||
+          new Date(mentorRow.last_session_at) > new Date(existing.last_session_at))
+      ) {
+        existing.last_session_at = mentorRow.last_session_at;
+      }
     }
 
     return acc;
   }, []);
+
+  uniqueMentors.sort((a, b) => {
+    const sessionDiff =
+      (Number(b.completed_sessions) || 0) -
+      (Number(a.completed_sessions) || 0);
+    if (sessionDiff !== 0) return sessionDiff;
+    return (a.name || "").localeCompare(b.name || "");
+  });
 
   // Apply search filter to unique mentors
   const filtered = uniqueMentors.filter((mentor) => {

@@ -2,6 +2,7 @@ import express from "express";
 import pool from "../config/db.js";
 import {
   getAllUsers,
+  getMemberDirectory,
   getUserProfile,
   getUserSkillInventory,
   getUserActivityTimeline,
@@ -30,6 +31,7 @@ const router = express.Router();
  *                 $ref: '#/components/schemas/User'
  */
 router.get("/", getAllUsers);
+router.get("/directory", getMemberDirectory);
 
 /**
  * @swagger

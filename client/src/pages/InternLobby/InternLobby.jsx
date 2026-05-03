@@ -11,6 +11,7 @@ import {
   getAvatarUrl,
 } from "../../utils/api";
 import RoleBadge from "../../components/shared/RoleBadge";
+import EncouragementBoard from "../../components/community/EncouragementBoard";
 
 export default function InternLobby() {
   const { user } = useUser();
@@ -224,6 +225,10 @@ export default function InternLobby() {
         <p className="text-sm text-text-secondary">
           Communicate with your mentors and administration to guide your project journey.
         </p>
+      </div>
+
+      <div className="mb-4">
+        <EncouragementBoard targetCycle={user?.cycle} mode="read" compact />
       </div>
 
       <div className="flex flex-1 gap-4 overflow-hidden">

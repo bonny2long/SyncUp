@@ -112,6 +112,8 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
     portfolio: "Project Portfolio",
     chat: "SyncChat",
     lobby: "Intern Lobby",
+    directory: "Member Directory",
+    opportunities: "Opportunity Board",
     settings: "Settings",
   };
   const pageTitle = titleMap[activeTab] || "SyncUp";

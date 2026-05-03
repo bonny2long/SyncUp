@@ -29,6 +29,12 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
 
     if (isCommunityMember) {
       items.push({ id: "chat", label: "SyncChat", path: "/chat" });
+      items.push({ id: "directory", label: "Member Directory", path: "/directory" });
+      items.push({
+        id: "opportunities",
+        label: "Opportunity Board",
+        path: "/opportunities",
+      });
     }
 
     if (user?.role === "intern") {

@@ -25,6 +25,36 @@ const formatDateForMySQL = (dateStr) => {
   return `${year}-${month}-${day} ${hours}:${mins}:${secs}`;
 };
 
+export const checkAndAwardMentorBadge = async (mentorId, connection) => {
+  try {
+    const [countRows] = await connection.query(
+      `SELECT COUNT(*) as total
+       FROM mentorship_sessions
+       WHERE mentor_id = ? AND status = 'completed'`,
+      [mentorId],
+    );
+
+    const completedTotal = Number(countRows[0]?.total || 0);
+    if (completedTotal < 3) return null;
+
+    const [badgeRows] = await connection.query(
+      "SELECT id FROM badges WHERE badge_key = 'mentor' LIMIT 1",
+    );
+
+    if (badgeRows.length === 0) return null;
+
+    await connection.query(
+      "INSERT IGNORE INTO user_badges (user_id, badge_id) VALUES (?, ?)",
+      [mentorId, badgeRows[0].id],
+    );
+
+    return badgeRows[0];
+  } catch (err) {
+    console.error("Mentor badge check failed:", err);
+    return null;
+  }
+};
+
 // Fetch all mentors
 export const getMentors = async (req, res) => {
   try {
@@ -79,7 +109,8 @@ export const getMentorDetails = async (req, res) => {
         COUNT(*) as total_sessions,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_sessions,
         SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) as accepted_sessions,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_sessions
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_sessions,
+        MAX(CASE WHEN status = 'completed' THEN session_date ELSE NULL END) as last_session_at
       FROM mentorship_sessions
       WHERE mentor_id = ?
       `,
@@ -108,6 +139,16 @@ export const getAvailableMentors = async (req, res) => {
         u.email,
         u.role,
         u.cycle,
+        (
+          SELECT COUNT(*)
+          FROM mentorship_sessions ms
+          WHERE ms.mentor_id = u.id AND ms.status = 'completed'
+        ) as completed_sessions,
+        (
+          SELECT MAX(ms.session_date)
+          FROM mentorship_sessions ms
+          WHERE ms.mentor_id = u.id AND ms.status = 'completed'
+        ) as last_session_at,
         ma.available_date,
         ma.available_time
       FROM mentor_availability ma
@@ -119,7 +160,7 @@ export const getAvailableMentors = async (req, res) => {
             AND s.session_date = CAST(CONCAT(DATE(ma.available_date), ' ', ma.available_time) AS DATETIME)
             AND s.status IN ('pending', 'accepted', 'completed')
         )
-      ORDER BY ma.available_date ASC, ma.available_time ASC
+      ORDER BY completed_sessions DESC, u.name ASC, ma.available_date ASC, ma.available_time ASC
       `,
     );
     res.json(rows);
@@ -140,12 +181,23 @@ export const getProjectMentors = async (req, res) => {
         u.email,
         u.role,
         u.cycle,
+        (
+          SELECT COUNT(*)
+          FROM mentorship_sessions ms
+          WHERE ms.mentor_id = u.id AND ms.status = 'completed'
+        ) as completed_sessions,
+        (
+          SELECT MAX(ms.session_date)
+          FROM mentorship_sessions ms
+          WHERE ms.mentor_id = u.id AND ms.status = 'completed'
+        ) as last_session_at,
         GROUP_CONCAT(DISTINCT p.title ORDER BY p.title SEPARATOR ', ') AS projects
       FROM project_members pm
       JOIN users u ON u.id = pm.user_id
       JOIN projects p ON pm.project_id = p.id
       WHERE u.role IN ('mentor', 'alumni', 'resident')
       GROUP BY u.id, u.name, u.email, u.role, u.cycle
+      ORDER BY completed_sessions DESC, u.name ASC
       `,
     );
     res.json(rows);
@@ -313,6 +365,8 @@ export const updateSessionStatus = async (req, res) => {
         weight: 3, // mentorship carries higher intent
         connection,
       });
+
+      await checkAndAwardMentorBadge(session.mentor_id, connection);
     }
 
     await connection.commit();

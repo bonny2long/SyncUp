@@ -12,10 +12,13 @@ const USER_SELECT_FIELDS = `
   linkedin_url,
   personal_site_url,
   featured_project_id,
+  current_title,
+  current_employer,
   profile_pic,
   is_active,
   has_commenced,
   cycle,
+  intern_cycle_id,
   email_notifications,
   notify_join_requests,
   notify_mentions,
@@ -91,6 +94,29 @@ function normalizeProfileUrl(value, label) {
   }
 }
 
+function publicProfileUser(user) {
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    join_date: user.join_date,
+    bio: user.bio,
+    headline: user.headline,
+    github_url: user.github_url,
+    linkedin_url: user.linkedin_url,
+    personal_site_url: user.personal_site_url,
+    featured_project_id: user.featured_project_id,
+    current_title: user.current_title,
+    current_employer: user.current_employer,
+    profile_pic: user.profile_pic,
+    has_commenced: user.has_commenced,
+    cycle: user.cycle,
+    intern_cycle_id: user.intern_cycle_id,
+    show_projects: user.show_projects,
+    show_skills: user.show_skills,
+  };
+}
+
 // GET /api/users
 export const getAllUsers = async (req, res) => {
   try {
@@ -131,10 +157,102 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+// GET /api/users/directory
+// Public community fields for the logged-in member directory.
+export const getMemberDirectory = async (req, res) => {
+  const { role, cycle, search } = req.query;
+  const allowedRoles = ["resident", "alumni", "mentor"];
+  const where = [
+    "u.role IN ('resident', 'alumni', 'mentor')",
+    "(u.is_active IS NULL OR u.is_active != FALSE)",
+  ];
+  const params = [];
+
+  if (role && role !== "all" && allowedRoles.includes(role)) {
+    where.push("u.role = ?");
+    params.push(role);
+  }
+
+  if (cycle) {
+    where.push("u.cycle = ?");
+    params.push(cycle);
+  }
+
+  if (search && String(search).trim()) {
+    const term = `%${String(search).trim()}%`;
+    where.push(`(
+      u.name LIKE ?
+      OR u.headline LIKE ?
+      OR u.current_title LIKE ?
+      OR u.current_employer LIKE ?
+    )`);
+    params.push(term, term, term, term);
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `
+        SELECT
+          u.id,
+          u.name,
+          u.role,
+          u.cycle,
+          u.headline,
+          u.profile_pic,
+          u.current_title,
+          u.current_employer,
+          u.github_url,
+          u.linkedin_url,
+          u.personal_site_url,
+          u.join_date,
+          (
+            SELECT GROUP_CONCAT(
+              gp.position
+              ORDER BY FIELD(
+                gp.position,
+                'president',
+                'vice_president',
+                'treasurer',
+                'secretary',
+                'parliamentarian',
+                'tech_lead',
+                'tech_member'
+              )
+              SEPARATOR ','
+            )
+            FROM governance_positions gp
+            WHERE gp.user_id = u.id AND gp.is_active = TRUE
+          ) AS governance_positions,
+          (
+            SELECT COUNT(*)
+            FROM project_members pm
+            WHERE pm.user_id = u.id
+          ) AS project_count,
+          (
+            SELECT COUNT(*)
+            FROM mentorship_sessions ms
+            WHERE ms.mentor_id = u.id
+              AND ms.status = 'completed'
+          ) AS completed_mentor_sessions
+        FROM users u
+        WHERE ${where.join(" AND ")}
+        ORDER BY FIELD(u.role, 'alumni', 'resident', 'mentor'), u.cycle ASC, u.name ASC
+      `,
+      params,
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching member directory:", err);
+    res.status(500).json({ error: "Failed to fetch member directory" });
+  }
+};
+
 // GET /api/users/:userId/profile
 // Get comprehensive user profile with skills, projects, and stats
 export const getUserProfile = async (req, res) => {
   const { userId } = req.params;
+  const publicMode = req.query.public === "true";
 
   try {
     // Get basic user info
@@ -150,6 +268,25 @@ export const getUserProfile = async (req, res) => {
     }
 
     const user = users[0];
+
+    const [governancePositions] = await pool.query(
+      `
+        SELECT id, position, assigned_at
+        FROM governance_positions
+        WHERE user_id = ? AND is_active = TRUE
+        ORDER BY FIELD(
+          position,
+          'president',
+          'vice_president',
+          'treasurer',
+          'secretary',
+          'parliamentarian',
+          'tech_lead',
+          'tech_member'
+        )
+      `,
+      [userId],
+    );
 
     // Get user's skills with signal counts
     const [skills] = await pool.query(
@@ -261,11 +398,13 @@ export const getUserProfile = async (req, res) => {
     );
 
     res.json({
-      user,
-      skills,
-      projects,
+      user: publicMode ? publicProfileUser(user) : user,
+      skills: publicMode && user.show_skills === false ? [] : skills,
+      projects: publicMode && user.show_projects === false ? [] : projects,
       stats,
       activity_streak: streakData[0]?.current_streak || 0,
+      governance_positions: governancePositions,
+      public: publicMode,
     });
   } catch (err) {
     console.error("Error fetching user profile:", err);
@@ -405,6 +544,14 @@ export const updateUserProfile = async (req, res) => {
     if (body.headline !== undefined) {
       updates.headline = body.headline ? String(body.headline).trim() : null;
     }
+    if (body.current_title !== undefined) {
+      updates.current_title =
+        body.current_title ? String(body.current_title).trim() : null;
+    }
+    if (body.current_employer !== undefined) {
+      updates.current_employer =
+        body.current_employer ? String(body.current_employer).trim() : null;
+    }
 
     try {
       if (body.github_url !== undefined) {
@@ -509,6 +656,9 @@ export const updateUserProfile = async (req, res) => {
       updates.has_commenced = body.has_commenced;
     }
     if (body.cycle !== undefined) updates.cycle = body.cycle || null;
+    if (body.intern_cycle_id !== undefined) {
+      updates.intern_cycle_id = body.intern_cycle_id || null;
+    }
 
     const requestedCommencement = body.has_commenced === true;
     const effectiveRole = updates.role ?? existingUser.role;

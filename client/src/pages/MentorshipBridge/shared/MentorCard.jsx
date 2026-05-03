@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Clock, Users } from "lucide-react";
+import { Award, Calendar, Clock, Users } from "lucide-react";
 import RoleBadge from "../../../components/shared/RoleBadge";
 
 export default function MentorCard({
@@ -18,6 +18,17 @@ export default function MentorCard({
     });
   };
 
+  const formatMonthYear = (dateStr) => {
+    if (!dateStr) return null;
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const completedSessions = Number(mentor.completed_sessions) || 0;
+  const lastSessionLabel = formatMonthYear(mentor.last_session_at);
+
   return (
     <div className="bg-surface border border-border rounded-lg p-4 hover:shadow-lg transition group">
       {/* Header */}
@@ -34,6 +45,16 @@ export default function MentorCard({
               Commenced {mentor.cycle}
             </p>
           )}
+          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-text-secondary">
+            {completedSessions > 0 ?
+              <span className="inline-flex items-center gap-1">
+                <Award className="w-3 h-3 text-primary" />
+                {completedSessions} session
+                {completedSessions === 1 ? "" : "s"} completed
+              </span>
+            : <span className="text-text-secondary/70">New mentor</span>}
+            {lastSessionLabel && <span>Active {lastSessionLabel}</span>}
+          </div>
           <p className="text-sm text-text-secondary mt-1">{mentor.email}</p>
         </div>
       </div>

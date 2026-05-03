@@ -5,6 +5,7 @@ import IncomingRequests from "./IncomingRequests";
 import MySessions from "./MySessions";
 import MentorshipHistory from "./MentorshipHistory";
 import MentorLeaderboard from "./MentorLeaderboard";
+import EncouragementBoard from "../../../components/community/EncouragementBoard";
 
 export default function MentorView() {
   const { user } = useUser();
@@ -105,6 +106,17 @@ export default function MentorView() {
         >
           Leaderboard
         </button>
+
+        <button
+          onClick={() => setActiveTab("encouragement")}
+          className={`px-4 py-3 font-medium transition-all ${
+            activeTab === "encouragement" ?
+              "text-primary border-b-2 border-primary"
+            : "text-text-secondary hover:text-neutral-dark"
+          }`}
+        >
+          Encouragement
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -137,6 +149,10 @@ export default function MentorView() {
         )}
 
         {activeTab === "leaderboard" && <MentorLeaderboard />}
+
+        {activeTab === "encouragement" && (
+          <EncouragementBoard mode="post" />
+        )}
       </div>
     </div>
   );

@@ -14,6 +14,10 @@ const SkillTracker = React.lazy(() => import("./SkillTracker/SkillTracker"));
 const HealthStatus = React.lazy(() => import("../components/HealthStatus"));
 const Chat = React.lazy(() => import("./Chat/Chat"));
 const InternLobby = React.lazy(() => import("./InternLobby/InternLobby"));
+const MemberDirectory = React.lazy(() => import("./Directory/MemberDirectory"));
+const OpportunityBoard = React.lazy(
+  () => import("./Opportunities/OpportunityBoard"),
+);
 
 export default function Dashboard() {
   const location = useLocation();
@@ -36,6 +40,10 @@ export default function Dashboard() {
         return <Chat />;
       case "lobby":
         return <InternLobby />;
+      case "directory":
+        return <MemberDirectory />;
+      case "opportunities":
+        return <OpportunityBoard />;
       default:
         return <CollaborationHub />;
     }

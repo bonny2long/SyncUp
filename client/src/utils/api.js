@@ -1101,6 +1101,184 @@ export async function updateUser(userId, data) {
   return res.json();
 }
 
+export async function fetchMemberDirectory(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.role && filters.role !== "all") params.set("role", filters.role);
+  if (filters.cycle) params.set("cycle", filters.cycle);
+  if (filters.search) params.set("search", filters.search);
+
+  const query = params.toString();
+  const res = await fetch(`${API_BASE}/users/directory${query ? `?${query}` : ""}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch member directory");
+  return res.json();
+}
+
+export async function fetchGovernancePositions() {
+  const res = await fetch(`${API_BASE}/governance/positions`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch governance positions");
+  return res.json();
+}
+
+export async function fetchUserGovernance(userId) {
+  const res = await fetch(`${API_BASE}/governance/user/${userId}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch user governance");
+  return res.json();
+}
+
+export async function assignGovernancePosition(data) {
+  const res = await fetch(`${API_BASE}/governance/assign`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getUserHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to assign governance position");
+  return res.json();
+}
+
+export async function removeGovernancePosition(id) {
+  const res = await fetch(`${API_BASE}/governance/remove/${id}`, {
+    method: "DELETE",
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to remove governance position");
+  return res.json();
+}
+
+export async function fetchOpportunities(userId) {
+  const params = new URLSearchParams();
+  if (userId) params.set("user_id", userId);
+
+  const res = await fetch(
+    `${API_BASE}/opportunities${params.toString() ? `?${params}` : ""}`,
+    { headers: getUserHeaders() },
+  );
+  if (!res.ok) throw new Error("Failed to fetch opportunities");
+  return res.json();
+}
+
+export async function createOpportunity(data) {
+  const res = await fetch(`${API_BASE}/opportunities`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getUserHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to create opportunity");
+  }
+  return res.json();
+}
+
+export async function deleteOpportunity(id, userId) {
+  const params = new URLSearchParams();
+  if (userId) params.set("user_id", userId);
+
+  const res = await fetch(
+    `${API_BASE}/opportunities/${id}${params.toString() ? `?${params}` : ""}`,
+    {
+      method: "DELETE",
+      headers: getUserHeaders(),
+    },
+  );
+  if (!res.ok) throw new Error("Failed to delete opportunity");
+  return res.json();
+}
+
+export async function fetchEncouragements(targetCycle, requesterId) {
+  const params = new URLSearchParams();
+  if (targetCycle) params.set("target_cycle", targetCycle);
+  if (requesterId) params.set("requester_id", requesterId);
+
+  const res = await fetch(`${API_BASE}/encouragements?${params}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch encouragements");
+  return res.json();
+}
+
+export async function createEncouragement(data) {
+  const res = await fetch(`${API_BASE}/encouragements`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getUserHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to post encouragement");
+  }
+  return res.json();
+}
+
+export async function deleteEncouragement(id, userId) {
+  const params = new URLSearchParams();
+  if (userId) params.set("user_id", userId);
+
+  const res = await fetch(`${API_BASE}/encouragements/${id}?${params}`, {
+    method: "DELETE",
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete encouragement");
+  return res.json();
+}
+
+export async function fetchCycles(status) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+
+  const res = await fetch(`${API_BASE}/cycles${params.toString() ? `?${params}` : ""}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch cycles");
+  return res.json();
+}
+
+export async function createCycle(data) {
+  const res = await fetch(`${API_BASE}/cycles`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getUserHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to create cycle");
+  }
+  return res.json();
+}
+
+export async function updateCycleStatus(id, status, adminId) {
+  const res = await fetch(`${API_BASE}/cycles/${id}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...getUserHeaders(),
+    },
+    body: JSON.stringify({ status, admin_id: adminId }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to update cycle");
+  }
+  return res.json();
+}
+
 export async function deleteProject(projectId) {
   const res = await fetch(`${API_BASE}/projects/${projectId}`, {
     method: "DELETE",

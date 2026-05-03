@@ -18,12 +18,14 @@ import {
   Github,
   Linkedin,
   CheckCircle,
+  Copy,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { ChartError } from "../components/shared/ErrorBoundary";
 import RoleBadge from "../components/shared/RoleBadge";
+import GovernanceBadge from "../components/shared/GovernanceBadge";
 import SkillBadge from "../components/shared/SkillBadge";
 import { getErrorMessage } from "../utils/errorHandler";
 import { calculateProfileCompleteness } from "../utils/profileCompleteness";
@@ -44,7 +46,7 @@ import BadgeNotification from "../components/badges/BadgeNotification";
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 const COMMUNITY_MENTOR_ROLES = ["mentor", "alumni", "resident"];
 
-export default function UserProfile() {
+export default function UserProfile({ isPublic = false }) {
   const { userId } = useParams();
   const { user: currentUser, updateUser } = useUser();
   const { addToast, handleError } = useToast();
@@ -69,6 +71,8 @@ export default function UserProfile() {
     github_url: "",
     linkedin_url: "",
     personal_site_url: "",
+    current_title: "",
+    current_employer: "",
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [featuringProjectId, setFeaturingProjectId] = useState(null);
@@ -89,7 +93,11 @@ export default function UserProfile() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_BASE}/users/${userId}/profile`);
+      const profileUrl =
+        isPublic ?
+          `${API_BASE}/users/${userId}/profile?public=true`
+        : `${API_BASE}/users/${userId}/profile`;
+      const res = await fetch(profileUrl);
       if (!res.ok) throw new Error("Failed to fetch profile");
       const data = await res.json();
       setProfile(data);
@@ -100,7 +108,7 @@ export default function UserProfile() {
     } finally {
       setLoading(false);
     }
-  }, [handleError, userId]);
+  }, [handleError, isPublic, userId]);
 
   const loadBadges = useCallback(async () => {
     if (!userId) return;
@@ -191,16 +199,28 @@ export default function UserProfile() {
 
   useEffect(() => {
     loadProfile();
-    loadBadges();
-  }, [loadBadges, loadProfile]);
+    if (!isPublic) {
+      loadBadges();
+    }
+  }, [isPublic, loadBadges, loadProfile]);
 
   useEffect(() => {
-    if (currentUser && userId) {
+    if (!isPublic && currentUser && userId) {
       loadSkillSignals();
     }
-  }, [currentUser, loadSkillSignals, userId]);
+  }, [currentUser, isPublic, loadSkillSignals, userId]);
 
   if (loading) {
+    if (isPublic) {
+      return (
+        <div className="min-h-screen bg-background p-6">
+          <div className="max-w-4xl mx-auto">
+            <SkeletonLoader type="text" lines={3} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex h-screen bg-background">
         <Sidebar activeTab="profile" />
@@ -224,6 +244,16 @@ export default function UserProfile() {
   }
 
   if (error || !profile) {
+    if (isPublic) {
+      return (
+        <div className="min-h-screen bg-background p-6">
+          <div className="max-w-4xl mx-auto">
+            <ChartError onRetry={loadProfile} error={error} />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex h-screen bg-background">
         <Sidebar activeTab="profile" />
@@ -241,7 +271,14 @@ export default function UserProfile() {
     );
   }
 
-  const { user, skills, projects, stats, activity_streak } = profile;
+  const {
+    user,
+    skills,
+    projects,
+    stats,
+    activity_streak,
+    governance_positions = [],
+  } = profile;
   const isOwnProfile = currentUser?.id === user.id;
   const credentialLinks = [
     {
@@ -308,6 +345,16 @@ export default function UserProfile() {
     });
   };
 
+  const handleCopyPublicLink = async () => {
+    const publicUrl = `${window.location.origin}/p/${user.id}`;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      addToast({ type: "success", message: "Public profile link copied" });
+    } catch {
+      addToast({ type: "info", message: publicUrl });
+    }
+  };
+
   const handleEditProfile = () => {
     setEditForm({
       name: user.name,
@@ -316,6 +363,8 @@ export default function UserProfile() {
       github_url: user.github_url || "",
       linkedin_url: user.linkedin_url || "",
       personal_site_url: user.personal_site_url || "",
+      current_title: user.current_title || "",
+      current_employer: user.current_employer || "",
     });
     setIsEditingProfile(true);
   };
@@ -329,6 +378,8 @@ export default function UserProfile() {
       github_url: "",
       linkedin_url: "",
       personal_site_url: "",
+      current_title: "",
+      current_employer: "",
     });
   };
 
@@ -427,26 +478,41 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className={isPublic ? "min-h-screen bg-background" : "flex h-screen bg-background"}>
       {/* Sidebar */}
-      <Sidebar
-        activeTab="collaboration"
-        isMobileOpen={isMobileSidebarOpen}
-        onClose={() => setIsMobileSidebarOpen(false)}
-      />
+      {!isPublic && (
+        <Sidebar
+          activeTab="collaboration"
+          isMobileOpen={isMobileSidebarOpen}
+          onClose={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={isPublic ? "min-h-screen" : "flex-1 flex flex-col overflow-hidden"}>
         {/* Navbar */}
-        <div className="px-6 pt-6">
-          <Navbar
-            activeTab="collaboration"
-            onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-          />
-        </div>
+        {!isPublic && (
+          <div className="px-6 pt-6">
+            <Navbar
+              activeTab="collaboration"
+              onToggleSidebar={() =>
+                setIsMobileSidebarOpen(!isMobileSidebarOpen)
+              }
+            />
+          </div>
+        )}
+        {isPublic && (
+          <div className="border-b border-border bg-surface">
+            <div className="max-w-4xl mx-auto px-6 py-4">
+              <p className="text-sm font-semibold text-primary">
+                SyncUp * iCAA Public Profile
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Page Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className={isPublic ? "p-6" : "flex-1 overflow-auto p-6"}>
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="bg-surface border border-border rounded-lg p-6 mb-6 relative">
@@ -525,6 +591,34 @@ export default function UserProfile() {
                         placeholder="Professional headline"
                         className="w-full text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
                       />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={editForm.current_title}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              current_title: e.target.value,
+                            })
+                          }
+                          maxLength={200}
+                          placeholder="Current title"
+                          className="text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                        <input
+                          type="text"
+                          value={editForm.current_employer}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              current_employer: e.target.value,
+                            })
+                          }
+                          maxLength={200}
+                          placeholder="Current employer"
+                          className="text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <input
                           type="url"
@@ -587,8 +681,21 @@ export default function UserProfile() {
                           </span>
                         )}
                       </p>
+                      {(user.current_title || user.current_employer) && (
+                        <p className="text-sm text-text-secondary mt-1">
+                          {[user.current_title, user.current_employer]
+                            .filter(Boolean)
+                            .join(" at ")}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 flex-wrap mt-2">
                         <RoleBadge role={user.role} />
+                        {governance_positions.map((position) => (
+                          <GovernanceBadge
+                            key={position.id || position.position}
+                            position={position.position}
+                          />
+                        ))}
                         {user.cycle && (
                           <span className="text-sm text-text-secondary">
                             {user.role === "intern" ?
@@ -620,6 +727,11 @@ export default function UserProfile() {
                           ))}
                         </div>
                       )}
+                      {isPublic && !currentUser && (
+                        <p className="text-xs text-text-secondary mt-3">
+                          Log in to connect with this member inside SyncUp.
+                        </p>
+                      )}
                       {!user.bio &&
                         currentUser &&
                         currentUser.id === user.id && (
@@ -632,7 +744,7 @@ export default function UserProfile() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {currentUser && currentUser.id === user.id ?
+                  {!isPublic && currentUser && currentUser.id === user.id ?
                     isEditingProfile ?
                       <div className="flex items-center gap-2">
                         <button
@@ -651,15 +763,25 @@ export default function UserProfile() {
                           {savingProfile ? "Saving..." : "Save"}
                         </button>
                       </div>
-                    : <button
-                        onClick={handleEditProfile}
-                        className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-highlight text-gray-400 hover:text-primary transition"
-                        title="Edit Profile"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
+                    : <div className="absolute top-4 right-4 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCopyPublicLink}
+                          className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40 transition"
+                        >
+                          <Copy className="w-4 h-4" />
+                          Copy public link
+                        </button>
+                        <button
+                          onClick={handleEditProfile}
+                          className="p-2 rounded-full hover:bg-surface-highlight text-gray-400 hover:text-primary transition"
+                          title="Edit Profile"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </div>
 
-                  : currentUser && currentUser.id !== user.id ?
+                  : !isPublic && currentUser && currentUser.id !== user.id ?
                     <>
                       {COMMUNITY_MENTOR_ROLES.includes(user.role) && (
                         <button

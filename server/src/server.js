@@ -18,6 +18,10 @@ import eventsRoutes from "./routes/eventsRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import errorsRoutes from "./routes/errorsRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import governanceRoutes from "./routes/governanceRoutes.js";
+import opportunitiesRoutes from "./routes/opportunitiesRoutes.js";
+import encouragementsRoutes from "./routes/encouragementsRoutes.js";
+import cyclesRoutes from "./routes/cyclesRoutes.js";
 import { checkMaintenanceMode } from "./middleware/maintenanceMode.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -115,6 +119,10 @@ app.use("/api/events", eventsRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/errors", errorsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/governance", governanceRoutes);
+app.use("/api/opportunities", opportunitiesRoutes);
+app.use("/api/encouragements", encouragementsRoutes);
+app.use("/api/cycles", cyclesRoutes);
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

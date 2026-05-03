@@ -296,6 +296,21 @@ export const userValidators = {
       .trim()
       .isLength({ max: 500 })
       .withMessage("Bio must be less than 500 characters"),
+    body("headline")
+      .optional()
+      .trim()
+      .isLength({ max: 160 })
+      .withMessage("Headline must be less than 160 characters"),
+    body("current_title")
+      .optional({ nullable: true, checkFalsy: true })
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Current title must be less than 200 characters"),
+    body("current_employer")
+      .optional({ nullable: true, checkFalsy: true })
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Current employer must be less than 200 characters"),
     body("email").optional().isEmail().withMessage("Invalid email format"),
     body("role")
       .optional()
@@ -313,6 +328,10 @@ export const userValidators = {
       .optional({ nullable: true })
       .isLength({ max: 10 })
       .withMessage("Cycle must be 10 characters or fewer"),
+    body("intern_cycle_id")
+      .optional({ nullable: true, checkFalsy: true })
+      .isInt({ min: 1 })
+      .withMessage("intern_cycle_id must be a positive integer"),
     body("featured_project_id")
       .optional({ nullable: true, checkFalsy: true })
       .isInt({ min: 1 })

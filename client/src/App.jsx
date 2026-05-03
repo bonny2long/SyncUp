@@ -71,6 +71,7 @@ function ProtectedRoute({
   requireAdmin = false,
   disallowAdmin = false,
   requireChatAccess = false,
+  requireCommunityMember = false,
 }) {
   const { user, loading } = useUser();
 
@@ -90,6 +91,8 @@ function ProtectedRoute({
     return <Navigate to="/collaboration" replace />;
   if (requireChatAccess && !canAccessSyncChat)
     return <Navigate to="/mentorship" replace />;
+  if (requireCommunityMember && !isCommunityMember)
+    return <Navigate to="/collaboration" replace />;
 
   return children;
 }
@@ -157,6 +160,32 @@ export default function App() {
               }
             />
             <Route
+              path="/directory"
+              element={
+                <MaintenanceCheck>
+                  <ProtectedRoute
+                    disallowAdmin={true}
+                    requireCommunityMember={true}
+                  >
+                    <Dashboard />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
+              }
+            />
+            <Route
+              path="/opportunities"
+              element={
+                <MaintenanceCheck>
+                  <ProtectedRoute
+                    disallowAdmin={true}
+                    requireCommunityMember={true}
+                  >
+                    <Dashboard />
+                  </ProtectedRoute>
+                </MaintenanceCheck>
+              }
+            />
+            <Route
               path="/skills"
               element={
                 <MaintenanceCheck>
@@ -173,6 +202,14 @@ export default function App() {
                   <ProtectedRoute>
                     <UserProfile />
                   </ProtectedRoute>
+                </MaintenanceCheck>
+              }
+            />
+            <Route
+              path="/p/:userId"
+              element={
+                <MaintenanceCheck>
+                  <UserProfile isPublic={true} />
                 </MaintenanceCheck>
               }
             />

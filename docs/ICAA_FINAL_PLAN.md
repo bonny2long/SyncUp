@@ -1,347 +1,477 @@
-# ICAA / SyncUp Final Production Plan
-
-This plan combines today's implementation direction with the coworker feedback. The goal is to avoid chasing every possible feature and instead finish the surfaces that make ICAA feel like a real professional community.
-
-## Product Direction
-
-ICAA / SyncUp should be understood as a professional community platform with four connected layers:
-
-1. **Onboarding Layer**
-   - Intern Lobby
-   - Mentorship requests
-   - Skill growth
-   - Commencement into the community
-
-2. **Community Layer**
-   - SyncChat
-   - ICAA HQ announcements
-   - Events
-   - Welcomes
-   - Community identity through roles, cycles, and badges
-
-3. **Work Layer**
-   - Collaboration Hub
-   - Project progress updates
-   - Project-specific discussion
-   - Team membership and join requests
-
-4. **Credential Layer**
-   - Public/profile-ready member pages
-   - Project portfolio
-   - GitHub links
-   - Live project links
-   - Featured project case studies
-   - Mentorship and contribution history
-
-The first three layers are now mostly in place. The strongest next move is the Credential Layer.
-
-## Direction Decision
-
-### Direction A: Brand + Visual Polish
-
-**Decision: Later.**
-
-Brand polish matters, especially with the ICAA guide, but doing it before the main product surfaces are locked will create rework. Colors, badges, cards, and layout should be polished once the profile and portfolio structure is final.
-
-### Direction B: Profile Page + GitHub + Portfolio Revamp
-
-**Decision: Do next.**
-
-This is the highest-impact remaining direction because ICAA is a professional community. Members should be able to show employers, partners, mentors, and other community members what they have built.
-
-The profile and portfolio should evolve from "internal tracker" into "professional credential."
-
-### Direction C: Identity Badge System
-
-**Decision: Do after profile/portfolio, together with brand polish.**
-
-Role badges are important, but the final badge visual language should come from the ICAA brand system. Building badges now without the final brand pass risks doing the same work twice.
-
-## Final Roadmap
-
-## Phase 1: Profile + Portfolio Foundation
-
-Goal: make projects and profiles externally meaningful.
-
-### 1. Add Project Link Fields
-
-Add two fields to projects:
-
-- `github_url`
-- `live_url`
-
-Case-study fields added next:
-
-- `case_study_problem`
-- `case_study_solution`
-- `case_study_tech_stack`
-- `case_study_outcomes`
-- `case_study_artifact_url`
-
-Backend/API:
-
-- Update project create/edit payloads.
-- Return these fields in project list, project detail, portfolio detail, and user profile queries.
-- Validate URLs lightly.
-
-Frontend:
-
-- Add GitHub and Live URL inputs where projects are created or edited.
-- Show link buttons on project cards.
-- Show links in Project Detail modal.
-- Capture and display case-study fields in create/edit/detail flows.
-
-Why first:
-
-- Small database change.
-- Unlocks portfolio and profile value immediately.
-- Gives public-facing project cards real proof points.
-
-### 2. Revamp Project Portfolio Page
-
-Goal: make portfolio feel like a showcase, not just a project grid.
-
-Recommended structure:
-
-- Featured project case study at the top.
-- Project cards below in a cleaner grid.
-- Each card should show:
-  - title
-  - short description
-  - status
-  - skills
-  - team/collaborators
-  - GitHub button when available
-  - Live button when available
-  - detail/case study button
-
-Featured project rules:
-
-- Prefer a completed project.
-- Fall back to most recently updated active project.
-- Later: allow user/admin to manually mark a project as featured.
-
-### 3. Evolve Profile Page
-
-Goal: profiles become professional member pages.
-
-Profile should adapt by role.
-
-Intern profile:
-
-- cycle
-- program progress
-- skill tracker summary
-- active projects
-- mentorship sessions
-- recent updates
-
-Resident/alumni profile:
-
-- cycle
-- featured project
-- GitHub profile link
-- public project portfolio
-- mentorship stats
-- projects contributed to
-- skills demonstrated
-
-Mentor profile:
-
-- mentorship stats
-- interns supported
-- skills/areas of guidance
-- project involvement
-
-Admin profile:
-
-- lighter public profile
-- admin badge/ICAA body tech arm identity later
-
-New profile fields to consider:
-
-- `github_url`
-- `linkedin_url`
-- `personal_site_url`
-- `headline`
-- `featured_project_id`
-
-The first version now supports manual featured project selection so members can choose the project that represents them best.
-
-### 4. Mentorship Stats For Profiles
-
-Goal: show contribution and community leadership.
-
-Stats to calculate:
-
-- sessions completed
-- interns mentored
-- projects advised
-- skills supported
-
-This matters especially for residents, alumni, and mentors.
-
-## Phase 2: Profile/Portfolio Polish
-
-Goal: make the credential layer feel complete.
-
-### Portfolio Improvements
-
-- Project screenshots or images.
-- Better empty states.
-- Public/private visibility rules.
-- Rich media upload for artifacts instead of URL-only artifacts.
-
-### Profile Improvements
-
-- Better profile header.
-- Role/cycle badge placement.
-- Project highlights.
-- Skill evidence.
-- Credential readiness checklist.
-- Timeline of activity:
-  - commenced
-  - project joined
-  - project completed
-  - mentorship completed
-  - badges earned
-
-### Admin Support
-
-- Admin can see profile completeness.
-- Admin can identify members missing credential profile pieces.
-- Admin can feature community projects.
-- Admin can review public-facing portfolio data.
-
-## Phase 3: Brand + Badge System
-
-Goal: make the community identity feel real and ICAA-specific.
-
-Do this after the profile/portfolio structure is stable.
-
-### Brand Pass
-
-Use the ICAA branding guide to standardize:
-
-- primary colors
-- accent colors
-- neutral palette
-- typography treatment where possible
-- buttons
-- cards
-- badges
-- admin/community surfaces
-
-Avoid doing only color swaps. This should be a UI identity pass.
-
-### Badge System
-
-Build distinct badge visuals for:
+# ICAA / SyncUp Final Priority Roadmap
+
+This document is the working plan for finishing SyncUp without trying to build every idea at once. It combines the current codebase, today's completed credential-layer work, and the Sprint 4-7 notes into one prioritized roadmap.
+
+The rule for implementation is simple: build from highest impact to lowest impact, keep each phase shippable, and do not start large visual polish until the product surfaces are stable.
+
+## Current Foundation
+
+Already in place:
+
+- Commencement foundation:
+  - `users.has_commenced`
+  - `users.cycle`
+  - intern to resident promotion flow
+- Role-based space separation:
+  - Intern Lobby for interns
+  - SyncChat for commenced community members
+- ICAA HQ:
+  - announcements
+  - events
+  - welcomes
+  - archive
+  - read tracking
+  - RSVP tracking
+- Project work:
+  - Collaboration Hub
+  - project detail modal
+  - project discussions
+  - project links
+  - project case-study fields
+- Credential layer:
+  - profile headline
+  - GitHub / LinkedIn / personal site
+  - featured project
+  - manual featured-project selection
+  - mentorship stats
+  - profile completeness indicators
+- Admin:
+  - user management
+  - announcements/events management
+  - announcement read counts
+  - event RSVP rosters
+  - credential completion signal in Users table
+
+## Final System Model
+
+### Member Journey
+
+```text
+ic.stars Intern
+  -> commencement by admin
+Resident
+  -> manual promotion by admin
+Alumni
+```
+
+Cycle identity is permanent. A member keeps the cycle they interned in forever, such as `C-58`, `C-59`, or `C-60`.
+
+The Intern Lobby is temporary and cohort-facing. The member's cycle identity is permanent and community-facing.
+
+### Role Rules
+
+| Capability | Intern | Resident | Alumni | Admin / ICAA Body |
+|---|---:|---:|---:|---:|
+| Intern Lobby | Own cycle only | No | No | Read/moderate |
+| SyncChat | No | Yes | Yes | Yes |
+| Vote on community decisions | No | Yes | Yes | Yes |
+| Serve in governance office | No | Yes | Yes | N/A |
+| Run for governance office | No | No | Yes | N/A |
+| Post opportunities | No | No for now | Yes | Yes |
+| Mentor interns | No | Yes | Yes | No by default |
+| Post encouragement to interns | No | Yes | Yes | Yes |
+| Public profile visible | Limited | Yes | Yes | Yes |
+
+Resolved decisions:
+
+- Admin can read/moderate Intern Lobby.
+- Opportunities are alumni/admin only for first version. Resident posting can be revisited after quality rules are clear.
+- Residents can mentor interns.
+- Governance is separate from role. A user can be `alumni` and also `treasurer`.
+- `mentor` should become a secondary designation, not a standalone primary role. The primary identity should be `intern`, `resident`, `alumni`, or `admin`; mentoring is something assigned/earned by residents and alumni who help interns.
+- Admin / ICAA Body may also become a secondary system-management designation later for residents/alumni who manage the app, rather than always being treated as a separate community identity.
+- Intern hard-delete is a policy direction, but cascade behavior must be verified before making it the only flow.
+
+## Badge Model
+
+### Identity Badges
+
+Who the person is:
 
 - Intern
 - Resident
 - Alumni
-- Mentor
-- Admin / ICAA body tech arm
+- Admin / ICAA Body
 
-Badge rules:
+### Governance Badges
 
-- role badge should be visible across member lists, chat, profile, admin rosters, and project teams.
-- cycle badge should sit near the role where relevant.
-- mentor badge should distinguish people who can support incoming interns.
-- admin badge should feel official, not just another colored pill.
+Specific office or ICAA body function:
 
-## Phase 4: HQ + Admin Maturity
+- President
+- Vice President
+- Treasurer
+- Secretary
+- Parliamentarian
+- Tech Lead
+- Tech Member
 
-Goal: make the admin/community operations loop stronger.
+These can stack with identity badges.
 
-### Announcement Management
+### Activity / Credibility Badges
 
-- explicit unread roster
-- announcement detail modal in admin
-- read percentage
-- pinned/required announcements
-- expiration handling
+What the person has contributed:
 
-### Welcome Management
+- Mentor badge
+- Active Contributor
+- Project Contributor
 
-- structured commencement metadata
-- welcome seen/read tracking
-- grouped welcomes by cycle without parsing message text
+Mentor credibility should live mostly in Mentorship Bridge and profiles, not everywhere in chat.
 
-### Events
+Future role-model correction:
 
-- RSVP export
-- event attendance tracking
-- post-event recap
+- Convert mentor from a primary `users.role` value into a secondary capability/badge/assignment.
+- Keep primary roles limited to intern, resident, alumni, and admin until the role model is refactored.
+- Update filters, directories, role badges, SyncChat member panels, and mentorship queries so mentors are shown as residents/alumni with a mentor designation.
 
-## Phase 5: Hardening
+## Priority Roadmap
 
-Goal: make the system production-stable.
+## Phase 1: Mentor Credibility
 
-### Access Control
+Status: Implemented first pass.
 
-Confirm server-side enforcement for:
+Goal: make the mentorship system more trustworthy by showing who is actively helping.
 
-- Intern Lobby
-- SyncChat
-- Project Discussion
-- Mentorship sessions
-- Admin actions
-- Profile visibility
+Build:
 
-### Database Migrations
+- Added completed session count to mentor results.
+- Added last completed session date to mentor results.
+- Sorted available mentors by completed sessions first, then name.
+- Show on mentor cards:
+  - completed sessions
+  - last active date
+  - "New Mentor" when sessions are zero
+- Added mentor credibility badge award after completed-session threshold.
 
-Make all migrations idempotent and safe for:
+Backend:
 
-- fresh database
-- existing local database
-- demo database
-- future production database
+- Update `getAvailableMentors` in `mentorshipController.js`.
+- Add completed session count derived from `mentorship_sessions`.
+- Add non-fatal badge check when a session becomes completed.
 
-### Cleanup
+Frontend:
 
-- clean existing `AdminDashboard.jsx` lint debt
-- add focused API tests for new endpoints
-- seed realistic ICAA demo data
+- Update mentor cards in Mentorship Bridge.
 
-## Recommended Next Sprint
+Why first:
 
-### Sprint Goal
+- Small scope.
+- High impact.
+- Makes existing mentorship workflows better immediately.
 
-Turn profile and portfolio into the first version of the ICAA credential layer.
+## Phase 2: Public Profiles + Employer Fields
 
-### Sprint Tasks
+Status: Implemented first pass.
 
-1. Add `github_url` and `live_url` to projects.
-2. Add project URL fields to create/edit UI.
-3. Show GitHub and Live buttons on project cards and detail modal.
-4. Revamp Project Portfolio page with featured project at the top.
-5. Add profile fields:
-   - GitHub profile
-   - LinkedIn
-   - personal site
-   - headline
-6. Add featured project section to Profile page.
-7. Add mentorship stats to resident/alumni/mentor profiles.
-8. Add project case-study fields and display them in Portfolio, Project Detail, and Profile.
-9. Let members manually choose their featured profile project.
-10. Add credential readiness indicators for members and admins.
+Goal: make profiles shareable outside the logged-in app.
 
-## Not Doing Yet
+Build:
 
-- Full ICAA color/branding pass.
-- Final badge visuals.
-- Deep public sharing permissions.
+- Added profile fields:
+  - `current_employer`
+  - `current_title`
+- Added public profile route:
+  - `/p/:userId`
+- Public profile shows:
+  - name
+  - role badge
+  - cycle
+  - headline
+  - employer/title if present
+  - featured project
+  - case-study summary
+  - GitHub / LinkedIn / website
+  - public skills or mentorship stats
+- Public profile hides:
+  - edit controls
+  - direct message controls
+  - private session details
+  - email address
+- Public profile responses now use a trimmed public user object and respect profile visibility toggles for skills/projects.
+
+Frontend:
+
+- Added copy profile link action on own profile.
+- Added `isPublic` mode to `UserProfile`.
+
+Why second:
+
+- We already built the credential profile.
+- This turns the profile into something members can actually share.
+
+## Phase 3: Member Directory
+
+Status: Implemented first pass.
+
+Goal: make the community searchable and useful for networking.
+
+Build:
+
+- Added Member Directory page.
+- Added search/filter by:
+  - name
+  - role
+  - cycle
+  - later: skill
+- Shows:
+  - avatar
+  - name
+  - role
+  - cycle
+  - headline
+  - employer/title
+  - project count
+  - mentor session count when available
+  - internal profile link
+  - public profile link
+  - GitHub link when available
+- Governance badge display remains parked until the governance table lands in Phase 4.
+
+Backend:
+
+- Added `GET /api/users/directory`.
+- Excludes interns by default.
+- Includes residents, alumni, mentors.
+- Respect public/profile visibility rules when those are finalized.
+
+Why third:
+
+- Public profiles become more valuable when members can find each other.
+
+## Phase 4: Governance Badges
+
+Status: Implemented first pass.
+
+Goal: separate leadership identity from account role.
+
+Build:
+
+- Added `governance_positions` table.
+- Added governance controller/routes:
+  - list active positions
+  - fetch positions for one user
+  - assign position
+  - deactivate/remove position
+- Added `GovernanceBadge` component.
+- Showing governance badges on:
+  - profile
+  - member directory
+  - later: SyncChat member list
+- Added Admin Dashboard governance tab:
+  - assign governance positions
+  - view active governance roster
+  - remove/deactivate positions
+
+Rules:
+
+- Alumni can run for governance.
+- Residents can serve where assigned.
+- Admin / ICAA Body is not the same thing as governance office.
+
+Why fourth:
+
+- Important for identity, but it depends on profiles and directory being useful first.
+
+## Phase 5: Opportunity Board
+
+Status: Implemented first pass.
+
+Goal: let the ICAA community share real professional opportunities.
+
+First version rules:
+
+- Alumni and admins can post.
+- Residents and mentors can view.
+- Intern access can be hidden or read-only depending on program policy.
+- Resident posting can be added later if quality is good.
+- SyncChat `#opportunities` stays as the discussion channel; Opportunity Board is the structured source of truth.
+
+Build:
+
+- Added `opportunities` table.
+- Added API:
+  - list active opportunities
+  - create opportunity
+  - soft-delete opportunity
+- Added frontend Opportunity Board at `/opportunities`:
+  - title
+  - company
+  - type
+  - short description
+  - apply URL
+  - author role/cycle
+  - search and type filter
+  - delete for author/admin
+
+Why fifth:
+
+- It is high value, but needs a stable identity/profile layer so posts have credibility.
+
+## Phase 6: Encouragement Board + Cycle-Scoped Lobby
+
+Status: Encouragement Board and cycle foundation implemented first pass. Lobby filtering by `intern_cycle_id` remains next.
+
+Goal: let the community encourage current interns while keeping the Intern Lobby cohort-safe.
+
+Build encouragement first:
+
+- Added `encouragements` table.
+- Added encouragement API:
+  - list by target cycle
+  - create encouragement
+  - soft-delete encouragement
+- Residents, alumni, admins, and current mentor-role users can post.
+- Interns can read inside Intern Lobby.
+- Community posters can post from the Mentorship Bridge encouragement tab.
+- Intern view hides author name and shows author cycle/role identity.
+
+Then build cycle-scoped lobby:
+
+- Added `intern_cycles` table.
+- Added `users.intern_cycle_id`.
+- Added cycle API:
+  - list cycles
+  - create cycle
+  - update cycle status
+- Added Admin Dashboard Cycles tab:
+  - create cohorts
+  - view active/commenced/closed cohorts
+  - mark a cycle commenced or closed
+- Active lobby filtering tied to `intern_cycle_id` is still a follow-up. Intern Lobby continues using `user.cycle` until users are linked to cycle records.
+
+Why sixth:
+
+- Valuable for culture, but it touches cycle lifecycle rules and should be built carefully.
+
+## Phase 7: Polls On Announcements
+
+Goal: support simple community decisions from ICAA HQ.
+
+Build:
+
+- Polls attached to announcements.
+- Poll options.
+- Poll votes.
+- Vote rules:
+  - residents, alumni, admins can vote
+  - interns cannot vote
+- Poll types:
+  - yes/no
+  - multiple choice
+  - date select later
+- Results visible after voting or after close.
+
+Why seventh:
+
+- Useful, but less urgent than mentorship, profiles, directory, governance, and opportunities.
+
+## Phase 8: Smart Notifications
+
+Goal: notify users without overwhelming them.
+
+Always notify:
+
+- direct messages
+- mentions
+- session request accepted/declined
+- admin-wide announcements
+
+Default on, user can disable:
+
+- channel messages
+- opportunities
+- events
+- encouragements
+
+Default off or admin-only:
+
+- RSVP activity
+- general channel activity
+- new member joins
+
+Build:
+
+- Notification preference fields:
+  - `notify_channel_messages`
+  - `notify_dm_messages`
+  - `notify_opportunities`
+  - `notify_events`
+  - `notify_encouragements`
+  - `digest_mode`
+- Smart notification service helper.
+- Group repeated channel messages into one notification.
+- Digest mode frontend behavior first.
+
+Why eighth:
+
+- Important for maturity, but it cuts across many systems.
+
+## Phase 9: Brand + Badge Visual System
+
+Goal: make SyncUp feel like ICAA, not a generic dashboard.
+
+Do after features are stable.
+
+Build:
+
+- ICAA color pass.
+- Typography pass.
+- Role badge redesign.
+- Governance badge visual design.
+- Featured project/case-study visual polish.
+- HQ card polish.
+- Copy audit.
+
+Brand notes:
+
+- Use ICAA red/gray/black carefully.
+- Avoid changing every component twice.
+- Badge visuals should come from the final brand pass, not before.
+
+## Phase 10: Production Hardening
+
+Goal: make the system safer and easier to maintain.
+
+Build/check:
+
+- Server-side access control for:
+  - Intern Lobby
+  - SyncChat
+  - Project Discussion
+  - Mentorship sessions
+  - Admin routes
+  - public profile data
+- Idempotent migrations for all new tables/columns.
+- Seed data for demo/testing.
+- API tests for new endpoints.
+- Clear intern deletion confirmation copy.
+- Verify cascade deletes before enforcing hard-delete-only intern exit.
+- Clean remaining lint warnings in large files.
+
+## Not Building Yet
+
+Do not start these until the higher phases are stable:
+
 - External GitHub API integration.
-- Automated GitHub repo import.
+- Automated repo import.
+- Full email digest system.
+- Deep public sharing permissions.
+- Screenshots/file uploads for project artifacts.
+- Final ICAA visual redesign.
 
-Those are valuable, but they should come after the link-based portfolio/profile structure is working.
+## Immediate Next Build
 
-## Final Recommendation
+Start with Phase 1:
 
-The next build phase should be:
+**Mentor Credibility**
 
-**Profile + Portfolio first, then brand + badges.**
+Deliverable:
 
-This gives ICAA the strongest practical value: members can show what they built, what they contributed to, and how they moved through the community.
+- Mentors sorted by completed session count.
+- Mentor cards show completed sessions and last active date.
+- Mentor credibility badge awarded after the agreed threshold.
+
+This is the best next step because it improves an active workflow without requiring a large new product surface.
+
+Next implementation target:
+
+**Phase 2: Public Profiles + Employer Fields**

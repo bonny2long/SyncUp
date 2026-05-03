@@ -42,12 +42,29 @@ import {
   createEvent,
   updateEvent,
   deleteEvent,
+  fetchGovernancePositions,
+  assignGovernancePosition,
+  removeGovernancePosition,
+  fetchCycles,
+  createCycle,
+  updateCycleStatus,
 } from "../utils/api";
 import HelpModal from "../components/shared/HelpModal";
 import ConfirmModal from "../components/shared/ConfirmModal";
 import InvitationPanel from "../components/admin/InvitationPanel";
+import GovernanceBadge from "../components/shared/GovernanceBadge";
 import { calculateProfileCompleteness } from "../utils/profileCompleteness";
 const Chat = React.lazy(() => import("./Chat/Chat"));
+
+const GOVERNANCE_POSITIONS = [
+  { value: "president", label: "President" },
+  { value: "vice_president", label: "Vice President" },
+  { value: "treasurer", label: "Treasurer" },
+  { value: "secretary", label: "Secretary" },
+  { value: "parliamentarian", label: "Parliamentarian" },
+  { value: "tech_lead", label: "Tech Lead" },
+  { value: "tech_member", label: "Tech Member" },
+];
 import {
   Users,
   FolderKanban,
@@ -302,6 +319,20 @@ export default function AdminDashboard() {
   const [communityEvents, setCommunityEvents] = useState([]);
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
   const [loadingCommunityEvents, setLoadingCommunityEvents] = useState(false);
+  const [governancePositions, setGovernancePositions] = useState([]);
+  const [loadingGovernance, setLoadingGovernance] = useState(false);
+  const [governanceBusy, setGovernanceBusy] = useState(false);
+  const [governanceForm, setGovernanceForm] = useState({
+    user_id: "",
+    position: "president",
+  });
+  const [cycles, setCycles] = useState([]);
+  const [loadingCycles, setLoadingCycles] = useState(false);
+  const [cycleBusy, setCycleBusy] = useState(false);
+  const [cycleForm, setCycleForm] = useState({
+    cycle_name: "",
+    start_date: "",
+  });
   const [announcementForm, setAnnouncementForm] = useState({
     title: "",
     content: "",
@@ -459,6 +490,32 @@ export default function AdminDashboard() {
     }
   }, [addToast, user?.id]);
 
+  const loadGovernancePositions = useCallback(async () => {
+    try {
+      setLoadingGovernance(true);
+      const data = await fetchGovernancePositions();
+      setGovernancePositions(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load governance positions:", err);
+      addToast("Failed to load governance positions", "error");
+    } finally {
+      setLoadingGovernance(false);
+    }
+  }, [addToast]);
+
+  const loadCycles = useCallback(async () => {
+    try {
+      setLoadingCycles(true);
+      const data = await fetchCycles();
+      setCycles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load cycles:", err);
+      addToast("Failed to load cycles", "error");
+    } finally {
+      setLoadingCycles(false);
+    }
+  }, [addToast]);
+
   useEffect(() => {
     if (activeTab === "announcements") {
       loadAnnouncements();
@@ -470,6 +527,18 @@ export default function AdminDashboard() {
       loadCommunityEvents();
     }
   }, [activeTab, loadCommunityEvents]);
+
+  useEffect(() => {
+    if (activeTab === "governance") {
+      loadGovernancePositions();
+    }
+  }, [activeTab, loadGovernancePositions]);
+
+  useEffect(() => {
+    if (activeTab === "cycles") {
+      loadCycles();
+    }
+  }, [activeTab, loadCycles]);
 
   useEffect(() => {
     if (!selectedUser) return;
@@ -494,6 +563,8 @@ export default function AdminDashboard() {
     { id: "users", label: "Users" },
     { id: "projects", label: "Projects" },
     { id: "mentorship", label: "Mentorship" },
+    { id: "governance", label: "Governance" },
+    { id: "cycles", label: "Cycles" },
     { id: "chat", label: "Chat" },
     { id: "announcements", label: "Announcements" },
     { id: "events", label: "Events" },
@@ -834,6 +905,87 @@ export default function AdminDashboard() {
         setConfirmModal({ ...confirmModal, open: false });
       },
     });
+  };
+
+  const eligibleGovernanceUsers = useMemo(
+    () =>
+      users
+        .filter((item) => ["resident", "alumni", "admin"].includes(item.role))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [users],
+  );
+
+  const handleAssignGovernance = async (e) => {
+    e.preventDefault();
+    if (!governanceForm.user_id || !governanceForm.position) return;
+
+    try {
+      setGovernanceBusy(true);
+      await assignGovernancePosition({
+        user_id: Number(governanceForm.user_id),
+        position: governanceForm.position,
+        admin_id: user?.id,
+      });
+      setGovernanceForm((current) => ({ ...current, user_id: "" }));
+      await loadGovernancePositions();
+      addToast("Governance position assigned", "success");
+    } catch (err) {
+      console.error("Failed to assign governance position:", err);
+      addToast(err.message || "Failed to assign governance position", "error");
+    } finally {
+      setGovernanceBusy(false);
+    }
+  };
+
+  const handleRemoveGovernance = (position) => {
+    setConfirmModal({
+      open: true,
+      title: "Remove Governance Position",
+      message: `Remove ${position.name} from this governance position?`,
+      onConfirm: async () => {
+        try {
+          await removeGovernancePosition(position.id);
+          await loadGovernancePositions();
+          addToast("Governance position removed", "success");
+        } catch (err) {
+          console.error("Failed to remove governance position:", err);
+          addToast("Failed to remove governance position", "error");
+        }
+        setConfirmModal({ ...confirmModal, open: false });
+      },
+    });
+  };
+
+  const handleCreateCycle = async (e) => {
+    e.preventDefault();
+    if (!cycleForm.cycle_name.trim() || cycleBusy) return;
+
+    try {
+      setCycleBusy(true);
+      await createCycle({
+        ...cycleForm,
+        admin_id: user?.id,
+      });
+      setCycleForm({ cycle_name: "", start_date: "" });
+      await loadCycles();
+      addToast("Cycle created", "success");
+    } catch (err) {
+      console.error("Failed to create cycle:", err);
+      addToast(err.message || "Failed to create cycle", "error");
+    } finally {
+      setCycleBusy(false);
+    }
+  };
+
+  const handleUpdateCycleStatus = async (cycle, status) => {
+    try {
+      await updateCycleStatus(cycle.id, status, user?.id);
+      await loadCycles();
+      addToast(`Cycle marked ${status}`, "success");
+    } catch (err) {
+      console.error("Failed to update cycle:", err);
+      addToast(err.message || "Failed to update cycle", "error");
+    }
   };
 
   // Handle error status update
@@ -1878,6 +2030,413 @@ export default function AdminDashboard() {
                     );
                   })
                 }
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "governance" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard
+                icon={Shield}
+                label="Active Positions"
+                value={governancePositions.length}
+                color="blue"
+              />
+              <StatCard
+                icon={Users2}
+                label="Eligible Members"
+                value={eligibleGovernanceUsers.length}
+                color="purple"
+              />
+              <StatCard
+                icon={Medal}
+                label="Position Types"
+                value={GOVERNANCE_POSITIONS.length}
+                color="yellow"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+              <form
+                onSubmit={handleAssignGovernance}
+                className="bg-surface rounded-xl border border-border p-5 space-y-4"
+              >
+                <div>
+                  <h3 className="font-semibold text-primary">
+                    Assign Governance Position
+                  </h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Governance is separate from role. Assign offices to
+                    residents, alumni, or iCAA admins.
+                  </p>
+                </div>
+
+                <label className="block">
+                  <span className="block text-xs font-medium text-gray-400 uppercase mb-1">
+                    Member
+                  </span>
+                  <select
+                    value={governanceForm.user_id}
+                    onChange={(e) =>
+                      setGovernanceForm({
+                        ...governanceForm,
+                        user_id: e.target.value,
+                      })
+                    }
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-primary"
+                    required
+                  >
+                    <option value="">Select member</option>
+                    {eligibleGovernanceUsers.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.name} - {member.role}
+                        {member.cycle ? ` - ${member.cycle}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs font-medium text-gray-400 uppercase mb-1">
+                    Position
+                  </span>
+                  <select
+                    value={governanceForm.position}
+                    onChange={(e) =>
+                      setGovernanceForm({
+                        ...governanceForm,
+                        position: e.target.value,
+                      })
+                    }
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-primary"
+                    required
+                  >
+                    {GOVERNANCE_POSITIONS.map((position) => (
+                      <option key={position.value} value={position.value}>
+                        {position.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={
+                    governanceBusy ||
+                    !governanceForm.user_id ||
+                    !governanceForm.position
+                  }
+                  className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition disabled:opacity-50"
+                >
+                  {governanceBusy ? "Assigning..." : "Assign Position"}
+                </button>
+              </form>
+
+              <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                <div className="p-4 border-b border-border flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-primary">
+                      Current Governance
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      Active board and iCAA body positions.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadGovernancePositions}
+                    className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-surface-highlight"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {loadingGovernance ? (
+                  <p className="p-4 text-sm text-gray-400">
+                    Loading governance positions...
+                  </p>
+                ) : governancePositions.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Shield className="w-10 h-10 text-gray-500 mx-auto mb-3" />
+                    <p className="text-primary font-medium">
+                      No governance positions assigned yet
+                    </p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Assign the first position using the form.
+                    </p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="bg-surface-highlight">
+                      <tr>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Position
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Member
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Cycle
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Assigned
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {governancePositions.map((position) => (
+                        <tr
+                          key={position.id}
+                          className="border-t border-border hover:bg-surface-highlight/50"
+                        >
+                          <td className="p-3">
+                            <GovernanceBadge position={position.position} />
+                          </td>
+                          <td className="p-3">
+                            <div className="text-sm font-medium text-primary">
+                              {position.name}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {position.role}
+                            </div>
+                          </td>
+                          <td className="p-3 text-sm text-gray-400">
+                            {position.cycle || "-"}
+                          </td>
+                          <td className="p-3 text-sm text-gray-400">
+                            {position.assigned_at ?
+                              new Date(position.assigned_at).toLocaleDateString()
+                            : "-"}
+                          </td>
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveGovernance(position)}
+                              className="inline-flex items-center gap-1 text-sm text-red-400 hover:text-red-300"
+                            >
+                              <Trash2 size={14} />
+                              Remove
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "cycles" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard
+                icon={Users}
+                label="Total Cycles"
+                value={cycles.length}
+                color="blue"
+              />
+              <StatCard
+                icon={Activity}
+                label="Active Cycles"
+                value={cycles.filter((cycle) => cycle.status === "active").length}
+                color="green"
+              />
+              <StatCard
+                icon={GraduationCap}
+                label="Commenced / Closed"
+                value={
+                  cycles.filter((cycle) =>
+                    ["commenced", "closed"].includes(cycle.status),
+                  ).length
+                }
+                color="purple"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
+              <form
+                onSubmit={handleCreateCycle}
+                className="bg-surface rounded-xl border border-border p-5 space-y-4"
+              >
+                <div>
+                  <h3 className="font-semibold text-primary">Create Cycle</h3>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Create the next intern cohort, such as C-61. This does not
+                    change lobby filtering yet.
+                  </p>
+                </div>
+
+                <label className="block">
+                  <span className="block text-xs font-medium text-gray-400 uppercase mb-1">
+                    Cycle Name
+                  </span>
+                  <input
+                    value={cycleForm.cycle_name}
+                    onChange={(e) =>
+                      setCycleForm({
+                        ...cycleForm,
+                        cycle_name: e.target.value,
+                      })
+                    }
+                    placeholder="C-61"
+                    maxLength={10}
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-primary"
+                    required
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="block text-xs font-medium text-gray-400 uppercase mb-1">
+                    Start Date
+                  </span>
+                  <input
+                    type="date"
+                    value={cycleForm.start_date}
+                    onChange={(e) =>
+                      setCycleForm({
+                        ...cycleForm,
+                        start_date: e.target.value,
+                      })
+                    }
+                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-primary"
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={cycleBusy || !cycleForm.cycle_name.trim()}
+                  className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition disabled:opacity-50"
+                >
+                  {cycleBusy ? "Creating..." : "Create Cycle"}
+                </button>
+              </form>
+
+              <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                <div className="p-4 border-b border-border flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-primary">Intern Cycles</h3>
+                    <p className="text-sm text-gray-400">
+                      Cohort records that will power the rotating Intern Lobby.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={loadCycles}
+                    className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-surface-highlight"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {loadingCycles ? (
+                  <p className="p-4 text-sm text-gray-400">Loading cycles...</p>
+                ) : cycles.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <GraduationCap className="w-10 h-10 text-gray-500 mx-auto mb-3" />
+                    <p className="text-primary font-medium">
+                      No cycles created yet
+                    </p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Create the first active cohort to begin cycle tracking.
+                    </p>
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead className="bg-surface-highlight">
+                      <tr>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Cycle
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Status
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Interns
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Dates
+                        </th>
+                        <th className="text-left p-3 text-xs font-medium text-gray-400 uppercase">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cycles.map((cycle) => (
+                        <tr
+                          key={cycle.id}
+                          className="border-t border-border hover:bg-surface-highlight/50"
+                        >
+                          <td className="p-3">
+                            <div className="text-sm font-semibold text-primary">
+                              {cycle.cycle_name}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              Created by {cycle.created_by_name || "Admin"}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`px-2 py-0.5 rounded text-xs ${
+                                cycle.status === "active" ?
+                                  "bg-green-500/20 text-green-400"
+                                : cycle.status === "commenced" ?
+                                  "bg-purple-500/20 text-purple-400"
+                                : "bg-gray-500/20 text-gray-400"
+                              }`}
+                            >
+                              {cycle.status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-sm text-gray-400">
+                            {cycle.intern_count || 0}
+                          </td>
+                          <td className="p-3 text-sm text-gray-400">
+                            {cycle.start_date ?
+                              new Date(cycle.start_date).toLocaleDateString()
+                            : "No start"}
+                            {cycle.end_date ?
+                              ` - ${new Date(cycle.end_date).toLocaleDateString()}`
+                            : ""}
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-wrap gap-2">
+                              {cycle.status === "active" && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleUpdateCycleStatus(cycle, "commenced")
+                                  }
+                                  className="text-xs text-purple-400 hover:text-purple-300"
+                                >
+                                  Mark Commenced
+                                </button>
+                              )}
+                              {cycle.status !== "closed" && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleUpdateCycleStatus(cycle, "closed")
+                                  }
+                                  className="text-xs text-gray-400 hover:text-gray-300"
+                                >
+                                  Close
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
           </div>

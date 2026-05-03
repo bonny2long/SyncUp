@@ -7,6 +7,13 @@ export default function MentorProfileModal({ mentor, onClose }) {
 
   const availability =
     Array.isArray(mentor.availability) ? mentor.availability.slice(0, 5) : [];
+  const lastActive =
+    mentor.stats?.last_session_at ?
+      new Date(mentor.stats.last_session_at).toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      })
+    : null;
 
   return (
     <div
@@ -64,6 +71,7 @@ export default function MentorProfileModal({ mentor, onClose }) {
                 <span>Completed: {mentor.stats?.completed_sessions || 0}</span>
                 <span>Accepted: {mentor.stats?.accepted_sessions || 0}</span>
                 <span>Pending: {mentor.stats?.pending_sessions || 0}</span>
+                {lastActive && <span>Active: {lastActive}</span>}
               </div>
             </div>
 
