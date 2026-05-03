@@ -6,6 +6,7 @@ import {
   fetchEvents,
   markAnnouncementRead,
 } from "../../utils/api";
+import PollWidget from "./PollWidget";
 
 export default function CommunityArchive() {
   const { user } = useUser();
@@ -233,6 +234,9 @@ export default function CommunityArchive() {
                   selectedItem.item.description || "No event description."
                 : selectedItem.item.content}
               </p>
+              {selectedItem.type === "announcement" && selectedItem.item.has_poll && (
+                <PollWidget announcementId={selectedItem.item.id} />
+              )}
               <div className="flex flex-wrap gap-2">
                 {selectedItem.type === "announcement" && (
                   <button

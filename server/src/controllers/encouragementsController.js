@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { createSmartNotification } from "../services/notificationService.js";
 
 const CAN_POST = ["resident", "alumni", "admin", "mentor"];
 
@@ -13,6 +14,43 @@ async function getUserById(userId) {
 
 function requesterId(req) {
   return req.user?.id || req.query.requester_id || req.body.author_id;
+}
+
+async function notifyEncouragementAudience(encouragementId, author, targetCycle) {
+  try {
+    const params = [];
+    let cycleFilter = "";
+
+    if (targetCycle) {
+      cycleFilter = "AND cycle = ?";
+      params.push(targetCycle);
+    }
+
+    const [recipients] = await pool.query(
+      `SELECT id
+       FROM users
+       WHERE role = 'intern'
+         AND (is_active IS NULL OR is_active != FALSE)
+         ${cycleFilter}`,
+      params,
+    );
+
+    for (const recipient of recipients) {
+      await createSmartNotification({
+        userId: recipient.id,
+        type: "encouragement",
+        title: "New encouragement from the ICAA community",
+        message: `${author.role}${author.cycle ? `, ${author.cycle}` : ""} shared a message with your cohort`,
+        link: "/lobby",
+        relatedId: encouragementId,
+        relatedType: "encouragement",
+        groupKey: targetCycle ? `encouragement:${targetCycle}` : "encouragement:all",
+        preferenceKey: "encouragement",
+      });
+    }
+  } catch (err) {
+    console.error("Failed to send encouragement notifications:", err);
+  }
 }
 
 export const getEncouragements = async (req, res) => {
@@ -87,6 +125,8 @@ export const createEncouragement = async (req, res) => {
         cleanTargetCycle,
       ],
     );
+
+    await notifyEncouragementAudience(result.insertId, author, cleanTargetCycle);
 
     res.status(201).json({ id: result.insertId, success: true });
   } catch (err) {

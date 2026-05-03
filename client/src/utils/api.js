@@ -951,6 +951,28 @@ export const deleteAnnouncement = async (id, userId = null) => {
   return res.json();
 };
 
+export const fetchPollForAnnouncement = async (announcementId, userId) => {
+  const query = userId ? `?user_id=${userId}` : "";
+  const res = await fetch(`${API_BASE}/announcements/${announcementId}/poll${query}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch poll");
+  return res.json();
+};
+
+export const submitPollVote = async (pollId, userId, optionId) => {
+  const res = await fetch(`${API_BASE}/announcements/polls/${pollId}/vote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ user_id: userId, option_id: optionId }),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to submit vote");
+  }
+  return res.json();
+};
+
 // ============================================================
 // EVENTS
 // ============================================================

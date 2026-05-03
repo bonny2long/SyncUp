@@ -17,6 +17,7 @@ import {
   markAnnouncementRead,
   rsvpEvent,
 } from "../../utils/api";
+import PollWidget from "./PollWidget";
 
 export default function CommunityFeed() {
   const { user } = useUser();
@@ -550,6 +551,9 @@ export default function CommunityFeed() {
                   <p className="text-sm text-neutral-dark whitespace-pre-wrap">
                     {selectedItem.item.content}
                   </p>
+                  {selectedItem.item.has_poll ? (
+                    <PollWidget announcementId={selectedItem.item.id} />
+                  ) : null}
                   <p className="text-xs text-text-secondary mt-3">
                     Posted {formatRelativeDate(selectedItem.item.created_at)}
                   </p>

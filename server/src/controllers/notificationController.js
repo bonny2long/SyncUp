@@ -1,5 +1,24 @@
 import pool from "../config/db.js";
 
+function requesterCanAccess(req, targetUserId) {
+  const requesterId = Number(req.user?.id);
+  if (!requesterId) return false;
+  return requesterId === Number(targetUserId) || req.user?.role === "admin";
+}
+
+async function requesterCanAccessNotification(req, notificationId) {
+  const requesterId = Number(req.user?.id);
+  if (!requesterId) return false;
+
+  const [rows] = await pool.query(
+    "SELECT user_id FROM notifications WHERE id = ? LIMIT 1",
+    [notificationId],
+  );
+
+  if (rows.length === 0) return null;
+  return requesterId === Number(rows[0].user_id) || req.user?.role === "admin";
+}
+
 // GET /api/notifications/:userId
 // Fetch all notifications for a user (unread first)
 export const getUserNotifications = async (req, res) => {
@@ -7,8 +26,12 @@ export const getUserNotifications = async (req, res) => {
   const { limit = 50 } = req.query;
 
   try {
+    if (!requesterCanAccess(req, userId)) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
     const [notifications] = await pool.query(
-      `SELECT 
+      `SELECT
         id,
         type,
         title,
@@ -17,6 +40,7 @@ export const getUserNotifications = async (req, res) => {
         is_read,
         related_id,
         related_type,
+        group_key,
         created_at
        FROM notifications
        WHERE user_id = ?
@@ -38,6 +62,10 @@ export const getUnreadCount = async (req, res) => {
   const { userId } = req.params;
 
   try {
+    if (!requesterCanAccess(req, userId)) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
     const [result] = await pool.query(
       `SELECT COUNT(*) as count
        FROM notifications
@@ -58,6 +86,14 @@ export const markAsRead = async (req, res) => {
   const { id } = req.params;
 
   try {
+    const canAccess = await requesterCanAccessNotification(req, id);
+    if (canAccess === null) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+    if (!canAccess) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
     const [result] = await pool.query(
       `UPDATE notifications SET is_read = 1 WHERE id = ?`,
       [id],
@@ -80,6 +116,10 @@ export const markAllAsRead = async (req, res) => {
   const { userId } = req.params;
 
   try {
+    if (!requesterCanAccess(req, userId)) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
     await pool.query(
       `UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0`,
       [userId],
@@ -98,6 +138,14 @@ export const deleteNotification = async (req, res) => {
   const { id } = req.params;
 
   try {
+    const canAccess = await requesterCanAccessNotification(req, id);
+    if (canAccess === null) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+    if (!canAccess) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
     const [result] = await pool.query(
       `DELETE FROM notifications WHERE id = ?`,
       [id],

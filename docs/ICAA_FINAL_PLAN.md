@@ -336,7 +336,17 @@ Then build cycle-scoped lobby:
   - create cohorts
   - view active/commenced/closed cohorts
   - mark a cycle commenced or closed
+- Cycle counts currently include users explicitly linked by `intern_cycle_id` and older users whose `users.cycle` matches the cycle name.
 - Active lobby filtering tied to `intern_cycle_id` is still a follow-up. Intern Lobby continues using `user.cycle` until users are linked to cycle records.
+
+Cycle assignment tightening to build later:
+
+- Admin creates cycles before interns register.
+- Intern registration should not allow free-text cycle entry.
+- New intern accounts should be assigned to an existing active cycle, preferably by admin invitation/setup.
+- Cycles should only move forward through `active -> commenced -> closed`.
+- Admin user edit now uses a cycle dropdown when cycles exist and sets both permanent `users.cycle` and active enrollment `users.intern_cycle_id`.
+- Registration/invitation still needs to move to existing-cycle assignment instead of intern free-text.
 
 Why sixth:
 
@@ -344,27 +354,40 @@ Why sixth:
 
 ## Phase 7: Polls On Announcements
 
+Status: Implemented first pass.
+
 Goal: support simple community decisions from ICAA HQ.
 
 Build:
 
-- Polls attached to announcements.
-- Poll options.
-- Poll votes.
-- Vote rules:
-  - residents, alumni, admins can vote
-  - interns cannot vote
-- Poll types:
+- Added announcement poll tables:
+  - `polls`
+  - `poll_options`
+  - `poll_votes`
+- Admin can attach a poll when creating an announcement.
+- Supported first-pass poll types:
   - yes/no
   - multiple choice
-  - date select later
-- Results visible after voting or after close.
+- Vote rules:
+  - residents, alumni, and admins can vote
+  - interns cannot vote
+- Results show after the user votes or after the poll closes.
+- Polls display inside the announcement detail modal in ICAA HQ and the archive.
+- Admin announcement list shows a poll badge when an announcement has a poll.
+
+Later:
+
+- Date-select polls.
+- Admin poll results summary inside Admin Dashboard.
+- Poll editing or poll cloning for existing announcements.
 
 Why seventh:
 
 - Useful, but less urgent than mentorship, profiles, directory, governance, and opportunities.
 
 ## Phase 8: Smart Notifications
+
+Status: Audit complete. Foundation implemented first pass.
 
 Goal: notify users without overwhelming them.
 
@@ -390,20 +413,119 @@ Default off or admin-only:
 
 Build:
 
-- Notification preference fields:
+- Added notification foundation migration:
+  - widened `notifications.related_type`
+  - added `notifications.group_key`
+  - added grouping index
+- Added notification preference fields:
   - `notify_channel_messages`
   - `notify_dm_messages`
   - `notify_opportunities`
   - `notify_events`
   - `notify_encouragements`
   - `digest_mode`
-- Smart notification service helper.
-- Group repeated channel messages into one notification.
+- Added `createSmartNotification` service helper.
+- Existing project update/completion notifications now respect project update preferences and use grouping keys.
+- Notification routes now check requester ownership/admin access through the existing `x-user` header.
+- Settings page can save the new notification preferences.
+- Group repeated notifications by `group_key` foundation is in place.
 - Digest mode frontend behavior first.
+
+Still to build:
+
+- Convert remaining notification sources to preference-aware helper where appropriate.
+- Added new event sources:
+  - announcements notify eligible community users as critical admin-wide updates
+  - events notify eligible community users when `notify_events` is enabled
+  - opportunities notify eligible community users when `notify_opportunities` is enabled
+  - encouragements notify matching interns when `notify_encouragements` is enabled
+- Add admin-visible notification analytics later.
+- Add digest-mode bell behavior.
+- Defer chat/DM/mention notifications until chat grouping and requester identity are tighter.
 
 Why eighth:
 
 - Important for maturity, but it cuts across many systems.
+- Current audit is captured in `docs/ICAA_NOTIFICATION_AUDIT_2026-05-03.md`.
+
+## Pre-Phase 8 Decision Notes
+
+These notes should be reviewed before building Smart Notifications because they affect where notifications should be created, who should receive them, and what access model they enforce.
+
+### Access And Auth
+
+- Add real auth/permission middleware later. Many endpoints currently trust `user_id`, `admin_id`, or `requester_id` from query/body data.
+- Before notification logic becomes broader, the backend should have a cleaner requester identity model so users cannot spoof notification actions.
+- Admin routes, community routes, mentorship routes, chat routes, and public profile routes need server-side permission checks.
+
+### Admin Navigation
+
+- Admin users currently operate mostly from Admin Dashboard and do not receive regular Sidebar navigation into SyncChat/Lobby.
+- Final decision needed:
+  - Admin-only dashboard model.
+  - Admin also gets community navigation.
+  - Admin has a separate "View as community" mode.
+
+### Intern Lobby Final Access Rule
+
+Current direction: keep Intern Lobby for interns and put helper/community interaction through Mentorship Bridge and encouragement tools unless we intentionally redesign the Lobby helper experience.
+
+Options to revisit:
+
+- Option A: residents/alumni/mentors can enter Intern Lobby to support interns.
+- Option B: only interns use Intern Lobby; community members support interns through Mentorship Bridge, encouragements, and session flows.
+- Option C: only mentors/admins enter Lobby; residents/alumni do not.
+
+If Option A is chosen later, the helper UI must not look like an intern's personal lobby. It should show "Incoming Interns", cycle filters, support queue, and clear helper context.
+
+### ICAA HQ / CommunityFeed
+
+- CommunityFeed already exists, so the next HQ phase is an upgrade, not a from-zero build.
+- CommunityFeed should become the real ICAA HQ strip/header:
+  - announcements
+  - pinned resources
+  - events
+  - welcomes
+  - polls
+  - read/RSVP/vote state
+- Long-term welcome grouping should stop parsing cycle/name from message text. Store structured metadata such as `introduced_user_id`, `cycle`, and `commencement_id`.
+
+### Events And RSVP Notifications
+
+- Admin system already knows RSVP rosters through the Events tab.
+- Later, optionally create bell notifications for admins when someone RSVPs.
+- Do not make RSVP notifications noisy by default.
+
+### Project Editing / Case Study Polish
+
+- Existing projects still need full edit support for URLs and case-study fields.
+- New projects can already add links/case-study fields, but existing project editing should be added before final brand polish.
+- Case-study feature works functionally. Later visual pass should make Project Detail, Portfolio featured project, and Profile featured project feel more ICAA-branded.
+
+### Role Model Refactor
+
+- Primary identities: `intern`, `resident`, `alumni`, `admin`.
+- `mentor` should become a secondary designation/capability for residents and alumni.
+- Governance/board/admin-management should also be layered as secondary designations where appropriate.
+- Later refactor filters, role badges, directory, chat panels, and mentorship queries so mentors display as "Resident + Mentor" or "Alumni + Mentor", not as a standalone role.
+
+### Cycle / Registration Tightening
+
+- Admin creates cycles first.
+- Interns should not free-type cycles.
+- New intern accounts should be assigned to an existing active cycle, likely through admin setup/invitation.
+- Registration should likely require an `@icstars.org` email, unless the user has an admin invitation.
+- Cycles only move forward: `active -> commenced -> closed`.
+- When a cycle commences, admin should be able to bulk-promote selected interns in that cycle to residents.
+- Remaining interns in the cycle should not be automatically promoted; admin needs an explicit review step.
+- Keep single-user manual commencement as an option.
+- Resident-to-alumni promotion may eventually become semi-automated after the two-year resident period is clarified.
+
+### Notification Reality Check
+
+- Notification system is not fully working yet.
+- Before building more notification features, confirm the current notification table/routes, bell UI, read state, and settings behavior.
+- Phase 8 should start with a current-state audit before adding new event sources.
 
 ## Phase 9: Brand + Badge Visual System
 
@@ -460,18 +582,15 @@ Do not start these until the higher phases are stable:
 
 ## Immediate Next Build
 
-Start with Phase 1:
+Hold Phase 9 and Phase 10 for later. Phase 7 is now in first pass and Phase 8 notification foundation is in first pass.
 
-**Mentor Credibility**
+Recommended next build:
+
+**Phase 8: Notification Polish**
 
 Deliverable:
 
-- Mentors sorted by completed session count.
-- Mentor cards show completed sessions and last active date.
-- Mentor credibility badge awarded after the agreed threshold.
-
-This is the best next step because it improves an active workflow without requiring a large new product surface.
-
-Next implementation target:
-
-**Phase 2: Public Profiles + Employer Fields**
+- Test the new notification event sources from the UI.
+- Add digest-mode bell behavior.
+- Add admin-visible notification health/analytics if needed.
+- Keep DM/mention notifications deferred until chat grouping is safer.

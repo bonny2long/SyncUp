@@ -5,6 +5,117 @@ import pool from "../config/db.js";
  * Emits notifications for various user events
  */
 
+const PREFERENCE_FIELDS = {
+  join_request: "notify_join_requests",
+  mention: "notify_mentions",
+  session: "notify_session_reminders",
+  project_update: "notify_project_updates",
+  channel_message: "notify_channel_messages",
+  dm: "notify_dm_messages",
+  opportunity: "notify_opportunities",
+  event: "notify_events",
+  encouragement: "notify_encouragements",
+};
+
+async function getRecipientPreference(userId, preferenceKey, db) {
+  if (!preferenceKey) return true;
+
+  const preferenceField = PREFERENCE_FIELDS[preferenceKey];
+  if (!preferenceField) return true;
+
+  const [rows] = await db.query(
+    `SELECT ${preferenceField} AS enabled FROM users WHERE id = ? LIMIT 1`,
+    [userId],
+  );
+
+  return rows.length === 0 ? false : Boolean(rows[0].enabled);
+}
+
+export const createSmartNotification = async ({
+  userId,
+  recipientId,
+  type,
+  title,
+  message,
+  link = null,
+  relatedId = null,
+  relatedType = null,
+  groupKey = null,
+  preferenceKey = null,
+  critical = false,
+  connection = null,
+}) => {
+  const db = connection || pool;
+  const targetUserId = recipientId || userId;
+
+  if (!targetUserId) return null;
+
+  try {
+    const shouldNotify =
+      critical || (await getRecipientPreference(targetUserId, preferenceKey, db));
+
+    if (!shouldNotify) return null;
+
+    if (groupKey) {
+      const [existing] = await db.query(
+        `SELECT id
+         FROM notifications
+         WHERE user_id = ?
+           AND group_key = ?
+           AND is_read = 0
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [targetUserId, groupKey],
+      );
+
+      if (existing.length > 0) {
+        await db.query(
+          `UPDATE notifications
+           SET type = ?,
+               title = ?,
+               message = ?,
+               link = ?,
+               related_id = ?,
+               related_type = ?,
+               created_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+          [
+            type,
+            title,
+            message,
+            link,
+            relatedId,
+            relatedType,
+            existing[0].id,
+          ],
+        );
+        return existing[0].id;
+      }
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO notifications
+        (user_id, type, title, message, link, related_id, related_type, group_key)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        targetUserId,
+        type,
+        title,
+        message,
+        link,
+        relatedId,
+        relatedType,
+        groupKey,
+      ],
+    );
+
+    return result.insertId;
+  } catch (err) {
+    console.error("Error creating smart notification:", err);
+    throw err;
+  }
+};
+
 export const createNotification = async ({
   userId,
   type,
@@ -15,22 +126,17 @@ export const createNotification = async ({
   relatedType = null,
   connection = null,
 }) => {
-  const db = connection || pool;
-
-  try {
-    const [result] = await db.query(
-      `INSERT INTO notifications 
-        (user_id, type, title, message, link, related_id, related_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [userId, type, title, message, link, relatedId, relatedType],
-    );
-
-    console.log(`Notification created for user ${userId}: ${type}`);
-    return result.insertId;
-  } catch (err) {
-    console.error("Error creating notification:", err);
-    throw err;
-  }
+  return createSmartNotification({
+    userId,
+    type,
+    title,
+    message,
+    link,
+    relatedId,
+    relatedType,
+    critical: true,
+    connection,
+  });
 };
 
 /**
@@ -148,24 +254,29 @@ export const notifyProjectUpdate = async (
   if (!Array.isArray(userIds) || userIds.length === 0) return;
 
   try {
-    const values = userIds.map((userId) => [
-      userId,
-      "project_update",
-      "New Project Update",
-      `${authorName} posted an update on "${projectTitle}"`,
-      `/collaboration`,
-      projectId,
-      "update",
-    ]);
+    const eligibleUserIds = [];
+    for (const userId of userIds) {
+      if (await getRecipientPreference(userId, "project_update", db)) {
+        eligibleUserIds.push(userId);
+      }
+    }
 
-    await db.query(
-      `INSERT INTO notifications 
-        (user_id, type, title, message, link, related_id, related_type)
-       VALUES ?`,
-      [values],
-    );
+    for (const userId of eligibleUserIds) {
+      await createSmartNotification({
+        userId,
+        type: "project_update",
+        title: "New Project Update",
+        message: `${authorName} posted an update on "${projectTitle}"`,
+        link: `/collaboration`,
+        relatedId: projectId,
+        relatedType: "update",
+        groupKey: `project_update:${projectId}`,
+        preferenceKey: "project_update",
+        connection,
+      });
+    }
 
-    console.log(`${userIds.length} project update notifications created`);
+    console.log(`${eligibleUserIds.length} project update notifications created`);
   } catch (err) {
     console.error("Error creating project update notifications:", err);
     throw err;
@@ -183,24 +294,29 @@ export const notifyProjectCompleted = async (
   if (!Array.isArray(userIds) || userIds.length === 0) return;
 
   try {
-    const values = userIds.map((userId) => [
-      userId,
-      "project_completed",
-      "Project Completed!",
-      `The project "${projectTitle}" has been marked as completed. Congratulations on the great work!`,
-      `/portfolio`,
-      projectId,
-      "project",
-    ]);
+    const eligibleUserIds = [];
+    for (const userId of userIds) {
+      if (await getRecipientPreference(userId, "project_update", db)) {
+        eligibleUserIds.push(userId);
+      }
+    }
 
-    await db.query(
-      `INSERT INTO notifications 
-        (user_id, type, title, message, link, related_id, related_type)
-       VALUES ?`,
-      [values],
-    );
+    for (const userId of eligibleUserIds) {
+      await createSmartNotification({
+        userId,
+        type: "project_completed",
+        title: "Project Completed!",
+        message: `The project "${projectTitle}" has been marked as completed. Congratulations on the great work!`,
+        link: `/portfolio`,
+        relatedId: projectId,
+        relatedType: "project",
+        groupKey: `project_completed:${projectId}`,
+        preferenceKey: "project_update",
+        connection,
+      });
+    }
 
-    console.log(`${userIds.length} project completed notifications created`);
+    console.log(`${eligibleUserIds.length} project completed notifications created`);
   } catch (err) {
     console.error("Error creating project completed notifications:", err);
     throw err;

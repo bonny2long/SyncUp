@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { createSmartNotification } from "../services/notificationService.js";
 
 async function isAdminUser(userId) {
   if (!userId) return false;
@@ -6,6 +7,38 @@ async function isAdminUser(userId) {
     userId,
   ]);
   return rows[0]?.role === "admin";
+}
+
+async function notifyEventAudience(eventId, title, authorId) {
+  try {
+    const [recipients] = await pool.query(
+      `SELECT id
+       FROM users
+       WHERE id != ?
+         AND (is_active IS NULL OR is_active != FALSE)
+         AND (
+           role IN ('admin', 'mentor', 'resident', 'alumni')
+           OR has_commenced = TRUE
+         )`,
+      [authorId],
+    );
+
+    for (const recipient of recipients) {
+      await createSmartNotification({
+        userId: recipient.id,
+        type: "event",
+        title: "New ICAA event",
+        message: title,
+        link: "/chat",
+        relatedId: eventId,
+        relatedType: "event",
+        groupKey: `event:${eventId}`,
+        preferenceKey: "event",
+      });
+    }
+  } catch (err) {
+    console.error("Failed to send event notifications:", err);
+  }
 }
 
 export const getEvents = async (req, res) => {
@@ -99,6 +132,8 @@ export const createEvent = async (req, res) => {
         max_attendees || null,
       ],
     );
+
+    await notifyEventAudience(result.insertId, title, actingUserId);
 
     res.status(201).json({ id: result.insertId });
   } catch (err) {

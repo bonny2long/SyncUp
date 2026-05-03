@@ -328,6 +328,7 @@ export default function AdminDashboard() {
   });
   const [cycles, setCycles] = useState([]);
   const [loadingCycles, setLoadingCycles] = useState(false);
+  const [cyclesLoaded, setCyclesLoaded] = useState(false);
   const [cycleBusy, setCycleBusy] = useState(false);
   const [cycleForm, setCycleForm] = useState({
     cycle_name: "",
@@ -338,6 +339,11 @@ export default function AdminDashboard() {
     content: "",
     announcement_type: "news",
     expires_at: "",
+    poll_enabled: false,
+    poll_question: "",
+    poll_type: "yes_no",
+    poll_options: "",
+    poll_closes_at: "",
   });
   const [editingAnnouncementId, setEditingAnnouncementId] = useState(null);
   const [eventForm, setEventForm] = useState({
@@ -351,6 +357,8 @@ export default function AdminDashboard() {
   const [editingEventId, setEditingEventId] = useState(null);
   const [editUserRole, setEditUserRole] = useState("intern");
   const [editUserCommenced, setEditUserCommenced] = useState(false);
+  const [editUserCycleId, setEditUserCycleId] = useState("");
+  const [editUserCycleText, setEditUserCycleText] = useState("");
 
   // Phase 1: Load critical data needed for initial overview render
   useEffect(() => {
@@ -513,6 +521,7 @@ export default function AdminDashboard() {
       addToast("Failed to load cycles", "error");
     } finally {
       setLoadingCycles(false);
+      setCyclesLoaded(true);
     }
   }, [addToast]);
 
@@ -545,7 +554,22 @@ export default function AdminDashboard() {
 
     setEditUserRole(selectedUser.role || "intern");
     setEditUserCommenced(Boolean(selectedUser.has_commenced));
-  }, [selectedUser]);
+    setEditUserCycleText(selectedUser.cycle || "");
+
+    const matchedCycle =
+      cycles.find(
+        (cycle) => Number(cycle.id) === Number(selectedUser.intern_cycle_id),
+      ) ||
+      cycles.find((cycle) => cycle.cycle_name === selectedUser.cycle);
+
+    setEditUserCycleId(matchedCycle ? String(matchedCycle.id) : "");
+  }, [cycles, selectedUser]);
+
+  useEffect(() => {
+    if (selectedUser && !cyclesLoaded) {
+      loadCycles();
+    }
+  }, [cyclesLoaded, loadCycles, selectedUser]);
 
   // Handle click outside for menu
   useEffect(() => {
@@ -683,6 +707,9 @@ export default function AdminDashboard() {
       if (user?.id === userId) {
         updateCurrentUser(updatedUser);
       }
+      if (cyclesLoaded) {
+        await loadCycles();
+      }
       setSelectedUser(null);
       addToast("User updated successfully", "success");
     } catch (err) {
@@ -773,6 +800,11 @@ export default function AdminDashboard() {
       content: "",
       announcement_type: "news",
       expires_at: "",
+      poll_enabled: false,
+      poll_question: "",
+      poll_type: "yes_no",
+      poll_options: "",
+      poll_closes_at: "",
     });
     setEditingAnnouncementId(null);
   };
@@ -794,10 +826,38 @@ export default function AdminDashboard() {
 
     try {
       const isEditing = Boolean(editingAnnouncementId);
+      const {
+        poll_enabled,
+        poll_question,
+        poll_type,
+        poll_options,
+        poll_closes_at,
+        ...announcementFields
+      } = announcementForm;
       const payload = {
-        ...announcementForm,
+        ...announcementFields,
         expires_at: announcementForm.expires_at || null,
       };
+
+      if (!isEditing && poll_enabled) {
+        const normalizedOptions = poll_options
+          .split(/\r?\n/)
+          .map((option) => option.trim())
+          .filter(Boolean);
+
+        if (poll_type === "multiple_choice" && normalizedOptions.length < 2) {
+          addToast("Multiple choice polls need at least two options", "error");
+          return;
+        }
+
+        payload.poll = {
+          enabled: true,
+          question: poll_question.trim(),
+          poll_type,
+          options: poll_type === "multiple_choice" ? normalizedOptions : undefined,
+          closes_at: poll_closes_at || null,
+        };
+      }
 
       if (isEditing) {
         await updateAnnouncement(editingAnnouncementId, payload, user.id);
@@ -823,6 +883,11 @@ export default function AdminDashboard() {
       content: announcement.content || "",
       announcement_type: announcement.announcement_type || "news",
       expires_at: formatDateTimeLocal(announcement.expires_at),
+      poll_enabled: false,
+      poll_question: "",
+      poll_type: "yes_no",
+      poll_options: "",
+      poll_closes_at: "",
     });
   };
 
@@ -1660,6 +1725,107 @@ export default function AdminDashboard() {
                 />
               </div>
 
+              {!editingAnnouncementId && (
+                <div className="rounded-lg border border-border bg-surface-highlight/30 p-4 space-y-3">
+                  <label className="flex items-center gap-2 text-sm font-medium text-primary">
+                    <input
+                      type="checkbox"
+                      checked={announcementForm.poll_enabled}
+                      onChange={(e) =>
+                        setAnnouncementForm((prev) => ({
+                          ...prev,
+                          poll_enabled: e.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    Attach poll
+                  </label>
+
+                  {announcementForm.poll_enabled && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-gray-400 mb-1">
+                          Poll Question
+                        </label>
+                        <input
+                          type="text"
+                          value={announcementForm.poll_question}
+                          onChange={(e) =>
+                            setAnnouncementForm((prev) => ({
+                              ...prev,
+                              poll_question: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                          required={announcementForm.poll_enabled}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm text-gray-400 mb-1">
+                          Poll Type
+                        </label>
+                        <select
+                          value={announcementForm.poll_type}
+                          onChange={(e) =>
+                            setAnnouncementForm((prev) => ({
+                              ...prev,
+                              poll_type: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                        >
+                          <option value="yes_no">Yes / No</option>
+                          <option value="multiple_choice">Multiple Choice</option>
+                        </select>
+                      </div>
+
+                      {announcementForm.poll_type === "multiple_choice" && (
+                        <div>
+                          <label className="block text-sm text-gray-400 mb-1">
+                            Options
+                          </label>
+                          <textarea
+                            value={announcementForm.poll_options}
+                            onChange={(e) =>
+                              setAnnouncementForm((prev) => ({
+                                ...prev,
+                                poll_options: e.target.value,
+                              }))
+                            }
+                            rows={4}
+                            placeholder={"One option per line\nUp to 5 options"}
+                            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary resize-none"
+                            required={announcementForm.poll_type === "multiple_choice"}
+                          />
+                          <p className="mt-1 text-xs text-gray-400">
+                            Add at least two options. Extra options after five are ignored.
+                          </p>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-sm text-gray-400 mb-1">
+                          Poll Closes At
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={announcementForm.poll_closes_at}
+                          onChange={(e) =>
+                            setAnnouncementForm((prev) => ({
+                              ...prev,
+                              poll_closes_at: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button
                 type="submit"
                 className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition"
@@ -1722,6 +1888,11 @@ export default function AdminDashboard() {
                             <span className="px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-400">
                               {announcement.announcement_type}
                             </span>
+                            {announcement.has_poll ? (
+                              <span className="px-2 py-0.5 rounded text-xs bg-purple-500/20 text-purple-300">
+                                Poll
+                              </span>
+                            ) : null}
                           </div>
                           <p className="text-xs text-gray-400 mt-1">
                             {announcement.author_name} |{" "}
@@ -4226,15 +4397,49 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">
-                    Cycle (e.g. C-58)
+                    Cycle
                   </label>
-                  <input
-                    type="text"
-                    defaultValue={selectedUser.cycle || ""}
-                    id="editUserCycle"
-                    placeholder="C-58"
-                    className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
-                  />
+                  {cycles.length > 0 ? (
+                    <>
+                      <select
+                        value={editUserCycleId}
+                        onChange={(e) => {
+                          const selectedCycle = cycles.find(
+                            (cycle) => String(cycle.id) === e.target.value,
+                          );
+                          setEditUserCycleId(e.target.value);
+                          setEditUserCycleText(selectedCycle?.cycle_name || "");
+                        }}
+                        id="editUserCycle"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                      >
+                        <option value="">No cycle assigned</option>
+                        {cycles.map((cycle) => (
+                          <option key={cycle.id} value={cycle.id}>
+                            {cycle.cycle_name} - {cycle.status}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Selecting a cycle sets both permanent cycle identity and
+                        active intern-cycle enrollment.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        value={editUserCycleText}
+                        onChange={(e) => setEditUserCycleText(e.target.value)}
+                        id="editUserCycle"
+                        placeholder="C-58"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-primary"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Create cycles in the Cycles tab to use a safer dropdown.
+                      </p>
+                    </>
+                  )}
                 </div>
                 {editUserRole === "intern" && (
                   <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg">
@@ -4322,8 +4527,13 @@ export default function AdminDashboard() {
                         document.getElementById("editUserEmail").value;
                       const notes =
                         document.getElementById("editUserNotes").value;
+                      const selectedCycle = cycles.find(
+                        (cycle) => String(cycle.id) === editUserCycleId,
+                      );
                       const cycle =
-                        document.getElementById("editUserCycle")?.value;
+                        selectedCycle?.cycle_name ||
+                        editUserCycleText.trim() ||
+                        null;
                       const isActiveToggle =
                         document.getElementById("editUserBanned");
                       const isBanned =
@@ -4337,7 +4547,11 @@ export default function AdminDashboard() {
                           : editUserRole,
                         notes,
                         is_active: !isBanned,
-                        cycle: cycle || null,
+                        cycle,
+                        intern_cycle_id:
+                          cycles.length > 0 ?
+                            selectedCycle?.id || null
+                          : selectedUser.intern_cycle_id || null,
                         has_commenced:
                           editUserRole === "intern" ? editUserCommenced : true,
                       });

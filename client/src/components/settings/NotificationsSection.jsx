@@ -13,6 +13,12 @@ export default function NotificationsSection() {
     sessionReminders: true,
     projectUpdates: true,
     weeklySummary: false,
+    channelMessages: true,
+    directMessages: true,
+    opportunities: true,
+    events: true,
+    encouragements: true,
+    digestMode: false,
   });
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
@@ -26,6 +32,12 @@ export default function NotificationsSection() {
         sessionReminders: user.notify_session_reminders ?? true,
         projectUpdates: user.notify_project_updates ?? true,
         weeklySummary: user.notify_weekly_summary ?? false,
+        channelMessages: user.notify_channel_messages ?? true,
+        directMessages: user.notify_dm_messages ?? true,
+        opportunities: user.notify_opportunities ?? true,
+        events: user.notify_events ?? true,
+        encouragements: user.notify_encouragements ?? true,
+        digestMode: user.digest_mode ?? false,
       });
     }
   }, [user]);
@@ -45,6 +57,12 @@ export default function NotificationsSection() {
           notify_session_reminders: newSettings.sessionReminders,
           notify_project_updates: newSettings.projectUpdates,
           notify_weekly_summary: newSettings.weeklySummary,
+          notify_channel_messages: newSettings.channelMessages,
+          notify_dm_messages: newSettings.directMessages,
+          notify_opportunities: newSettings.opportunities,
+          notify_events: newSettings.events,
+          notify_encouragements: newSettings.encouragements,
+          digest_mode: newSettings.digestMode,
         }),
       });
       
@@ -125,10 +143,46 @@ export default function NotificationsSection() {
               description="Progress updates from your projects"
             />
             <ToggleSwitch
+              checked={settings.channelMessages}
+              onChange={() => handleToggle("channelMessages")}
+              label="Channel messages"
+              description="Community channel activity when enabled"
+            />
+            <ToggleSwitch
+              checked={settings.directMessages}
+              onChange={() => handleToggle("directMessages")}
+              label="Direct messages"
+              description="Messages sent directly to you"
+            />
+            <ToggleSwitch
+              checked={settings.opportunities}
+              onChange={() => handleToggle("opportunities")}
+              label="Opportunities"
+              description="New opportunities shared by the community"
+            />
+            <ToggleSwitch
+              checked={settings.events}
+              onChange={() => handleToggle("events")}
+              label="Events"
+              description="New community events"
+            />
+            <ToggleSwitch
+              checked={settings.encouragements}
+              onChange={() => handleToggle("encouragements")}
+              label="Encouragements"
+              description="Community encouragement activity"
+            />
+            <ToggleSwitch
               checked={settings.weeklySummary}
               onChange={() => handleToggle("weeklySummary")}
               label="Weekly activity summary"
               description="A weekly digest of your activity"
+            />
+            <ToggleSwitch
+              checked={settings.digestMode}
+              onChange={() => handleToggle("digestMode")}
+              label="Daily digest mode"
+              description="Batch non-urgent updates when digest delivery is added"
             />
           </div>
         </div>

@@ -25,6 +25,12 @@ const USER_SELECT_FIELDS = `
   notify_session_reminders,
   notify_project_updates,
   notify_weekly_summary,
+  notify_channel_messages,
+  notify_dm_messages,
+  notify_opportunities,
+  notify_events,
+  notify_encouragements,
+  digest_mode,
   profile_visibility,
   show_email,
   show_projects,
@@ -636,6 +642,24 @@ export const updateUserProfile = async (req, res) => {
     }
     if (body.notify_weekly_summary !== undefined) {
       updates.notify_weekly_summary = body.notify_weekly_summary;
+    }
+    if (body.notify_channel_messages !== undefined) {
+      updates.notify_channel_messages = body.notify_channel_messages;
+    }
+    if (body.notify_dm_messages !== undefined) {
+      updates.notify_dm_messages = body.notify_dm_messages;
+    }
+    if (body.notify_opportunities !== undefined) {
+      updates.notify_opportunities = body.notify_opportunities;
+    }
+    if (body.notify_events !== undefined) {
+      updates.notify_events = body.notify_events;
+    }
+    if (body.notify_encouragements !== undefined) {
+      updates.notify_encouragements = body.notify_encouragements;
+    }
+    if (body.digest_mode !== undefined) {
+      updates.digest_mode = body.digest_mode;
     }
     if (body.profile_visibility !== undefined) {
       updates.profile_visibility = body.profile_visibility;

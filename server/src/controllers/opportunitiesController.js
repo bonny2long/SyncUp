@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { createSmartNotification } from "../services/notificationService.js";
 
 const CAN_VIEW = ["resident", "alumni", "mentor", "admin"];
 const CAN_POST = ["alumni", "admin"];
@@ -40,6 +41,35 @@ function normalizeUrl(value) {
     const error = new Error("Apply URL must be a valid http(s) URL");
     error.statusCode = 400;
     throw error;
+  }
+}
+
+async function notifyOpportunityAudience(opportunity, author) {
+  try {
+    const [recipients] = await pool.query(
+      `SELECT id
+       FROM users
+       WHERE id != ?
+         AND (is_active IS NULL OR is_active != FALSE)
+         AND role IN ('resident', 'alumni', 'mentor', 'admin')`,
+      [author.id],
+    );
+
+    for (const recipient of recipients) {
+      await createSmartNotification({
+        userId: recipient.id,
+        type: "opportunity",
+        title: "New community opportunity",
+        message: `${opportunity.title} at ${opportunity.company}`,
+        link: "/opportunities",
+        relatedId: opportunity.id,
+        relatedType: "opportunity",
+        groupKey: `opportunity:${opportunity.id}`,
+        preferenceKey: "opportunity",
+      });
+    }
+  } catch (err) {
+    console.error("Failed to send opportunity notifications:", err);
   }
 }
 
@@ -135,7 +165,10 @@ export const createOpportunity = async (req, res) => {
       [result.insertId],
     );
 
-    res.status(201).json(rows[0]);
+    const opportunity = rows[0];
+    await notifyOpportunityAudience(opportunity, author);
+
+    res.status(201).json(opportunity);
   } catch (err) {
     console.error("Error creating opportunity:", err);
     res

@@ -51,7 +51,12 @@ export const getCycles = async (req, res) => {
           COUNT(CASE WHEN u.role != 'intern' THEN u.id END) AS member_count
         FROM intern_cycles ic
         LEFT JOIN users creator ON creator.id = ic.created_by
-        LEFT JOIN users u ON u.intern_cycle_id = ic.id
+        LEFT JOIN users u
+          ON u.intern_cycle_id = ic.id
+          OR (
+            u.intern_cycle_id IS NULL
+            AND UPPER(u.cycle) = ic.cycle_name
+          )
         ${where}
         GROUP BY ic.id, creator.name
         ORDER BY
