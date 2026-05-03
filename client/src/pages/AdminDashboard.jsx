@@ -360,6 +360,9 @@ export default function AdminDashboard() {
   const [editUserCycleId, setEditUserCycleId] = useState("");
   const [editUserCycleText, setEditUserCycleText] = useState("");
 
+  // Special invitation state
+  const [specialInvite, setSpecialInvite] = useState({ email: '', role: 'alumni', note: '' });
+
   // Phase 1: Load critical data needed for initial overview render
   useEffect(() => {
     async function loadCriticalData() {
@@ -715,6 +718,49 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error("Failed to update user:", err);
       addToast(err.message || "Failed to update user. Please try again.", "error");
+    }
+  };
+
+  // Handle special invitation
+  const handleSpecialInvite = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/invitations/special`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: specialInvite.email,
+          intended_role: specialInvite.role,
+          verification_note: specialInvite.note,
+          admin_id: user.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        addToast("Special invitation sent!", "success");
+        setSpecialInvite({ email: '', role: 'alumni', note: '' });
+      } else {
+        addToast(data.error || "Failed to send invitation", "error");
+      }
+    } catch {
+      addToast("Failed to send invitation", "error");
+    }
+  };
+
+  // Handle admin password reset
+  const handleAdminResetPassword = async (targetUserId) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/admin-reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target_user_id: targetUserId, admin_id: user.id }),
+      });
+      const data = await res.json();
+      if (data.reset_link) {
+        navigator.clipboard.writeText(data.reset_link);
+        addToast(`Reset link copied to clipboard. Share with ${selectedUser.name}. Valid 24h.`, "success");
+      }
+    } catch {
+      addToast("Failed to generate reset link", "error");
     }
   };
 
@@ -2721,6 +2767,12 @@ export default function AdminDashboard() {
                       scope="col"
                       className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
                     >
+                      Verified
+                    </th>
+                    <th
+                      scope="col"
+                      className="text-left p-3 text-xs font-medium text-gray-400 uppercase"
+                    >
                       Credential
                     </th>
                     <th
@@ -2780,7 +2832,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="p-3">
                           <span
-                            className={`px-2 py-0.5 rounded text-xs flex items-center gap-1 w-fit ${
+                            className={`px-2 py-0.5 rounded text-xs ${
                               user.is_active === false ?
                                 "bg-gray-500/20 text-gray-400"
                               : "bg-green-500/20 text-green-400"
@@ -2788,6 +2840,15 @@ export default function AdminDashboard() {
                           >
                             <Check size={12} />{" "}
                             {user.is_active === false ? "Inactive" : "Active"}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded text-xs ${
+                            user.email_verified
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-yellow-500/20 text-yellow-400'
+                          }`}>
+                            {user.email_verified ? 'Verified' : 'Unverified'}
                           </span>
                         </td>
                         <td className="p-3">
@@ -4337,6 +4398,47 @@ export default function AdminDashboard() {
         {activeTab === "invitations" && (
           <div className="space-y-6">
             <InvitationPanel />
+
+            {/* Special Access Invitation Section */}
+            <div className="mt-8 border-t border-border pt-6">
+              <h3 className="text-lg font-semibold mb-4">Special Access Invitation</h3>
+              <p className="text-sm text-text-secondary mb-4">
+                For verified ic.stars members who cannot access their @icstars.org email.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="email"
+                  className="input"
+                  placeholder="Email address"
+                  value={specialInvite.email}
+                  onChange={e => setSpecialInvite(s => ({ ...s, email: e.target.value }))}
+                />
+                <select
+                  className="input"
+                  value={specialInvite.role}
+                  onChange={e => setSpecialInvite(s => ({ ...s, role: e.target.value }))}
+                >
+                  <option value="alumni">Alumni</option>
+                  <option value="resident">Resident</option>
+                  <option value="intern">Intern</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <textarea
+                className="input w-full mt-4"
+                rows={3}
+                placeholder="Verification note (required): Why does this person get special access?"
+                value={specialInvite.note}
+                onChange={e => setSpecialInvite(s => ({ ...s, note: e.target.value }))}
+              />
+              <button
+                onClick={handleSpecialInvite}
+                className="btn btn-secondary mt-4"
+              >
+                Send Special Invitation
+              </button>
+            </div>
           </div>
         )}
 
@@ -4512,6 +4614,15 @@ export default function AdminDashboard() {
                     />
                   </button>
                 </div>
+                {/* Password Reset Button */}
+                <button
+                  type="button"
+                  onClick={() => handleAdminResetPassword(selectedUser.id)}
+                  className="flex items-center gap-2 px-3 py-2 bg-surface-highlight text-text-secondary rounded-lg text-sm hover:bg-border transition w-full justify-center"
+                >
+                  Generate Password Reset Link
+                </button>
+
                 <div className="flex gap-2 mt-6">
                   <button
                     onClick={() => setSelectedUser(null)}

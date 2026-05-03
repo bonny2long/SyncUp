@@ -1480,3 +1480,68 @@ export async function registerWithInvitation(token, name, password) {
   if (!res.ok) throw new Error(data.error || "Failed to register");
   return data;
 }
+
+// =============================================
+// Auth API functions
+// =============================================
+export const registerAccount = async (data) => {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || "Registration failed");
+  return result;
+};
+
+export const loginAccount = async (email, password) => {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || "Login failed");
+  return result;
+};
+
+export const resendVerificationEmail = async (email) => {
+  const res = await fetch(`${API_BASE}/auth/resend-verification`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return res.json();
+};
+
+export const verifyEmailToken = async (token) => {
+  const res = await fetch(`${API_BASE}/auth/verify-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || "Verification failed");
+  return result;
+};
+
+export const forgotPasswordRequest = async (email) => {
+  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return res.json();
+};
+
+export const resetPasswordWithToken = async (token, password) => {
+  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error || "Reset failed");
+  return result;
+};

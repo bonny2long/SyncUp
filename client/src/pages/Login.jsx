@@ -1,97 +1,223 @@
-import { useEffect, useState } from "react";
-import { fetchUsers, reportError } from "../utils/api";
-import { useUser } from "../context/UserContext";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { loginAccount, fetchUsers } from '../utils/api';
+import { useUser } from '../context/UserContext';
 
 export default function Login() {
-  const { login } = useUser();
   const navigate = useNavigate();
+  const { login } = useUser();
+
+  // Dev mode state
+  const [devMode, setDevMode] = useState(() => {
+    return localStorage.getItem('devMode') === 'true' || false;
+  });
   const [users, setUsers] = useState([]);
-  const [selected, setSelected] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [devError, setDevError] = useState('');
 
+  // Real login state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showResend, setShowResend] = useState(false);
+
+  // Load users for dev mode
   useEffect(() => {
-    fetchUsers()
-      .then(setUsers)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+    if (devMode) {
+      setLoadingUsers(true);
+      fetchUsers()
+        .then(data => {
+          setUsers(data.sort((a, b) => {
+            if (a.role === 'admin' && b.role !== 'admin') return -1;
+            if (a.role !== 'admin' && b.role === 'admin') return 1;
+            return a.name.localeCompare(b.name);
+          }));
+        })
+        .catch(() => setDevError('Failed to load users'))
+        .finally(() => setLoadingUsers(false));
+    }
+  }, [devMode]);
 
-  const handleContinue = () => {
-    const user = users.find((u) => u.id === Number(selected));
-    if (!user) return;
-
-    login(user);
-    if (user.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/");
+  const handleDevLogin = () => {
+    const selected = users.find(u => u.id === parseInt(selectedUserId));
+    if (selected) {
+      login(selected);
+      if (selected.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     }
   };
 
-  if (loading) {
-    return (
-      <p className="text-sm text-gray-500 text-center py-12">
-        Loading users...
-      </p>
-    );
-  }
+  const handleRealLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setShowResend(false);
+    setLoading(true);
+
+    try {
+      const data = await loginAccount(email, password);
+      login(data.user);
+      if (data.user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      const msg = err.message || 'Login failed';
+      setError(msg);
+      if (msg.includes('EMAIL_NOT_VERIFIED')) {
+        setShowResend(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      await resendVerificationEmail(email);
+      setError('');
+      setShowResend(false);
+      alert('Verification email resent. Check your inbox.');
+    } catch {
+      // Ignore
+    }
+  };
 
   return (
-    <div className="max-w-md mx-auto mt-20 bg-white border rounded-lg p-6">
-      <h1 className="text-xl font-semibold text-gray-900">Select a user</h1>
-      <p className="text-sm text-gray-600 mt-1">
-        Choose who you want to act as.
-      </p>
+    <div className="min-h-[60vh] flex items-center justify-center py-8">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold">Log In to SyncUp</h1>
+          <p className="text-text-secondary mt-2">
+            {devMode ? 'Dev Mode — Quick user selection' : 'Enter your credentials to access your account.'}
+          </p>
+        </div>
 
-      <select
-        className="mt-4 w-full border rounded px-3 py-2 text-sm"
-        value={selected}
-        onChange={(e) => setSelected(e.target.value)}
-      >
-        <option value="">Select a user...</option>
-        {[...users]
-          .sort((a, b) => {
-            // Sort by role (admin first) then name
-            if (a.role === "admin" && b.role !== "admin") return -1;
-            if (a.role !== "admin" && b.role === "admin") return 1;
-            return (a.name || "").localeCompare(b.name || "");
-          })
-          .map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name} ({u.role})
-            </option>
-          ))}
-      </select>
+        {/* Dev Mode Toggle */}
+        <div className="flex items-center justify-between mb-6 p-3 bg-surface-highlight rounded-lg">
+          <span className="text-sm font-medium">Dev Mode</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={devMode}
+              onChange={(e) => {
+                setDevMode(e.target.checked);
+                localStorage.setItem('devMode', e.target.checked);
+              }}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          </label>
+        </div>
 
-      <button
-        onClick={handleContinue}
-        disabled={!selected}
-        className="mt-4 w-full bg-indigo-600 text-white py-2 rounded disabled:opacity-50"
-      >
-        Continue
-      </button>
+        {/* Dev Mode Login */}
+        {devMode ? (
+          <div className="space-y-4">
+            {devError && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">{devError}</p>
+              </div>
+            )}
 
-      <div className="mt-8 pt-6 border-t border-gray-100">
-        <p className="text-xs text-gray-500 mb-2">Debug Tools:</p>
-        <button
-          onClick={() => {
-            const user = users.find((u) => u.id === Number(selected));
-            if (!user) {
-              alert("Please select a user first from the dropdown above.");
-              return;
-            }
-            reportError(
-              "javascript",
-              `Manual test error from ${user.name}`,
-              { userId: user.id },
-            );
-            alert("Test error triggered! Check admin dashboard.");
-          }}
-          className="w-full bg-red-50 text-red-600 border border-red-200 py-2 rounded text-sm hover:bg-red-100 transition"
-        >
-          Trigger Test Error
-        </button>
+            <div>
+              <label className="block text-sm font-medium mb-1">Select User</label>
+              <select
+                className="input w-full"
+                value={selectedUserId}
+                onChange={e => setSelectedUserId(e.target.value)}
+                disabled={loadingUsers}
+              >
+                <option value="">-- Choose a user --</option>
+                {users.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.role}{u.cycle ? ` - ${u.cycle}` : ''})
+                  </option>
+                ))}
+              </select>
+              {loadingUsers && <p className="text-xs text-text-secondary mt-1">Loading users...</p>}
+            </div>
+
+            <button
+              onClick={handleDevLogin}
+              disabled={!selectedUserId}
+              className="btn btn-primary w-full"
+            >
+              Continue as Selected User
+            </button>
+
+            {/* Debug button */}
+            <button
+              onClick={() => {
+                throw new Error('Test error from Login page');
+              }}
+              className="btn btn-ghost w-full text-xs"
+            >
+              Trigger Test Error
+            </button>
+          </div>
+        ) : (
+          /* Real Login Form */
+          <div>
+            {error && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mb-4">
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                {showResend && (
+                  <button
+                    onClick={handleResend}
+                    className="text-sm text-primary hover:underline mt-1 block"
+                  >
+                    Resend verification email
+                  </button>
+                )}
+              </div>
+            )}
+
+            <form onSubmit={handleRealLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  className="input w-full"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@icstars.org"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Password</label>
+                <input
+                  type="password"
+                  className="input w-full"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Your password"
+                  required
+                />
+              </div>
+
+              <button type="submit" disabled={loading} className="btn btn-primary w-full">
+                {loading ? 'Logging in...' : 'Log In'}
+              </button>
+            </form>
+
+            <div className="text-center mt-4 space-y-2">
+              <p className="text-sm text-text-secondary">
+                <a href="/forgot-password" className="text-primary hover:underline">Forgot your password?</a>
+              </p>
+              <p className="text-sm text-text-secondary">
+                Don't have an account?{' '}
+                <a href="/register" className="text-primary hover:underline">Register</a>
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

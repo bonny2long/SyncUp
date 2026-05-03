@@ -1,12 +1,13 @@
 import express from "express";
 import pool from "../config/db.js";
 import {
-  createInvitation,
-  validateInvitation,
-  registerWithInvitation,
-  listInvitations,
-  revokeInvitation,
-} from "../controllers/invitationController.js";
+   createInvitation,
+   validateInvitation,
+   registerWithInvitation,
+   listInvitations,
+   revokeInvitation,
+   createSpecialInvitation,
+ } from "../controllers/invitationController.js";
 
 const router = express.Router();
 
@@ -230,6 +231,9 @@ router.get("/invitations/validate", validateInvitation);
 
 // POST /api/admin/register - Register with invitation (public)
 router.post("/register", registerWithInvitation);
+
+// POST /api/admin/invitations/special - Special access invitation (admin only)
+router.post("/invitations/special", createSpecialInvitation);
 
 // POST /api/admin/reset-demo - Reset and seed demo data
 router.post("/reset-demo", async (req, res) => {

@@ -814,21 +814,29 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// DELETE /api/users/:userId
+ // DELETE /api/users/:userId
 // Delete user account
 export const deleteUser = async (req, res) => {
   const { userId } = req.params;
 
   try {
-    // Delete related data first (cascading should handle this, but being explicit)
-    await pool.query("DELETE FROM user_skill_signals WHERE user_id = ?", [
-      userId,
-    ]);
-    await pool.query("DELETE FROM project_members WHERE user_id = ?", [userId]);
-    await pool.query("DELETE FROM notifications WHERE user_id = ?", [userId]);
-    await pool.query("DELETE FROM skill_validations WHERE user_id = ?", [
-      userId,
-    ]);
+    // Delete related data in correct order (respecting foreign keys)
+    // Check which tables have user_id column
+    const tablesToCheck = [
+      'skill_validations', 'user_skills_signals', 'user_skills',
+      'project_members', 'notifications', 'encouragement_votes',
+      'poll_votes', 'progress_updates', 'project_discussions',
+      'mentorship_sessions', 'user_badges', 'skill_logs'
+    ];
+    
+    for (const table of tablesToCheck) {
+      try {
+        await pool.query(`DELETE FROM ${table} WHERE user_id = ?`, [userId]);
+      } catch (e) {
+        // Column might not exist, log and continue
+        console.log(`Skip ${table}:`, e.message);
+      }
+    }
 
     // Delete user
     const [result] = await pool.query("DELETE FROM users WHERE id = ?", [
@@ -841,7 +849,7 @@ export const deleteUser = async (req, res) => {
 
     res.json({ message: "Account deleted successfully" });
   } catch (err) {
-    console.error("Error deleting account:", err);
-    res.status(500).json({ error: "Failed to delete account" });
+    console.error("Error deleting account:", err.message);
+    res.status(500).json({ error: "Failed to delete account: " + err.message });
   }
 };

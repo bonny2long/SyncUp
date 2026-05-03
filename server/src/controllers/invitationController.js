@@ -1,14 +1,12 @@
 import crypto from "crypto";
 import pool from "../config/db.js";
+import bcrypt from "bcrypt";
+import { specialInviteEmailHtml, generateToken } from "../services/authService.js";
 
 const INVITATION_EXPIRY_DAYS =
   parseInt(process.env.INVITATION_EXPIRY_DAYS) || 7;
 const MAX_INVITATIONS_PER_ADMIN =
   parseInt(process.env.MAX_INVITATIONS_PER_ADMIN) || 10;
-
-const generateToken = () => {
-  return crypto.randomBytes(32).toString("hex");
-};
 
 export const createInvitation = async (req, res) => {
   try {
@@ -99,9 +97,9 @@ export const validateInvitation = async (req, res) => {
     }
 
     const [invitation] = await pool.query(
-      `SELECT id, email, expires_at, used_at 
-       FROM admin_invitations 
-       WHERE token = ?`,
+      `SELECT id, email, expires_at, used_at, invite_type, intended_role
+         FROM admin_invitations
+         WHERE token = ?`,
       [token],
     );
 
@@ -128,6 +126,9 @@ export const validateInvitation = async (req, res) => {
     res.json({
       valid: true,
       email: inv.email,
+      invite_type: inv.invite_type,
+      intended_role: inv.intended_role,
+      is_special_invite: inv.invite_type === 'special_access',
     });
   } catch (err) {
     console.error("Validate invitation error:", err);
@@ -154,9 +155,9 @@ export const registerWithInvitation = async (req, res) => {
     }
 
     const [invitation] = await pool.query(
-      `SELECT id, email, expires_at, used_at 
-       FROM admin_invitations 
-       WHERE token = ?`,
+      `SELECT id, email, expires_at, used_at, invite_type, intended_role
+         FROM admin_invitations
+         WHERE token = ?`,
       [token],
     );
 
@@ -185,10 +186,14 @@ export const registerWithInvitation = async (req, res) => {
       });
     }
 
+    const passwordHash = await bcrypt.hash(password, 12);
+    const role = inv.intended_role || 'admin';
+    const emailVerified = inv.invite_type === 'special_access' ? true : false;
+
     await pool.query(
-      `INSERT INTO users (name, email, password_hash, role, join_date) 
-       VALUES (?, ?, ?, 'admin', NOW())`,
-      [name, inv.email, password],
+      `INSERT INTO users (name, email, password_hash, role, join_date, email_verified)
+         VALUES (?, ?, ?, ?, NOW(), ?)`,
+      [name, inv.email, passwordHash, role, emailVerified],
     );
 
     await pool.query(
@@ -198,7 +203,7 @@ export const registerWithInvitation = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Admin account created successfully",
+      message: "Account created successfully",
     });
   } catch (err) {
     console.error("Register with invitation error:", err);
@@ -257,6 +262,64 @@ export const listInvitations = async (req, res) => {
   } catch (err) {
     console.error("List invitations error:", err);
     res.status(500).json({ error: "Failed to list invitations" });
+  }
+};
+
+// =============================================
+// POST /api/admin/invitations/special
+// Special access invite for non-@icstars.org users
+// =============================================
+export const createSpecialInvitation = async (req, res) => {
+  const {
+    email,
+    name,
+    intended_role,
+    verification_note,
+    admin_id,
+  } = req.body;
+
+  try {
+    const [adminRows] = await pool.query(
+      'SELECT role FROM users WHERE id = ?', [admin_id]
+    );
+    if (!adminRows.length || adminRows[0].role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    if (!email || !verification_note?.trim()) {
+      return res.status(400).json({
+        error: 'Email and verification note are required. Document why this person is getting special access.'
+      });
+    }
+
+    const [existing] = await pool.query(
+      'SELECT id FROM users WHERE email = ?', [email.toLowerCase().trim()]
+    );
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'An account with this email already exists' });
+    }
+
+    const token = generateToken();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    await pool.query(
+      `INSERT INTO admin_invitations
+       (email, token, created_by, expires_at, invite_type, intended_role, verified_by_admin_id, verification_note)
+       VALUES (?, ?, ?, ?, 'special_access', ?, ?, ?)`,
+      [email.toLowerCase().trim(), token, admin_id, expiresAt,
+       intended_role || 'alumni', admin_id, verification_note.trim()]
+    );
+
+    await sendEmail({
+      to: email.toLowerCase().trim(),
+      subject: 'You have been invited to join the iCAA community on SyncUp',
+      html: specialInviteEmailHtml(name, token, verification_note.trim()),
+    });
+
+    res.status(201).json({ success: true, message: `Special invitation sent to ${email}` });
+  } catch (err) {
+    console.error('Special invitation error:', err);
+    res.status(500).json({ error: 'Failed to send invitation' });
   }
 };
 

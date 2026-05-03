@@ -15,6 +15,9 @@ const UserProfile = React.lazy(() => import("./pages/UserProfile"));
 const Chat = React.lazy(() => import("./pages/Chat/Chat"));
 const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
 const Maintenance = React.lazy(() => import("./pages/Maintenance"));
+const VerifyEmail = React.lazy(() => import("./pages/VerifyEmail"));
+const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = React.lazy(() => import("./pages/ResetPassword"));
 
 function LoadingFallback() {
   return (
@@ -215,6 +218,9 @@ export default function App() {
             />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/portfolio"
               element={
