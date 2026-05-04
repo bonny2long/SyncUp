@@ -359,6 +359,7 @@ export default function AdminDashboard() {
   const [editUserCommenced, setEditUserCommenced] = useState(false);
   const [editUserCycleId, setEditUserCycleId] = useState("");
   const [editUserCycleText, setEditUserCycleText] = useState("");
+  const [editUserIsAdmin, setEditUserIsAdmin] = useState(false);
 
   // Special invitation state
   const [specialInvite, setSpecialInvite] = useState({ email: '', role: 'alumni', note: '' });
@@ -380,8 +381,8 @@ export default function AdminDashboard() {
         setUpdates(updatesData);
 
         // Calculate real stats from critical data
-        const mentors = usersData.filter((u) =>
-          ["mentor", "resident", "alumni"].includes(u.role),
+        const communityMembers = usersData.filter((u) =>
+          ["resident", "alumni"].includes(u.role),
         ).length;
         const interns = usersData.filter((u) => u.role === "intern").length;
         const activeProjects = projectsData.filter(
@@ -397,7 +398,7 @@ export default function AdminDashboard() {
         setStats({
           users: usersData.length,
           projects: projectsData.length,
-          mentors,
+          mentors: communityMembers, // All iCAA community members can mentor
           interns,
           sessions: sessionsData.length,
           activeProjects,
@@ -558,6 +559,7 @@ export default function AdminDashboard() {
     setEditUserRole(selectedUser.role || "intern");
     setEditUserCommenced(Boolean(selectedUser.has_commenced));
     setEditUserCycleText(selectedUser.cycle || "");
+    setEditUserIsAdmin(Boolean(selectedUser.is_admin));
 
     const matchedCycle =
       cycles.find(
@@ -2703,8 +2705,7 @@ export default function AdminDashboard() {
                     <option value="intern">Intern</option>
                     <option value="resident">Resident</option>
                     <option value="alumni">Alumni</option>
-                    <option value="mentor">Mentor</option>
-                    <option value="admin">Admin</option>
+                    <option value="admin">Admins Only</option>
                   </select>
                   <select
                     value={userFilters.status}
@@ -2829,6 +2830,11 @@ export default function AdminDashboard() {
                           >
                             {user.role}
                           </span>
+                          {user.is_admin === 1 || user.is_admin === true ? (
+                            <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-[#b9123f] text-white">
+                              ADMIN
+                            </span>
+                          ) : null}
                         </td>
                         <td className="p-3">
                           <span
@@ -4484,6 +4490,7 @@ export default function AdminDashboard() {
                   <label className="block text-sm text-gray-400 mb-1">
                     Role
                   </label>
+                  {/* REMOVE Mentor and Admin from role options */}
                   <select
                     value={editUserRole}
                     onChange={(e) => setEditUserRole(e.target.value)}
@@ -4493,9 +4500,31 @@ export default function AdminDashboard() {
                     <option value="intern">Intern</option>
                     <option value="resident">Resident</option>
                     <option value="alumni">Alumni</option>
-                    <option value="mentor">Mentor</option>
-                    <option value="admin">Admin</option>
                   </select>
+
+                  {/* ADD a separate Admin Access toggle below the role dropdown */}
+                  <div className="flex items-center justify-between p-3 bg-surface-highlight/30 rounded-lg mt-3">
+                    <div>
+                      <span className="text-primary font-medium">Admin Access</span>
+                      <p className="text-xs text-gray-400">
+                        Grants access to Admin Dashboard. Only grant to iCAA governing body members.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      id="editUserIsAdmin"
+                      onClick={() => setEditUserIsAdmin((prev) => !prev)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        editUserIsAdmin ? "bg-[#b9123f]" : "bg-gray-400"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          editUserIsAdmin ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">
@@ -4649,6 +4678,8 @@ export default function AdminDashboard() {
                         document.getElementById("editUserBanned");
                       const isBanned =
                         isActiveToggle.classList.contains("bg-red-500");
+                      const is_admin = editUserIsAdmin;
+
                       handleUpdateUser(selectedUser.id, {
                         name,
                         email,
@@ -4658,13 +4689,10 @@ export default function AdminDashboard() {
                           : editUserRole,
                         notes,
                         is_active: !isBanned,
-                        cycle,
-                        intern_cycle_id:
-                          cycles.length > 0 ?
-                            selectedCycle?.id || null
-                          : selectedUser.intern_cycle_id || null,
+                        cycle: cycle || null,
                         has_commenced:
                           editUserRole === "intern" ? editUserCommenced : true,
+                        is_admin,  // ADD THIS
                       });
                     }}
                     className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80"

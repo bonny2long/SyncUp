@@ -3,10 +3,10 @@ import { createSmartNotification } from "../services/notificationService.js";
 
 async function isAdminUser(userId) {
   if (!userId) return false;
-  const [rows] = await pool.query("SELECT role FROM users WHERE id = ?", [
+  const [rows] = await pool.query("SELECT is_admin FROM users WHERE id = ?", [
     userId,
   ]);
-  return rows[0]?.role === "admin";
+  return rows[0]?.is_admin === true;
 }
 
 async function notifyEventAudience(eventId, title, authorId) {
@@ -17,9 +17,9 @@ async function notifyEventAudience(eventId, title, authorId) {
        WHERE id != ?
          AND (is_active IS NULL OR is_active != FALSE)
          AND (
-           role IN ('admin', 'mentor', 'resident', 'alumni')
+           role IN ('resident', 'alumni')
            OR has_commenced = TRUE
-         )`,
+         ) `,
       [authorId],
     );
 

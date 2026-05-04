@@ -10,7 +10,9 @@ export default function MentorshipBridge() {
     return <InternView />;
   }
 
-  if (["mentor", "alumni", "resident"].includes(user?.role)) {
+  // Alumni, residents, AND admins all get the mentor view
+  // Admins are alumni/residents who also maintain the system
+  if (["alumni", "resident"].includes(user?.role) || user?.is_admin) {
     return <MentorView />;
   }
 

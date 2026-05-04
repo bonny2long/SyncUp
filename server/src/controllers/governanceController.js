@@ -10,7 +10,7 @@ const POSITION_ORDER = [
   "tech_member",
 ];
 
-const ELIGIBLE_ROLES = ["resident", "alumni", "admin"];
+const ELIGIBLE_ROLES = ["resident", "alumni"];
 
 function isValidPosition(position) {
   return POSITION_ORDER.includes(position);
@@ -23,11 +23,12 @@ async function requireAdmin(req, res) {
     return null;
   }
 
-  const [rows] = await pool.query("SELECT id, role FROM users WHERE id = ?", [
-    requesterId,
-  ]);
+  const [rows] = await pool.query(
+    "SELECT id, role, is_admin FROM users WHERE id = ?",
+    [requesterId],
+  );
   const requester = rows[0];
-  if (requester?.role !== "admin") {
+  if (!requester?.is_admin) {
     res.status(403).json({ error: "Admin access required" });
     return null;
   }

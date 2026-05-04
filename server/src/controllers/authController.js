@@ -299,9 +299,9 @@ export const adminResetPassword = async (req, res) => {
 
   try {
     const [adminRows] = await pool.query(
-      'SELECT role FROM users WHERE id = ?', [admin_id]
+      'SELECT is_admin FROM users WHERE id = ?', [admin_id]
     );
-    if (!adminRows.length || adminRows[0].role !== 'admin') {
+    if (!adminRows.length || adminRows[0].is_admin !== true) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -353,7 +353,7 @@ export const login = async (req, res) => {
 
   try {
     const [users] = await pool.query(
-      'SELECT id, name, email, password_hash, role, cycle, intern_cycle_id, has_commenced, email_verified FROM users WHERE email = ?',
+      'SELECT id, name, email, password_hash, role, cycle, intern_cycle_id, has_commenced, email_verified, is_admin FROM users WHERE email = ?',
       [email.toLowerCase().trim()]
     );
 
@@ -393,6 +393,7 @@ export const login = async (req, res) => {
         intern_cycle_id: user.intern_cycle_id,
         has_commenced: user.has_commenced,
         email_verified: user.email_verified,
+        is_admin: user.is_admin === 1 || user.is_admin === true
       }
     });
   } catch (err) {

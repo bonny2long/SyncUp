@@ -1,8 +1,8 @@
 import pool from "../config/db.js";
 import { createSmartNotification } from "../services/notificationService.js";
 
-const CAN_VIEW = ["resident", "alumni", "mentor", "admin"];
-const CAN_POST = ["alumni", "admin"];
+const CAN_VIEW = ["resident", "alumni"];
+const CAN_POST = ["alumni"];
 const OPPORTUNITY_TYPES = [
   "full_time",
   "part_time",
@@ -16,7 +16,7 @@ const OPPORTUNITY_TYPES = [
 async function getUserById(userId) {
   if (!userId) return null;
   const [rows] = await pool.query(
-    "SELECT id, name, role, cycle FROM users WHERE id = ?",
+    "SELECT id, name, role, cycle, is_admin FROM users WHERE id = ?",
     [userId],
   );
   return rows[0] || null;
@@ -51,7 +51,7 @@ async function notifyOpportunityAudience(opportunity, author) {
        FROM users
        WHERE id != ?
          AND (is_active IS NULL OR is_active != FALSE)
-         AND role IN ('resident', 'alumni', 'mentor', 'admin')`,
+         AND role IN ('resident', 'alumni')`,
       [author.id],
     );
 
@@ -76,7 +76,7 @@ async function notifyOpportunityAudience(opportunity, author) {
 export const getOpportunities = async (req, res) => {
   try {
     const requester = await getUserById(getRequesterId(req));
-    if (!requester || !CAN_VIEW.includes(requester.role)) {
+    if (!requester || (!CAN_VIEW.includes(requester.role) && !requester.is_admin)) {
       return res.status(403).json({ error: "Community access required" });
     }
 
@@ -120,7 +120,7 @@ export const createOpportunity = async (req, res) => {
 
   try {
     const author = await getUserById(req.user?.id || author_id);
-    if (!author || !CAN_POST.includes(author.role)) {
+    if (!author || (!CAN_POST.includes(author.role) && !author.is_admin)) {
       return res.status(403).json({
         error: "Only alumni and admins can post opportunities right now",
       });
@@ -194,7 +194,7 @@ export const deleteOpportunity = async (req, res) => {
     if (!opportunity) return res.status(404).json({ error: "Not found" });
 
     const canDelete =
-      requester.role === "admin" || Number(opportunity.author_id) === requester.id;
+      requester.is_admin || Number(opportunity.author_id) === requester.id;
     if (!canDelete) return res.status(403).json({ error: "Not authorized" });
 
     await pool.query(

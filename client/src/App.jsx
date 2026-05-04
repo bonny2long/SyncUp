@@ -60,7 +60,7 @@ function MaintenanceCheck({ children }) {
 
   if (loading || maintenanceMode === null) return null;
 
-  if (maintenanceMode && (!user || user.role !== "admin")) {
+  if (maintenanceMode && (!user || !user.is_admin)) {
     return <Navigate to="/maintenance" replace />;
   }
 
@@ -80,8 +80,8 @@ function ProtectedRoute({
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
 
-  const isAdmin = user.role === "admin";
-  const isCommunityMember = ["alumni", "resident", "mentor"].includes(
+  const isAdmin = user.is_admin === true;
+  const isCommunityMember = ["alumni", "resident"].includes(
     user.role,
   );
   const canAccessSyncChat =

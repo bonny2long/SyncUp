@@ -5,36 +5,25 @@ import React from "react";
 const ROLE_CONFIG = {
   alumni: {
     label: "Alumni",
-    // iCAA Red â€” full membership, highest tier
+    // iCAA Red — full membership, highest tier
     bg: "bg-[#b9123f]",
     text: "text-white",
     dot: "bg-[#b9123f]",
   },
   resident: {
-    // iCAA Red tinted â€” earned, on their way
+    // iCAA Red tinted — earned, on their way
     bg: "bg-[#b9123f]/15",
     text: "text-[#b9123f]",
     dot: "bg-[#b9123f]",
   },
-  mentor: {
-    // iCAA Gray â€” established, professional
-    bg: "bg-[#383838]",
-    text: "text-white",
-    dot: "bg-[#383838]",
-  },
   intern: {
-    // Neutral â€” working toward membership
+    // Neutral — working toward membership
     bg: "bg-neutral-200 dark:bg-neutral-700",
     text: "text-neutral-700 dark:text-neutral-200",
     dot: "bg-neutral-500",
   },
-  admin: {
-    // iCAA Black â€” authority, ICAA body
-    label: "iCAA",
-    bg: "bg-[#282827]",
-    text: "text-white",
-    dot: "bg-[#282827]",
-  },
+  // admin role removed — is_admin is now a flag, not a role
+  // mentor role removed — mentor badge is earned, not a role
 };
 
 export default function RoleBadge({ role, size = "sm", showDot = false }) {

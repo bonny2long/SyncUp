@@ -59,11 +59,12 @@ export const createChannel = async (req, res) => {
   }
 
   try {
-    const [userRows] = await pool.query("SELECT role FROM users WHERE id = ?", [
-      user_id,
-    ]);
+    const [userRows] = await pool.query(
+      "SELECT role, is_admin FROM users WHERE id = ?",
+      [user_id],
+    );
 
-    if (userRows[0]?.role !== "admin") {
+    if (!userRows[0]?.is_admin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -374,7 +375,7 @@ export const getDMUsers = async (req, res) => {
         FROM users u
         LEFT JOIN user_presence up ON u.id = up.user_id
         WHERE u.id != ? 
-          AND u.role IN ('mentor', 'alumni', 'resident', 'admin')
+          AND (u.role IN ('alumni', 'resident') OR u.is_admin = TRUE)
         ORDER BY u.name
       `;
       params = [user_id];

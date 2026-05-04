@@ -69,6 +69,16 @@ Phase 9K:  Admin Access Fix            ✅ Done
   - Edit 1B: ProtectedRoute — admin passes community checks
   - Edit 1C: Route guards — removed disallowAdmin from community routes
   - Edit 2: Sidebar — admins see full community nav (8 items)
+Phase 9L:  Role System Fix           ✅ Done
+  - Database: Added is_admin column, migrated admin→alumni, mentor→alumni
+  - Backend: Updated all role='admin' checks to is_admin=TRUE
+  - Backend: Removed mentor/admin from role enum (now: intern, resident, alumni)
+  - Frontend: App.jsx ProtectedRoute uses is_admin flag
+  - Frontend: Sidebar.jsx shows admin dashboard + full community
+  - Frontend: MentorshipBridge.jsx — admins get MentorView
+  - Frontend: RoleBadge.jsx — removed mentor/admin configs
+  - Frontend: AdminDashboard.jsx — role dropdown now intern/resident/alumni only
+  - Frontend: AdminDashboard.jsx — added Admin Access toggle (is_admin)
 ─── NEXT ───────────────────────────────
 Phase 10: Production Hardening        🔨 In Progress
   - Access Control Verification (server-side)

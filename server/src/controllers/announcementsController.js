@@ -3,13 +3,13 @@ import { createSmartNotification } from "../services/notificationService.js";
 
 async function isAdminUser(userId) {
   if (!userId) return false;
-  const [rows] = await pool.query("SELECT role FROM users WHERE id = ?", [
+  const [rows] = await pool.query("SELECT is_admin FROM users WHERE id = ?", [
     userId,
   ]);
-  return rows[0]?.role === "admin";
+  return rows[0]?.is_admin === true;
 }
 
-const VOTING_ROLES = ["resident", "alumni", "admin"];
+const VOTING_ROLES = ["resident", "alumni"];
 const POLL_TYPES = ["yes_no", "multiple_choice"];
 
 async function createPollForAnnouncement(connection, announcementId, poll) {
@@ -63,7 +63,7 @@ async function notifyAnnouncementAudience(announcement, authorId) {
        WHERE id != ?
          AND (is_active IS NULL OR is_active != FALSE)
          AND (
-           role IN ('admin', 'mentor', 'resident', 'alumni')
+           role IN ('resident', 'alumni')
            OR has_commenced = TRUE
          )`,
       [authorId],
@@ -113,7 +113,7 @@ export const getAnnouncements = async (req, res) => {
         (
           SELECT COUNT(*)
           FROM users audience
-          WHERE audience.role IN ('admin', 'mentor', 'resident', 'alumni')
+          WHERE audience.role IN ('resident', 'alumni')
              OR audience.has_commenced = TRUE
         ) AS audience_count,
         (
@@ -409,7 +409,7 @@ export const submitPollVote = async (req, res) => {
     if (!VOTING_ROLES.includes(role)) {
       return res
         .status(403)
-        .json({ error: "Only residents, alumni, and admins can vote" });
+        .json({ error: "Only residents and alumni can vote" });
     }
 
     const [pollRows] = await pool.query(

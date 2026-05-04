@@ -8,7 +8,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   const { user } = useUser();
 
   const tabs = React.useMemo(() => {
-    if (user?.role === "admin") {
+    if (user?.is_admin === true) {
       return [
         // Admin tool — their special access
         { id: "admin", label: "Admin Dashboard", path: "/admin" },
@@ -22,7 +22,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
       ];
     }
 
-    const isCommunityMember = ["alumni", "resident", "mentor"].includes(
+    const isCommunityMember = ["alumni", "resident"].includes(
       user?.role,
     );
 

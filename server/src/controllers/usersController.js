@@ -5,6 +5,7 @@ const USER_SELECT_FIELDS = `
   name,
   email,
   role,
+  is_admin,
   join_date,
   bio,
   headline,
@@ -36,12 +37,14 @@ const USER_SELECT_FIELDS = `
   show_projects,
   show_skills,
   accept_mentorship,
-  auto_accept_teammates
-`;
+  auto_accept_teammates,
+  email_verified,
+  email_verified_at`;
+
 
 async function getSystemSenderId(fallbackUserId) {
   const [admins] = await pool.query(
-    "SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1",
+    "SELECT id FROM users WHERE is_admin = TRUE ORDER BY id ASC LIMIT 1",
   );
   return admins[0]?.id || fallbackUserId;
 }
@@ -618,10 +621,14 @@ export const updateUserProfile = async (req, res) => {
       updates.role = body.role;
       if (
         body.has_commenced === undefined &&
-        ["mentor", "resident", "alumni", "admin"].includes(body.role)
+        ["resident", "alumni"].includes(body.role)
       ) {
         updates.has_commenced = true;
       }
+    }
+
+    if (body.is_admin !== undefined) {
+      updates.is_admin = body.is_admin === true;
     }
 
     if (body.profile_pic !== undefined) updates.profile_pic = body.profile_pic;
@@ -712,7 +719,7 @@ export const updateUserProfile = async (req, res) => {
 
     if (
       updates.role !== undefined &&
-      ["mentor", "resident", "alumni", "admin"].includes(updates.role) &&
+      ["resident", "alumni"].includes(updates.role) &&
       updates.has_commenced === undefined
     ) {
       updates.has_commenced = true;
