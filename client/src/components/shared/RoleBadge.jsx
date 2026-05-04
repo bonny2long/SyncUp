@@ -12,6 +12,7 @@ const ROLE_CONFIG = {
   },
   resident: {
     // iCAA Red tinted — earned, on their way
+    label: "Resident",
     bg: "bg-[#b9123f]/15",
     text: "text-[#b9123f]",
     dot: "bg-[#b9123f]",

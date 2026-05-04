@@ -291,12 +291,30 @@ export default function OpportunityBoard() {
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-accent" />
         </div>
       ) : filteredOpportunities.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-surface py-12 text-center">
-          <Briefcase className="mx-auto mb-3 h-10 w-10 text-text-secondary" />
-          <p className="font-medium text-neutral-dark">No opportunities yet — be the first to share one.</p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Share internship opportunities with the community.
+        <div className="rounded-lg border border-dashed border-border bg-surface py-16 text-center px-4">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <Briefcase className="h-8 w-8 text-primary" />
+          </div>
+          <p className="font-semibold text-neutral-dark text-lg">No opportunities yet</p>
+          <p className="mt-2 text-sm text-text-secondary max-w-md mx-auto">
+            The Opportunity Board is where alumni and admins share jobs, internships,
+            apprenticeships, and scholarships with the iCAA community.
           </p>
+          {canPost && (
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" />
+              Post the First Opportunity
+            </button>
+          )}
+          {!canPost && (
+            <p className="mt-4 text-xs text-text-secondary">
+              Only alumni and admins can post opportunities — ask a community member to share one.
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

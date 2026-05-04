@@ -118,9 +118,9 @@ const StatCard = memo(function StatCard({
   color,
 }) {
   const colorClasses = {
-    blue: "text-blue-500",
+    blue: "text-primary",
     green: "text-green-500",
-    purple: "text-purple-500",
+    purple: "text-secondary",
     yellow: "text-yellow-500",
   };
   return (
@@ -134,7 +134,7 @@ const StatCard = memo(function StatCard({
             color === "green" ? "bg-green-500"
             : color === "yellow" ? "bg-yellow-500"
             : color === "red" ? "bg-red-500"
-            : "bg-blue-500"
+            : "bg-primary"
           }`}
         ></span>
       </div>
@@ -176,13 +176,13 @@ const AlertItem = memo(function AlertItem({
   const severityColors = {
     critical: "border-l-red-500 bg-red-500/10",
     warning: "border-l-yellow-500 bg-yellow-500/10",
-    info: "border-l-blue-500 bg-blue-500/10",
+    info: "border-l-secondary bg-secondary/10",
     error: "border-l-red-500 bg-red-500/10",
   };
   const iconColors = {
     critical: "text-red-500",
     warning: "text-yellow-500",
-    info: "text-blue-500",
+    info: "text-secondary",
     error: "text-red-500",
   };
   return (
@@ -1309,7 +1309,7 @@ export default function AdminDashboard() {
         ...mentor,
         rank: idx + 1,
         medalColor:
-          idx === 0 ? "text-yellow-400"
+          idx === 0 ? "text-primary"
           : idx === 1 ? "text-gray-300"
           : idx === 2 ? "text-amber-600"
           : null,
@@ -1332,7 +1332,7 @@ export default function AdminDashboard() {
         update.created_at ?
           new Date(update.created_at).toLocaleDateString()
         : "Recently",
-      color: "text-blue-400",
+      color: "text-primary",
     }));
     return showAllActivity ? items : items.slice(0, 5);
   }, [updates, showAllActivity]);
@@ -1654,7 +1654,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => setActiveTab("users")}
                   aria-label="Manage Users"
-                  className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition flex items-center gap-2"
+                  className="px-4 py-2 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition flex items-center gap-2"
                 >
                   <Users size={18} aria-hidden="true" /> Manage Users
                 </button>
@@ -1668,7 +1668,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => setActiveTab("system")}
                   aria-label="System Health"
-                  className="px-4 py-2 bg-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/30 transition flex items-center gap-2"
+                  className="px-4 py-2 bg-yellow-500/20 text-yellow-500 rounded-lg hover:bg-yellow-500/30 transition flex items-center gap-2"
                 >
                   <BarChart3 size={18} aria-hidden="true" /> System Health
                 </button>
@@ -1933,11 +1933,11 @@ export default function AdminDashboard() {
                             <h4 className="font-medium text-primary">
                               {announcement.title}
                             </h4>
-                            <span className="px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-400">
+                            <span className="px-2 py-0.5 rounded text-xs bg-primary/20 text-primary">
                               {announcement.announcement_type}
                             </span>
                             {announcement.has_poll ? (
-                              <span className="px-2 py-0.5 rounded text-xs bg-purple-500/20 text-purple-300">
+                              <span className="px-2 py-0.5 rounded text-xs bg-secondary/20 text-secondary">
                                 Poll
                               </span>
                             ) : null}
@@ -2607,7 +2607,7 @@ export default function AdminDashboard() {
                                 cycle.status === "active" ?
                                   "bg-green-500/20 text-green-400"
                                 : cycle.status === "commenced" ?
-                                  "bg-purple-500/20 text-purple-400"
+                                  "bg-secondary/20 text-secondary"
                                 : "bg-gray-500/20 text-gray-400"
                               }`}
                             >
@@ -2633,7 +2633,7 @@ export default function AdminDashboard() {
                                   onClick={() =>
                                     handleUpdateCycleStatus(cycle, "commenced")
                                   }
-                                  className="text-xs text-purple-400 hover:text-purple-300"
+                                  className="text-xs text-secondary hover:text-secondary"
                                 >
                                   Mark Commenced
                                 </button>
@@ -2798,7 +2798,7 @@ export default function AdminDashboard() {
                         completeness.percent >= 85 ?
                           "bg-green-500/20 text-green-400"
                         : completeness.percent >= 60 ?
-                          "bg-yellow-500/20 text-yellow-400"
+                          "bg-yellow-500/20 text-yellow-500"
                         : "bg-red-500/20 text-red-400";
 
                       return (
@@ -2818,11 +2818,11 @@ export default function AdminDashboard() {
                           <span
                             className={`px-2 py-0.5 rounded text-xs ${
                               user.role === "resident" ?
-                                "bg-purple-500/20 text-purple-400"
+                                "bg-secondary/20 text-secondary"
                               : user.role === "alumni" ?
-                                "bg-yellow-500/20 text-yellow-400"
+                                "bg-yellow-500/20 text-yellow-500"
                               : user.role === "mentor" ?
-                                "bg-blue-500/20 text-blue-400"
+                                "bg-primary/20 text-primary"
                               : user.role === "admin" ?
                                 "bg-red-500/20 text-red-400"
                               : "bg-green-500/20 text-green-400"
@@ -2852,7 +2852,7 @@ export default function AdminDashboard() {
                           <span className={`px-2 py-0.5 rounded text-xs ${
                             user.email_verified
                               ? 'bg-green-500/20 text-green-400'
-                              : 'bg-yellow-500/20 text-yellow-400'
+                              : 'bg-yellow-500/20 text-yellow-500'
                           }`}>
                             {user.email_verified ? 'Verified' : 'Unverified'}
                           </span>
@@ -3389,7 +3389,7 @@ export default function AdminDashboard() {
                                 mentor.rate >= 80 ?
                                   "bg-green-500/20 text-green-400"
                                 : mentor.rate >= 50 ?
-                                  "bg-yellow-500/20 text-yellow-400"
+                                  "bg-yellow-500/20 text-yellow-500"
                                 : "bg-red-500/20 text-red-400"
                               }`}
                             >
@@ -3494,8 +3494,8 @@ export default function AdminDashboard() {
                                   session.status === "completed" ?
                                     "bg-green-500/20 text-green-400"
                                   : session.status === "pending" ?
-                                    "bg-yellow-500/20 text-yellow-400"
-                                  : "bg-blue-500/20 text-blue-400"
+                                    "bg-yellow-500/20 text-yellow-500"
+                                  : "bg-primary/20 text-primary"
                                 }`}
                               >
                                 {session.status || "scheduled"}
@@ -3607,7 +3607,7 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   onClick={exportErrorsToJSON}
-                  className="flex items-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 transition text-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-primary/20 text-primary border border-primary/30 rounded-lg hover:bg-primary/30 transition text-sm"
                   title="Export to JSON"
                 >
                   <File size={16} /> JSON
@@ -3727,12 +3727,12 @@ export default function AdminDashboard() {
                           <span
                             className={`px-2 py-1 rounded text-xs ${
                               error.error_type === "javascript" ?
-                                "bg-yellow-500/20 text-yellow-400"
+                                "bg-yellow-500/20 text-yellow-500"
                               : error.error_type === "api" ?
                                 "bg-red-500/20 text-red-400"
                               : error.error_type === "server" ?
-                                "bg-purple-500/20 text-purple-400"
-                              : "bg-blue-500/20 text-blue-400"
+                                "bg-secondary/20 text-secondary"
+                              : "bg-primary/20 text-primary"
                             }`}
                           >
                             {error.error_type}
@@ -3987,12 +3987,12 @@ export default function AdminDashboard() {
                         <span
                           className={`px-2 py-1 rounded text-xs ${
                             error.error_type === "javascript" ?
-                              "bg-yellow-500/20 text-yellow-400"
+                              "bg-yellow-500/20 text-yellow-500"
                             : error.error_type === "api" ?
                               "bg-red-500/20 text-red-400"
                             : error.error_type === "server" ?
-                              "bg-purple-500/20 text-purple-400"
-                            : "bg-blue-500/20 text-blue-400"
+                              "bg-secondary/20 text-secondary"
+                            : "bg-primary/20 text-primary"
                           }`}
                         >
                           {error.error_type}
@@ -4018,7 +4018,7 @@ export default function AdminDashboard() {
             {/* Platform Stats */}
             <div className="bg-surface rounded-xl border border-border p-5">
               <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
-                <Info className="text-blue-500" size={20} /> Platform Stats
+                <Info className="text-primary" size={20} /> Platform Stats
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 bg-surface-highlight/30 rounded-lg">
@@ -4832,12 +4832,12 @@ export default function AdminDashboard() {
                   <span
                     className={`px-2 py-1 rounded text-xs ${
                       selectedError.error_type === "javascript" ?
-                        "bg-yellow-500/20 text-yellow-400"
+                        "bg-yellow-500/20 text-yellow-500"
                       : selectedError.error_type === "api" ?
                         "bg-red-500/20 text-red-400"
                       : selectedError.error_type === "server" ?
-                        "bg-purple-500/20 text-purple-400"
-                      : "bg-blue-500/20 text-blue-400"
+                        "bg-secondary/20 text-secondary"
+                      : "bg-primary/20 text-primary"
                     }`}
                   >
                     {selectedError.error_type}

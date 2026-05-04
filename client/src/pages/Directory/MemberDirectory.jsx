@@ -215,11 +215,18 @@ export default function MemberDirectory() {
                     )}
 
                     <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-                      <span className="inline-flex items-center gap-1">
-                        <FolderKanban className="h-3.5 w-3.5" />
-                        {member.project_count || 0} project
-                        {Number(member.project_count) === 1 ? "" : "s"}
-                      </span>
+                      {Number(member.project_count) > 0 ? (
+                        <span className="inline-flex items-center gap-1">
+                          <FolderKanban className="h-3.5 w-3.5" />
+                          {member.project_count} project
+                          {Number(member.project_count) === 1 ? "" : "s"}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" title="No projects yet">
+                          <FolderKanban className="h-3.5 w-3.5" />
+                          No projects yet
+                        </span>
+                      )}
                       {Number(member.completed_mentor_sessions) > 0 && (
                         <span className="inline-flex items-center gap-1">
                           <Award className="h-3.5 w-3.5 text-primary" />
