@@ -1,35 +1,39 @@
 import React from "react";
 
+// iCAA brand-aligned role badge system
+// Colors sourced from ICAA Branding Guide V1
 const ROLE_CONFIG = {
   alumni: {
     label: "Alumni",
-    bg: "bg-yellow-100 dark:bg-yellow-900/30",
-    text: "text-yellow-700 dark:text-yellow-400",
-    dot: "bg-yellow-500",
+    // iCAA Red â€” full membership, highest tier
+    bg: "bg-[#b9123f]",
+    text: "text-white",
+    dot: "bg-[#b9123f]",
   },
   resident: {
-    label: "Resident",
-    bg: "bg-purple-100 dark:bg-purple-900/30",
-    text: "text-purple-700 dark:text-purple-400",
-    dot: "bg-purple-500",
+    // iCAA Red tinted â€” earned, on their way
+    bg: "bg-[#b9123f]/15",
+    text: "text-[#b9123f]",
+    dot: "bg-[#b9123f]",
   },
   mentor: {
-    label: "Mentor",
-    bg: "bg-blue-100 dark:bg-blue-900/30",
-    text: "text-blue-700 dark:text-blue-400",
-    dot: "bg-blue-500",
+    // iCAA Gray â€” established, professional
+    bg: "bg-[#383838]",
+    text: "text-white",
+    dot: "bg-[#383838]",
   },
   intern: {
-    label: "Intern",
-    bg: "bg-green-100 dark:bg-green-900/30",
-    text: "text-green-700 dark:text-green-400",
-    dot: "bg-green-500",
+    // Neutral â€” working toward membership
+    bg: "bg-neutral-200 dark:bg-neutral-700",
+    text: "text-neutral-700 dark:text-neutral-200",
+    dot: "bg-neutral-500",
   },
   admin: {
-    label: "Admin",
-    bg: "bg-red-100 dark:bg-red-900/30",
-    text: "text-red-700 dark:text-red-400",
-    dot: "bg-red-500",
+    // iCAA Black â€” authority, ICAA body
+    label: "iCAA",
+    bg: "bg-[#282827]",
+    text: "text-white",
+    dot: "bg-[#282827]",
   },
 };
 
@@ -40,9 +44,11 @@ export default function RoleBadge({ role, size = "sm", showDot = false }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full font-medium ${sizeClasses} ${config.bg} ${config.text}`}
+      className={`inline-flex items-center gap-1 rounded-full font-semibold ${sizeClasses} ${config.bg} ${config.text}`}
     >
-      {showDot && <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />}
+      {showDot && (
+        <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+      )}
       {config.label}
     </span>
   );

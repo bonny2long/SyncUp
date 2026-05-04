@@ -136,9 +136,9 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
         <h3 className="text-lg font-semibold text-neutral-dark mb-2">
           No upcoming sessions
         </h3>
-        <p className="text-sm text-text-secondary">
-          Accepted session requests will appear here
-        </p>
+          <p className="text-sm text-text-secondary">
+            Your upcoming mentorship sessions will appear here
+          </p>
       </div>
     );
   }

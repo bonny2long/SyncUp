@@ -114,6 +114,7 @@ export default function Register() {
   };
 
   if (success) {
+    const isSpecial = invitation?.is_special_invite;
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -122,20 +123,32 @@ export default function Register() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Check Your Email</h2>
+          <h2 className="text-2xl font-bold mb-2">
+            {isSpecial ? 'Account Created!' : 'Check Your Email'}
+          </h2>
           <p className="text-text-secondary mb-4">
-            We sent a verification link to <strong>{form.email}</strong>.
-            You'll be able to log in once you verify.
+            {isSpecial ? (
+              <>
+                Your account is ready. You can log in immediately.
+              </>
+            ) : (
+              <>
+                We sent a verification link to <strong>{form.email}</strong>.
+                You'll be able to log in once you verify.
+              </>
+            )}
           </p>
-          <button
-            onClick={() => resendVerificationEmail(form.email)}
-            className="btn btn-outline text-sm"
-          >
-            Resend verification email
-          </button>
+          {!isSpecial && (
+            <button
+              onClick={() => resendVerificationEmail(form.email)}
+              className="btn btn-outline text-sm"
+            >
+              Resend verification email
+            </button>
+          )}
           <div className="mt-4">
             <a href="/login" className="text-sm text-primary hover:underline">
-              Back to login
+              {isSpecial ? 'Log In Now' : 'Back to login'}
             </a>
           </div>
         </div>
@@ -160,12 +173,11 @@ export default function Register() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center py-8">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Create Your Account</h1>
-          <p className="text-text-secondary mt-2">
-            {mode === 'special'
-              ? 'Complete your invitation to join SyncUp'
-              : 'Join the iCAA community on SyncUp'}
+        <div className="text-center mb-6">
+          <div className="text-4xl font-black text-[#b9123f] tracking-tighter">*iCAA</div>
+          <h1 className="text-xl font-bold text-neutral-dark mt-1">Join the Community</h1>
+          <p className="text-sm text-text-secondary mt-1">
+            For i.c.stars program members only
           </p>
         </div>
 

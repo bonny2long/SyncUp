@@ -23,9 +23,18 @@
 }
 
 @theme {
-  --color-primary: #4c5fd5; /* Indigo Blue */
-  --color-secondary: #9b5de5; /* Electric Purple */
-  --color-accent: #00c2ba; /* Aqua Cyan */
+  /* iCAA Primary Palette */
+  --color-primary: #b9123f;      /* iCAA Red â€” strength, passion, energy */
+  --color-secondary: #383838;    /* iCAA Gray â€” sophistication, professionalism */
+  --color-accent: #282827;       /* iCAA Black â€” authority, stability */
+
+  /* iCAA Secondary Palette â€” events, promotions */
+  --color-vibrant: #f83030;      /* Vibrant Red â€” dynamic, energetic */
+  
+  /* iCAA White */
+  --color-icaa-white: #fdfdfd;
+
+  /* Surface colors stay the same â€” they work well */
   --color-neutral-light: var(--color-neutral-light);
   --color-neutral-dark: var(--color-neutral-dark);
 

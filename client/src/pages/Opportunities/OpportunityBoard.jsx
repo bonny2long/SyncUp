@@ -293,9 +293,9 @@ export default function OpportunityBoard() {
       ) : filteredOpportunities.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface py-12 text-center">
           <Briefcase className="mx-auto mb-3 h-10 w-10 text-text-secondary" />
-          <p className="font-medium text-neutral-dark">No opportunities found</p>
+          <p className="font-medium text-neutral-dark">No opportunities yet — be the first to share one.</p>
           <p className="mt-1 text-sm text-text-secondary">
-            Try clearing filters or check back later.
+            Share internship opportunities with the community.
           </p>
         </div>
       ) : (

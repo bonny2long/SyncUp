@@ -18,10 +18,10 @@ export default function MentorshipBridge() {
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-neutral-dark mb-2">
-          Role Not Configured
+          Contact an iCAA admin to set up your account
         </h2>
         <p className="text-text-secondary">
-          Contact an administrator to configure your account role.
+          Your role needs to be configured by an administrator.
         </p>
       </div>
     </div>

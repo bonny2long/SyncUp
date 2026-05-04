@@ -278,7 +278,7 @@ export default function CommunityFeed() {
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-2">
                   <section className="border border-border rounded-lg bg-surface-highlight/40 p-3 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-4 h-4 text-accent" />
+                      <Calendar className="w-4 h-4 text-[#f83030] flex-shrink-0" />
                       <h3 className="text-xs font-semibold uppercase text-text-secondary">
                         Next Up
                       </h3>
@@ -310,8 +310,8 @@ export default function CommunityFeed() {
                                 }}
                                 className={`flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                                   event.user_rsvp === "attending" ?
-                                    "bg-accent/15 text-accent border border-accent/30"
-                                  : "bg-primary text-white hover:bg-primary/90"
+                                    "bg-[#f83030]/15 text-[#f83030] border border-[#f83030]/30"
+                                  : "bg-[#f83030] text-white hover:bg-[#f83030]/90"
                                 }`}
                               >
                                 {event.user_rsvp === "attending" ? "Going" : "RSVP"}
@@ -328,7 +328,7 @@ export default function CommunityFeed() {
 
                   <section className="border border-border rounded-lg bg-surface-highlight/40 p-3 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <PartyPopper className="w-4 h-4 text-primary" />
+                      <div className="text-[#b9123f] text-lg">🎉</div>
                       <h3 className="text-xs font-semibold uppercase text-text-secondary">
                         Welcomes
                       </h3>
@@ -346,36 +346,45 @@ export default function CommunityFeed() {
                                 }
                                 className="block w-full min-w-0 text-left hover:bg-surface/70 rounded px-1 py-0.5 transition-colors"
                               >
-                                <p className="text-sm font-medium text-neutral-dark line-clamp-2">
-                                  {welcome.items.length} new residents joined{" "}
-                                  {welcome.cycle === "ICAA" ?
-                                    "the ICAA community"
-                                  : `Cycle ${welcome.cycle}`}
-                                </p>
-                                <p className="text-xs text-text-secondary mt-0.5">
-                                  {formatRelativeDate(welcome.latestDate)}
-                                </p>
+                            <div className="bg-[#b9123f]/5 border border-[#b9123f]/20 rounded-lg px-3 py-2.5 flex items-center gap-2">
+                                <span className="text-[#b9123f] text-lg">🎉</span>
+                                <div>
+                                  <p className="text-sm font-semibold text-[#b9123f]">Welcome to the community</p>
+                                  <p className="text-xs text-text-secondary">
+                                    {welcome.items.length} new residents joined{" "}
+                                    {welcome.cycle === "ICAA" ?
+                                      "the ICAA community"
+                                    : `Cycle ${welcome.cycle}`}
+                                  </p>
+                                </div>
+                              </div>
                               </button>
                             );
                           }
 
                           return (
-                            <button
-                              key={welcome.item.id}
-                              type="button"
-                              onClick={() =>
-                                openItem("introduction", welcome.item)
-                              }
-                              className="block w-full min-w-0 text-left hover:bg-surface/70 rounded px-1 py-0.5 transition-colors"
-                            >
-                              <p className="text-sm text-neutral-dark line-clamp-2">
-                                {welcome.item.content}
-                              </p>
-                              <p className="text-xs text-text-secondary mt-0.5">
-                                {formatRelativeDate(welcome.item.created_at)}
-                              </p>
-                            </button>
-                          );
+                              <button
+                                key={`${welcome.cycle}-${welcome.latestDate}`}
+                                type="button"
+                                onClick={() =>
+                                  openItem("introductionGroup", welcome)
+                                }
+                                className="block w-full min-w-0 text-left hover:bg-surface/70 rounded px-1 py-0.5 transition-colors"
+                              >
+                                <div className="bg-[#b9123f]/5 border border-[#b9123f]/20 rounded-lg px-3 py-2.5 flex items-center gap-2">
+                                  <span className="text-[#b9123f] text-lg">🎉</span>
+                                  <div>
+                                    <p className="text-sm font-semibold text-[#b9123f]">Welcome to the community</p>
+                                    <p className="text-xs text-text-secondary">
+                                      {welcome.items.length} new residents joined{" "}
+                                      {welcome.cycle === "ICAA" ?
+                                        "the ICAA community"
+                                      : `Cycle ${welcome.cycle}`}
+                                    </p>
+                                  </div>
+                                </div>
+                              </button>
+                            );
                         })
                       : <p className="text-xs text-text-secondary">
                           No recent introductions.
@@ -386,7 +395,7 @@ export default function CommunityFeed() {
 
                   <section className="border border-border rounded-lg bg-surface-highlight/40 p-3 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <Newspaper className="w-4 h-4 text-secondary" />
+                      <Newspaper className="w-4 h-4 text-[#b9123f]" />
                       <h3 className="text-xs font-semibold uppercase text-text-secondary">
                         News
                       </h3>
@@ -400,12 +409,12 @@ export default function CommunityFeed() {
                             onClick={() => openItem("announcement", item)}
                             className="block w-full min-w-0 text-left hover:bg-surface/70 rounded px-1 py-0.5 transition-colors"
                           >
-                            <p className="text-sm font-medium text-neutral-dark truncate">
-                              {item.title}
-                            </p>
-                            <p className="text-xs text-text-secondary line-clamp-2">
-                              {item.content}
-                            </p>
+                              <div className="border-l-4 border-[#b9123f] pl-3 py-1">
+                                <p className="text-sm font-semibold text-neutral-dark">{item.title}</p>
+                                <p className="text-xs text-text-secondary mt-0.5">
+                                  {item.content.substring(0, 80)}...
+                                </p>
+                              </div>
                           </button>
                         ))
                       : <p className="text-xs text-text-secondary">

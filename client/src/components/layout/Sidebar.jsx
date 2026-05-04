@@ -67,8 +67,13 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   };
 
   const content = (
-    <div className="w-64 bg-primary text-white flex flex-col p-6 rounded-r-2xl shadow-lg h-full">
-      <h2 className="text-3xl font-bold mb-8 text-accent">SyncUp</h2>
+      <div className="w-64 bg-primary text-white flex flex-col p-6 rounded-r-2xl shadow-lg h-full">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-white tracking-tight">SyncUp</h2>
+          <p className="text-xs text-white/60 font-medium tracking-widest uppercase mt-0.5">
+            powered by *iCAA
+          </p>
+        </div>
 
       <nav
         aria-label="Main Navigation"
@@ -94,7 +99,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
 
 
       <footer className="mt-auto pt-6 text-xs text-white/80 border-t border-white/20">
-        v2.0 | ICCA
+        v2.0 | iCAA
       </footer>
     </div>
   );

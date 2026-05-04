@@ -76,6 +76,8 @@ export default function NotificationBell() {
 
   if (!user) return null;
 
+  const digestMode = user?.digest_mode;
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
@@ -84,12 +86,14 @@ export default function NotificationBell() {
         className="relative p-2 rounded-full hover:bg-gray-100 transition"
         aria-label="Notifications"
       >
-        <Bell className="w-5 h-5 text-gray-700" />
+        <Bell className={`w-5 h-5 ${!digestMode && unreadCount > 0 ? 'text-primary animate-bounce' : 'text-gray-700'}`} />
 
         {/* Unread Badge */}
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-            {unreadCount > 9 ? "9+" : unreadCount}
+          <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full text-white text-xs flex items-center justify-center font-bold ${
+            digestMode ? 'bg-gray-400' : 'bg-red-500'
+          }`}>
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>

@@ -92,9 +92,13 @@ export default function Login() {
     <div className="min-h-[60vh] flex items-center justify-center py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Log In to SyncUp</h1>
-          <p className="text-text-secondary mt-2">
-            {devMode ? 'Dev Mode — Quick user selection' : 'Enter your credentials to access your account.'}
+          {/* iCAA Red star asterisk mimicking the logo mark */}
+          <div className="text-5xl font-black text-[#b9123f] tracking-tighter leading-none">
+            *iCAA
+          </div>
+          <div className="text-2xl font-bold text-neutral-dark mt-1">SyncUp</div>
+          <p className="text-sm text-text-secondary mt-2">
+            {devMode ? 'Dev Mode — Quick user selection' : 'The i.c.stars alumni community platform'}
           </p>
         </div>
 

@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
-import { specialInviteEmailHtml, generateToken } from "../services/authService.js";
+import { specialInviteEmailHtml, generateToken, sendEmail } from "../services/authService.js";
 
 const INVITATION_EXPIRY_DAYS =
   parseInt(process.env.INVITATION_EXPIRY_DAYS) || 7;
@@ -304,7 +304,7 @@ export const createSpecialInvitation = async (req, res) => {
 
     await pool.query(
       `INSERT INTO admin_invitations
-       (email, token, created_by, expires_at, invite_type, intended_role, verified_by_admin_id, verification_note)
+       (email, token, invited_by, expires_at, invite_type, intended_role, verified_by_admin_id, verification_note)
        VALUES (?, ?, ?, ?, 'special_access', ?, ?, ?)`,
       [email.toLowerCase().trim(), token, admin_id, expiresAt,
        intended_role || 'alumni', admin_id, verification_note.trim()]

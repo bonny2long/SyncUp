@@ -143,7 +143,7 @@ export default function SessionChat({ otherUser }) {
               </p>
             ) : messages.length === 0 ? (
               <p className="text-xs text-text-secondary text-center py-4">
-                No messages yet — start the conversation!
+                Start the conversation
               </p>
             ) : (
               messages.map((msg) => {

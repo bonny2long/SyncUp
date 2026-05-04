@@ -27,9 +27,10 @@ export function normalizeCycle(value) {
 
 // =============================================
 // Token generation
+// 32 bytes = 64 hex chars (256-bit entropy, AES-256 standard)
 // =============================================
 export function generateToken() {
-  return crypto.randomBytes(48).toString('hex');
+  return crypto.randomBytes(32).toString('hex');
 }
 
 // =============================================
@@ -37,14 +38,10 @@ export function generateToken() {
 // =============================================
 export async function sendEmail({ to, subject, html }) {
   if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER) {
-    console.log(`\n[EMAIL - DEV MODE]`);
+    console.log(`[EMAIL - DEV MODE]`);
     console.log(`To: ${to}`);
     console.log(`Subject: ${subject}`);
-    const linkMatch = html.match(/href="([^"]+)"/);
-    if (linkMatch) {
-      console.log(`LINK: ${linkMatch[1]}`);
-    }
-    console.log(`Body: ${html.replace(/<[^>]+>/g, '')}\n`);
+    console.log(`Body: ${html.replace(/<[^>]+>/g, '')}`);
     return;
   }
 
