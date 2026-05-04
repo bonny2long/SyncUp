@@ -14,6 +14,7 @@ function normalizeUser(rawUser) {
   return {
     ...rawUser,
     role,
+    is_admin: !!rawUser.is_admin,
     has_commenced: isCommunityRole ? (rawUser.has_commenced ?? true) : false,
     cycle: rawUser.cycle ?? null,
   };
