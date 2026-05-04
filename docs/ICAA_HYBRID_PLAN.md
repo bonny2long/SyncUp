@@ -17,29 +17,58 @@ Gathered from live code exploration (2026-05-03):
 - Role-based space separation: Intern Lobby vs SyncChat
 - User roles: `intern`, `mentor`, `resident`, `alumni`, `admin`
 
-### Critical Gaps (Must Fix Before Production)
+### Critical Gaps (All Fixed ✅)
 | Issue | Status | Severity |
 |-------|--------|----------|
-| Passwords stored in **plaintext** | `invitationController.js` line ~188 — no bcrypt | 🔴 Critical |
-| No real login — mock user selection dropdown | `Login.jsx` — no email/password auth | 🔴 Critical |
-| No email verification | No `email_verifications` table | 🔴 Critical |
-| No password reset | No `password_resets` table | 🔴 Critical |
-| No `authController.js` | File does not exist | 🔴 Critical |
-| `admin_invitations` table missing columns | No `invite_type`, `intended_role`, etc. | 🟡 Medium |
-| `users.email_verified` column missing | Needs migration | 🟡 Medium |
-| `bcrypt` not installed | Not in `server/package.json` | 🔴 Critical |
-| `nodemailer` not installed | Not in `server/package.json` | 🟡 Medium |
+| Passwords stored in **plaintext** | ✅ FIXED - bcrypt implemented | 🔴 Was Critical |
+| No real login — mock user selection dropdown | ✅ FIXED - real login with email/password | 🔴 Was Critical |
+| No email verification | ✅ FIXED - `email_verifications` table + flow | 🔴 Was Critical |
+| No password reset | ✅ FIXED - `password_resets` table + flow | 🔴 Was Critical |
+| No `authController.js` | ✅ FIXED - file created with all auth functions | 🔴 Was Critical |
+| `admin_invitations` table missing columns | ✅ FIXED - migration applied | 🟡 Was Medium |
+| `users.email_verified` column missing | ✅ FIXED - column exists | 🟡 Was Medium |
+| `bcrypt` not installed | ✅ FIXED - installed | 🔴 Was Critical |
+| `nodemailer` not installed | ✅ FIXED - installed | 🟡 Was Medium |
 
-### Current Color Scheme (Keep Until Brand Phase)
-- Primary: `#4c5fd5` (Indigo)
-- Secondary: `#9b5de5` (Purple)
-- Accent: `#00c2ba` (Cyan)
-- Email templates only: `#b9123f` (ICAA Red) — per co-worker's spec
+### Current Color Scheme (Brand Phase Complete ✅)
+- Primary: `#b9123f` (iCAA Red) ✅
+- Secondary: `#383838` (iCAA Gray) ✅
+- Accent: `#282827` (iCAA Black) ✅
+- Vibrant Red: `#f83030` (Events/Promotions) ✅
+- iCAA White: `#fdfdfd` ✅
+- Font: League Spartan ✅
 
 ---
 
 ## Phase Sequence (Updated)
 
+```
+Phase 1:  Mentor Credibility          ✅ Done
+Phase 2:  Public Profiles             ✅ Done
+Phase 3:  Member Directory            ✅ Done
+Phase 4:  Governance Badges           ✅ Done
+Phase 5:  Opportunity Board           ✅ Done
+Phase 6:  Encouragement + Cycles      ✅ Done
+Phase 7:  Polls on Announcements      ✅ Done
+Phase 8:  Smart Notifications         ✅ Done
+─── NEW ──────────────────────────────────
+Phase 9:  Auth Revamp (CRITICAL)      ✅ Done
+Phase 9A: League Spartan Font          ✅ Done
+Phase 9B:  iCAA Color System           ✅ Done
+Phase 9C:  Sidebar iCAA Identity       ✅ Done
+Phase 9D:  RoleBadge iCAA Colors      ✅ Done
+Phase 9E:  GovernanceBadge iCAA       ✅ Done
+Phase 9F:  Event Cards Vibrant Red     ✅ Done
+Phase 9G:  Button System Audit         ✅ Done
+Phase 9H:  Login/Register Branded     ✅ Done
+Phase 9I:  Copy Audit (iCAA Terms)    ✅ Done
+Phase 9J:  HQ Visual Polish          ✅ Done
+─── NEXT ────────────────────────────────
+Phase 10: Production Hardening        🔨 In Progress
+  - Access Control Verification
+  - Idempotent Migrations
+  - Seed Data
+  - Cascade Delete Verification
 ```
 Phase 1:  Mentor Credibility          ✅ Done
 Phase 2:  Public Profiles             ✅ Done
@@ -1820,35 +1849,72 @@ When multi-city support is added:
 
 ---
 
-## Phase 10: Brand + Badge Visual System (Deferred)
+## Phase 10: Production Hardening (In Progress)
 
-**Goal:** Make SyncUp feel like ICAA, not a generic dashboard.  
-**Do after Phase 9 is stable and tested.**
+Build/check:
 
-Build:
-- Switch primary color from Indigo `#4c5fd5` to ICAA red `#b9123f`
-- Update `client/src/index.css` CSS variables
-- Typography pass
-- Role badge redesign (use ICAA red for admin badges)
-- Governance badge visual design
-- Featured project/case-study visual polish
-- HQ card polish
-- Copy audit
+### 10A — Access Control Verification
+- ✅ `requesterCanAccess()` in `notificationController.js`
+- ✅ Auth middleware created: `server/src/middleware/auth.js`
+- TODO: Apply `requireAuth` and `requireAdmin` to all admin routes
+- TODO: Verify Intern Lobby only accessible by interns (own cycle) + admins
+- TODO: Verify SyncChat channels only accessible by commenced members
+- TODO: Verify project discussions only by members/owners/admins
+- TODO: Verify mentorship sessions only by intern + their mentor
+- TODO: Verify admin routes have admin role check
+- TODO: Verify public profile returns no private data
+
+### 10B — Idempotent Migrations
+- ✅ `admin_invitations` table updated with `IF NOT EXISTS` patterns
+- TODO: Review all SQL files in `server/src/database/` for `IF NOT EXISTS`
+- TODO: Ensure all migrations can be run safely multiple times
+
+### 10C — Seed Data
+- TODO: Create `server/src/database/seed_demo.sql`
+- TODO: Include test users: 1 admin, 2 alumni, 2 residents, 3 interns (same cycle), 1 commenced intern
+
+### 10D — Cascade Delete Verification
+- TODO: Verify CASCADE rules on:
+  - `mentorship_sessions` (as intern_id or mentor_id)
+  - `project_members`
+  - `skill_signals`
+  - `user_badges`
+  - `encouragements` (authored by user)
+  - `notifications` (for user)
+  - `announcement_reads`
+  - `event_rsvps`
+  - `poll_votes`
 
 ---
 
-## Phase 11: Production Hardening (Deferred)
+## Phase 11: Completed Work Summary
 
-Build/check:
-- Server-side access control for all routes
-- Idempotent migrations for all new tables/columns
-- Seed data for testing
-- API tests for new auth endpoints
-- Clean remaining lint warnings
-- Verify cascade deletes
+### Auth Revamp (Phase 9) ✅ COMPLETE
+- 9A: Database migration ✅
+- 9B: Install dependencies (bcrypt, nodemailer) ✅
+- 9C: Auth service ✅
+- 9D: Auth controller ✅
+- 9E: Auth routes + server registration ✅
+- 9F: Frontend API functions ✅
+- 9G: Rewrite Register.jsx ✅
+- 9H: Rewrite Login.jsx ✅
+- 9I: VerifyEmail, ForgotPassword, ResetPassword pages ✅
+- 9J: Dev mode toggle ✅
+
+### Brand Implementation (Phase 9 Continued) ✅ COMPLETE
+- 9A: League Spartan font ✅
+- 9B: iCAA color system ✅
+- 9C: Sidebar iCAA identity ✅
+- 9D: RoleBadge iCAA colors ✅
+- 9E: GovernanceBadge iCAA colors ✅
+- 9F: Event cards vibrant red ✅
+- 9G: Button system audit ✅
+- 9H: Login/Register branded ✅
+- 9I: Copy audit (iCAA terminology) ✅
+- 9J: HQ visual polish ✅
 
 ---
 
 *Hybrid Plan created: 2026-05-03*  
-*Combines: ICAA_FINAL_PLAN.md + ICAA_WORKLOG_2026-05-01.md + ICAA_NOTIFICATION_AUDIT_2026-05-03.md + Co-worker's Auth Revamp Plan + Live Codebase State*  
-*Branding deferred to Phase 10. Development first.*
+*Updated: 2026-05-04 — Auth + Brand phases complete, moving to Production Hardening*  
+*Combines: ICAA_FINAL_PLAN.md + ICAA_WORKLOG_2026-05-01.md + ICAA_NOTIFICATION_AUDIT_2026-05-03.md + Co-worker's Auth Revamp Plan + Live Codebase State*
