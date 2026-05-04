@@ -10,7 +10,14 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   const tabs = React.useMemo(() => {
     if (user?.role === "admin") {
       return [
+        // Admin tool — their special access
         { id: "admin", label: "Admin Dashboard", path: "/admin" },
+        // Full community access — admins are iCAA members too
+        { id: "collaboration", label: "Collaboration Hub", path: "/collaboration" },
+        { id: "chat", label: "SyncChat", path: "/chat" },
+        { id: "directory", label: "Member Directory", path: "/directory" },
+        { id: "opportunities", label: "Opportunity Board", path: "/opportunities" },
+        { id: "mentorship", label: "Mentorship Bridge", path: "/mentorship" },
         { id: "portfolio", label: "Project Portfolio", path: "/portfolio" },
       ];
     }

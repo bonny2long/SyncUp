@@ -44,11 +44,7 @@ export default function Login() {
     const selected = users.find(u => u.id === parseInt(selectedUserId));
     if (selected) {
       login(selected);
-      if (selected.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      navigate('/');
     }
   };
 
@@ -61,11 +57,7 @@ export default function Login() {
     try {
       const data = await loginAccount(email, password);
       login(data.user);
-      if (data.user.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      navigate('/');
     } catch (err) {
       const msg = err.message || 'Login failed';
       setError(msg);

@@ -34,10 +34,8 @@ function HomeRedirect() {
   if (loading) return <LoadingFallback />;
   if (!user) return <Navigate to="/login" replace />;
 
-  if (user.role === "admin") {
-    return <Navigate to="/admin" replace />;
-  }
-
+  // Everyone goes to collaboration on login.
+  // Admins reach their dashboard via the sidebar.
   return <Navigate to="/collaboration" replace />;
 }
 
@@ -90,12 +88,14 @@ function ProtectedRoute({
     isCommunityMember || (user.role === "intern" && user.has_commenced);
 
   if (requireAdmin && !isAdmin) return <Navigate to="/" replace />;
-  if (disallowAdmin && isAdmin) return <Navigate to="/admin" replace />;
-  if (requireIntern && user.role !== "intern" && !isAdmin)
+  // disallowAdmin only blocks admins from intern-only spaces (lobby, skills)
+  if (disallowAdmin && isAdmin) return <Navigate to="/collaboration" replace />;
+  if (requireIntern && user.role !== "intern")
     return <Navigate to="/collaboration" replace />;
-  if (requireChatAccess && !canAccessSyncChat)
+  // Admins can access chat and community pages — they are community members
+  if (requireChatAccess && !canAccessSyncChat && !isAdmin)
     return <Navigate to="/mentorship" replace />;
-  if (requireCommunityMember && !isCommunityMember)
+  if (requireCommunityMember && !isCommunityMember && !isAdmin)
     return <Navigate to="/collaboration" replace />;
 
   return children;
@@ -122,7 +122,7 @@ export default function App() {
               path="/collaboration"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute disallowAdmin={true}>
+                  <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>
@@ -132,10 +132,7 @@ export default function App() {
               path="/chat"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute
-                    disallowAdmin={true}
-                    requireChatAccess={true}
-                  >
+                  <ProtectedRoute requireChatAccess={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>
@@ -158,7 +155,7 @@ export default function App() {
               path="/mentorship"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute disallowAdmin={true}>
+                  <ProtectedRoute>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>
@@ -168,10 +165,7 @@ export default function App() {
               path="/directory"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute
-                    disallowAdmin={true}
-                    requireCommunityMember={true}
-                  >
+                  <ProtectedRoute requireCommunityMember={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>
@@ -181,10 +175,7 @@ export default function App() {
               path="/opportunities"
               element={
                 <MaintenanceCheck>
-                  <ProtectedRoute
-                    disallowAdmin={true}
-                    requireCommunityMember={true}
-                  >
+                  <ProtectedRoute requireCommunityMember={true}>
                     <Dashboard />
                   </ProtectedRoute>
                 </MaintenanceCheck>
