@@ -4,6 +4,7 @@ import { useUser } from "./context/UserContext";
 import { ToastProvider } from "./context/ToastContext";
 import { OnboardingProvider } from "./context/OnboardingContext";
 import OnboardingTour from "./components/shared/OnboardingTour";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { API_BASE } from "./utils/api";
 
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -102,11 +103,12 @@ function ProtectedRoute({
 
 export default function App() {
   return (
-    <ToastProvider>
-      <OnboardingProvider>
-        <OnboardingTour />
-        <Suspense fallback={<LoadingFallback />}>
-          <Routes>
+      <ToastProvider>
+        <OnboardingProvider>
+          <OnboardingTour />
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
             <Route path="/maintenance" element={<Maintenance />} />
             <Route
               path="/"
@@ -253,8 +255,9 @@ export default function App() {
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </Suspense>
-      </OnboardingProvider>
-    </ToastProvider>
+          </Suspense>
+          </ErrorBoundary>
+        </OnboardingProvider>
+      </ToastProvider>
   );
 }

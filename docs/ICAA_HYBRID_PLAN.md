@@ -1856,6 +1856,8 @@ Build/check:
 ### 10A — Access Control Verification
 - ✅ `requesterCanAccess()` in `notificationController.js`
 - ✅ Auth middleware created: `server/src/middleware/auth.js`
+- ✅ ErrorBoundary component created: `client/src/components/ErrorBoundary.jsx`
+- ✅ ErrorBoundary added to `App.jsx` to catch silent errors
 - TODO: Apply `requireAuth` and `requireAdmin` to all admin routes
 - TODO: Verify Intern Lobby only accessible by interns (own cycle) + admins
 - TODO: Verify SyncChat channels only accessible by commenced members

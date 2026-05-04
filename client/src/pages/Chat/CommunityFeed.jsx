@@ -218,7 +218,7 @@ export default function CommunityFeed() {
   const upcomingEvents = events
     .filter((event) => event.user_rsvp !== "attending")
     .slice(0, 2);
-  const welcomeItems = buildWelcomeItems().slice(0, 3);
+  const welcomeItems = (buildWelcomeItems() || []).slice(0, 3);
   const hasUpdates =
     pinned.length > 0 ||
     news.length > 0 ||
@@ -364,10 +364,10 @@ export default function CommunityFeed() {
 
                           return (
                               <button
-                                key={`${welcome.cycle}-${welcome.latestDate}`}
+                                key={`intro-${welcome.item.id}`}
                                 type="button"
                                 onClick={() =>
-                                  openItem("introductionGroup", welcome)
+                                  openItem("introduction", welcome.item)
                                 }
                                 className="block w-full min-w-0 text-left hover:bg-surface/70 rounded px-1 py-0.5 transition-colors"
                               >
@@ -376,10 +376,10 @@ export default function CommunityFeed() {
                                   <div>
                                     <p className="text-sm font-semibold text-[#b9123f]">Welcome to the community</p>
                                     <p className="text-xs text-text-secondary">
-                                      {welcome.items.length} new residents joined{" "}
-                                      {welcome.cycle === "ICAA" ?
+                                      {getIntroductionName(welcome.item)} has joined{" "}
+                                      {getIntroductionCycle(welcome.item) === "ICAA" ?
                                         "the ICAA community"
-                                      : `Cycle ${welcome.cycle}`}
+                                      : `Cycle ${getIntroductionCycle(welcome.item)}`}
                                     </p>
                                   </div>
                                 </div>
