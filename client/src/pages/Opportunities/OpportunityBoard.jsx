@@ -8,6 +8,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import EmptyState from "../../components/brand/EmptyState";
 import RoleBadge from "../../components/shared/RoleBadge";
 import { useToast } from "../../context/ToastContext";
 import { useUser } from "../../context/UserContext";
@@ -28,11 +29,11 @@ const TYPE_LABELS = {
 };
 
 const TYPE_CLASSES = {
-  full_time: "bg-[#b9123f] text-white",           // iCAA Red — premium role
-  part_time: "bg-[#b9123f]/15 text-[#b9123f]",    // Red tinted — partial
-  contract: "bg-[#383838] text-white",             // iCAA Gray — professional
-  internship: "bg-[#282827] text-white",           // iCAA Black — structured
-  apprenticeship: "bg-[#383838]/15 text-[#383838]", // Gray tinted
+  full_time: "bg-[#b9123f] text-white",
+  part_time: "bg-[#b9123f]/15 text-[#b9123f]",
+  contract: "bg-[#383838] text-white",
+  internship: "bg-[#282827] text-white",
+  apprenticeship: "bg-[#383838]/15 text-[#383838]",
   scholarship: "bg-[#b9123f]/10 text-[#b9123f]",
   event: "bg-slate-100 text-slate-700",
 };
@@ -130,18 +131,57 @@ export default function OpportunityBoard() {
     }
   };
 
+  const stats = [
+    { label: "Open posts", value: opportunities.length },
+    { label: "Showing", value: filteredOpportunities.length },
+    { label: "Types", value: Object.keys(TYPE_LABELS).length },
+  ];
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-dark">
-            Opportunity Board
-          </h1>
-          <p className="text-sm text-text-secondary">
-            Structured opportunities shared by the iCAA community. Use
-            SyncChat #opportunities for discussion and questions.
-          </p>
+    <div className="page-shell space-y-5">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-sm">
+        <div className="absolute inset-y-0 left-0 w-1.5 bg-primary" />
+        <div className="flex flex-col gap-5 pl-2 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <p className="page-kicker font-semibold uppercase">
+              Community pipeline
+            </p>
+            <h1 className="page-title mt-1">Opportunity Board</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
+              Structured opportunities shared by the iCAA community. Use
+              SyncChat #opportunities for discussion and questions.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {stats.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-lg border border-border bg-surface-highlight px-3 py-2"
+              >
+                <p className="text-lg font-black text-primary">{item.value}</p>
+                <p className="text-xs font-semibold uppercase text-text-secondary">
+                  {item.label}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        {!canPost ? (
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-text-secondary">
+            Alumni and admins can post opportunities in this first version.
+            Residents and mentors can view and use the board.
+          </div>
+        ) : (
+          <div className="text-sm text-text-secondary">
+            Share roles, referrals, scholarships, events, and pathways that
+            help the community move forward.
+          </div>
+        )}
+
         <div className="flex gap-2">
           <button
             type="button"
@@ -155,27 +195,28 @@ export default function OpportunityBoard() {
             <button
               type="button"
               onClick={() => setShowForm((current) => !current)}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
             >
-              {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              {showForm ?
+                <X className="h-4 w-4" />
+              : <Plus className="h-4 w-4" />}
               {showForm ? "Close" : "Post Opportunity"}
             </button>
           )}
         </div>
       </div>
 
-      {!canPost && (
-        <div className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-text-secondary">
-          Alumni and admins can post opportunities in this first version.
-          Residents and mentors can view and use the board.
-        </div>
-      )}
-
       {showForm && canPost && (
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-lg border border-border bg-surface p-4 space-y-3"
-        >
+        <form onSubmit={handleSubmit} className="brand-card space-y-3 p-4">
+          <div>
+            <h2 className="text-base font-black text-neutral-dark">
+              Share an opportunity
+            </h2>
+            <p className="text-sm text-text-secondary">
+              Add enough context so members know why it is worth pursuing.
+            </p>
+          </div>
+
           <div className="grid gap-3 md:grid-cols-2">
             <input
               value={form.title}
@@ -254,7 +295,7 @@ export default function OpportunityBoard() {
             <button
               type="submit"
               disabled={submitting || !form.title.trim() || !form.company.trim()}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
             >
               {submitting ? "Posting..." : "Post"}
             </button>
@@ -262,7 +303,7 @@ export default function OpportunityBoard() {
         </form>
       )}
 
-      <div className="grid gap-3 md:grid-cols-[1fr_220px]">
+      <div className="brand-card grid gap-3 p-3 md:grid-cols-[1fr_220px]">
         <label className="relative block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
           <input
@@ -287,37 +328,32 @@ export default function OpportunityBoard() {
       </div>
 
       {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-accent" />
+        <div className="brand-card flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
         </div>
       ) : filteredOpportunities.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-surface py-16 text-center px-4">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Briefcase className="h-8 w-8 text-primary" />
-          </div>
-          <p className="font-semibold text-neutral-dark text-lg">No opportunities yet</p>
-          <p className="mt-2 text-sm text-text-secondary max-w-md mx-auto">
-            The Opportunity Board is where alumni and admins share jobs, internships,
-            apprenticeships, and scholarships with the iCAA community.
-          </p>
-          {canPost && (
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4" />
-              Post the First Opportunity
-            </button>
-          )}
-          {!canPost && (
-            <p className="mt-4 text-xs text-text-secondary">
-              Only alumni and admins can post opportunities — ask a community member to share one.
-            </p>
-          )}
-        </div>
+        <EmptyState
+          icon={Briefcase}
+          title="No opportunities yet"
+          description="The Opportunity Board is where alumni and admins share jobs, internships, apprenticeships, and scholarships with the iCAA community."
+          image="skylineView"
+          action={
+            canPost ?
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4" />
+                Post the First Opportunity
+              </button>
+            : <p className="text-xs text-text-secondary">
+                Only alumni and admins can post opportunities.
+              </p>
+          }
+        />
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-3 xl:grid-cols-2">
           {filteredOpportunities.map((opportunity) => {
             const canDelete =
               user?.role === "admin" || user?.id === opportunity.author_id;
@@ -325,33 +361,35 @@ export default function OpportunityBoard() {
             return (
               <article
                 key={opportunity.id}
-                className="rounded-lg border border-border bg-surface p-4 transition hover:shadow-sm"
+                className="relative overflow-hidden rounded-xl border border-border bg-surface p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
+                <div className="flex items-start justify-between gap-4 pt-1">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-semibold text-neutral-dark">
+                      <h2 className="text-base font-black text-neutral-dark">
                         {opportunity.title}
                       </h2>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                           TYPE_CLASSES[opportunity.type] || TYPE_CLASSES.event
                         }`}
                       >
                         {TYPE_LABELS[opportunity.type] || opportunity.type}
                       </span>
                     </div>
-                    <p className="mt-1 text-sm text-text-secondary">
+                    <p className="mt-1 text-sm font-semibold text-text-secondary">
                       {opportunity.company}
                     </p>
                     {opportunity.description && (
-                      <p className="mt-3 text-sm text-neutral-dark">
+                      <p className="mt-3 line-clamp-3 text-sm leading-6 text-neutral-dark">
                         {opportunity.description}
                       </p>
                     )}
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
+                    <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
                       <span className="inline-flex items-center gap-1">
-                        Posted by <RoleBadge role={opportunity.author_role} size="xs" />
+                        Posted by{" "}
+                        <RoleBadge role={opportunity.author_role} size="xs" />
                         <span>{opportunity.author_name}</span>
                         {opportunity.author_cycle && (
                           <span>{opportunity.author_cycle}</span>
@@ -372,7 +410,7 @@ export default function OpportunityBoard() {
                         href={opportunity.apply_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-neutral-dark hover:border-primary/40 hover:text-primary"
+                        className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary/90"
                       >
                         <ExternalLink className="h-4 w-4" />
                         Apply

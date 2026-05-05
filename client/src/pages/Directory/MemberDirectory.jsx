@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import RoleBadge from "../../components/shared/RoleBadge";
 import GovernanceBadge from "../../components/shared/GovernanceBadge";
+import EmptyState from "../../components/brand/EmptyState";
 import { API_BASE, fetchMemberDirectory } from "../../utils/api";
 
 function getAvatarUrl(member) {
@@ -141,13 +142,12 @@ export default function MemberDirectory() {
           <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-accent" />
         </div>
       ) : members.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-surface py-12 text-center">
-          <Users className="mx-auto mb-3 h-10 w-10 text-text-secondary" />
-          <p className="font-medium text-neutral-dark">No members found</p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Try a different role, cycle, or search term.
-          </p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No members found"
+          description="Try a different role, cycle, or search term."
+          image="groupPhoto"
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {members.map((member) => {
@@ -162,10 +162,11 @@ export default function MemberDirectory() {
             return (
               <article
                 key={member.id}
-                className="rounded-lg border border-border bg-surface p-4 transition hover:shadow-sm"
+                className="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
               >
+                <div className="absolute inset-x-0 top-0 h-1 bg-primary/80" />
                 <div className="flex gap-4">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-secondary/20">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-primary/10 ring-1 ring-primary/10">
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
@@ -215,29 +216,39 @@ export default function MemberDirectory() {
                       </p>
                     )}
 
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-                      {Number(member.project_count) > 0 ? (
-                        <span className="inline-flex items-center gap-1">
-                          <FolderKanban className="h-3.5 w-3.5" />
-                          {member.project_count} project
-                          {Number(member.project_count) === 1 ? "" : "s"}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" title="No projects yet">
-                          <FolderKanban className="h-3.5 w-3.5" />
-                          No projects yet
-                        </span>
-                      )}
-                      {Number(member.completed_mentor_sessions) > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <Award className="h-3.5 w-3.5 text-primary" />
-                          {member.completed_mentor_sessions} mentor session
-                          {Number(member.completed_mentor_sessions) === 1 ?
-                            ""
-                          : "s"}
-                        </span>
-                      )}
+                    {!member.headline && !workLine && (
+                      <p className="mt-2 text-sm italic text-text-secondary">
+                        Profile details coming soon.
+                      </p>
+                    )}
+
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-lg bg-surface-highlight px-3 py-2">
+                        <p className="font-semibold text-neutral-dark">
+                          {Number(member.project_count) || 0}
+                        </p>
+                        <p className="text-text-secondary">Projects</p>
+                      </div>
+                      <div className="rounded-lg bg-surface-highlight px-3 py-2">
+                        <p className="font-semibold text-neutral-dark">
+                          {Number(member.completed_mentor_sessions) || 0}
+                        </p>
+                        <p className="text-text-secondary">Mentor sessions</p>
+                      </div>
                     </div>
+
+                    {Number(member.project_count) > 0 && (
+                      <p className="mt-2 inline-flex items-center gap-1 text-xs text-text-secondary">
+                        <FolderKanban className="h-3.5 w-3.5" />
+                        Active in community project work
+                      </p>
+                    )}
+                    {Number(member.completed_mentor_sessions) > 0 && (
+                      <p className="mt-1 inline-flex items-center gap-1 text-xs text-text-secondary">
+                        <Award className="h-3.5 w-3.5 text-primary" />
+                        Mentorship contributor
+                      </p>
+                      )}
 
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Link
@@ -252,7 +263,7 @@ export default function MemberDirectory() {
                           className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-neutral-dark hover:border-primary/40 hover:text-primary"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
-                          Public profile
+                          View profile
                         </Link>
                       {member.github_url && (
                         <a

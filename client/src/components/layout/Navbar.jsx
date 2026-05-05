@@ -119,24 +119,24 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
   const pageTitle = titleMap[activeTab] || "SyncUp";
 
   return (
-    <div className="w-full">
-      <header className="flex justify-between items-start bg-surface shadow-md px-4 md:px-6 py-3 transition-all duration-300">
-        <div className="flex items-start gap-3">
+    <div className="w-full border-b border-border bg-neutralLight px-4 pt-4 md:px-6">
+      <header className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 shadow-sm transition-all duration-300">
+        <div className="flex items-center gap-3">
           <button
             type="button"
-            className="md:hidden p-2 rounded-full hover:bg-neutralLight transition"
+            className="rounded-lg p-2 transition hover:bg-neutralLight md:hidden"
             onClick={onToggleSidebar}
             aria-label="Toggle navigation"
           >
             <Menu className="w-5 h-5 text-neutral-dark" />
           </button>
-          <div className="flex flex-col gap-1">
+          <div className="flex min-w-0 flex-col gap-1">
             {user ?
               <div className="flex items-center gap-2">
                 <button
                   data-onboarding="profile"
                   onClick={handleProfileClick}
-                  className="w-9 h-9 bg-secondary/20 flex items-center justify-center rounded-full text-secondary font-semibold hover:bg-secondary/30 transition cursor-pointer overflow-hidden"
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-primary/10 font-black text-primary ring-1 ring-primary/10 transition hover:bg-primary/15"
                   title="View your profile"
                 >
                   {(() => {
@@ -148,26 +148,27 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
                         <img
                           src={imageUrl}
                           alt={`${user.name}'s profile`}
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       : user.name.charAt(0);
                   })()}
                 </button>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-neutral-dark">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-neutral-dark">
                       Welcome,{" "}
                       <span className="text-primary font-semibold">
                         {user.name.split(" ")[0]}
                       </span>
                     </p>
-                    <span className="text-gray-400 text-sm">·</span>
-                    <h1 className="text-sm font-semibold text-primary">
+                    <span className="h-1 w-1 rounded-full bg-border" />
+                    <h1 className="text-sm font-black text-primary">
                       {pageTitle}
                     </h1>
                   </div>
-                  <p className="text-[11px] text-gray-500 capitalize">
+                  <p className="text-[11px] font-medium capitalize text-text-secondary">
                     {user.role}
+                    {user.cycle ? ` - ${user.cycle}` : ""}
                   </p>
                 </div>
               </div>
@@ -175,30 +176,37 @@ export default function Navbar({ activeTab, onToggleSidebar }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 relative" ref={menuRef}>
+        <div className="relative flex items-center gap-2" ref={menuRef}>
           <NotificationBell />
 
           <button
             onClick={toggleMenu}
-            className={`p-2 rounded-full transition-all duration-300 hover:bg-neutralLight
-            ${activeButton === "menu" ? "ring-2 ring-accent" : ""}`}
+            className={`rounded-lg p-2 transition-all duration-300 hover:bg-neutralLight
+            ${activeButton === "menu" ? "ring-2 ring-primary/40" : ""}`}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-haspopup="true"
             aria-expanded={menuOpen}
           >
             {menuOpen ?
-              <X className="w-5 h-5 text-neutral-dark transition-transform duration-300 rotate-180" />
-            : <Menu className="w-5 h-5 text-neutral-dark transition-transform duration-300" />
+              <X className="h-5 w-5 rotate-180 text-neutral-dark transition-transform duration-300" />
+            : <Menu className="h-5 w-5 text-neutral-dark transition-transform duration-300" />
             }
           </button>
 
           <div
-            className={`absolute right-0 top-12 w-56 bg-surface shadow-lg rounded-xl border border-border z-10 overflow-hidden transform transition-all duration-300 origin-top-right ${
+            className={`absolute right-0 top-12 z-10 w-60 origin-top-right transform overflow-hidden rounded-xl border border-border bg-surface shadow-xl transition-all duration-300 ${
               menuOpen ?
                 "opacity-100 scale-100 translate-y-0"
               : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
             }`}
           >
+            <div className="border-b border-border bg-accent px-4 py-3 text-white">
+              <p className="text-sm font-black">{user?.name || "SyncUp"}</p>
+              <p className="text-xs capitalize text-white/65">
+                {user?.role || "member"}
+                {user?.cycle ? ` - ${user.cycle}` : ""}
+              </p>
+            </div>
             <ul className="text-sm">
               {/* Account Section */}
               <li>

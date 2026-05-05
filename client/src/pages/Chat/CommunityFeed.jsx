@@ -219,44 +219,53 @@ export default function CommunityFeed() {
     .filter((event) => event.user_rsvp !== "attending")
     .slice(0, 2);
   const welcomeItems = (buildWelcomeItems() || []).slice(0, 3);
-  const hasUpdates =
-    pinned.length > 0 ||
-    news.length > 0 ||
-    upcomingEvents.length > 0 ||
-    welcomeItems.length > 0;
+  const updateCount =
+    pinned.length + news.length + upcomingEvents.length + welcomeItems.length;
+  const hasUpdates = updateCount > 0;
 
   return (
     <div className="border-b border-border bg-surface">
       <button
         onClick={() => setExpanded((prev) => !prev)}
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-surface-highlight transition-colors"
+        className="group flex w-full items-stretch justify-between overflow-hidden bg-accent text-left text-white transition-colors hover:bg-accent/95"
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <Megaphone className="w-4 h-4 text-primary flex-shrink-0" />
-          <div className="min-w-0 text-left">
-            <p className="text-xs font-semibold text-neutral-dark uppercase">
-              ICAA HQ
-            </p>
-            <p className="text-xs text-text-secondary truncate">
-              Announcements, events, and community welcomes
+        <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-white shadow-sm">
+            <Megaphone className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-black">ICAA HQ</p>
+              {updateCount > 0 && (
+                <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-white">
+                  {updateCount} active
+                </span>
+              )}
+            </div>
+            <p className="truncate text-xs text-white/75">
+              Announcements, events, welcomes, and community signal
             </p>
           </div>
         </div>
-        {expanded ?
-          <ChevronUp className="w-4 h-4 text-text-secondary flex-shrink-0" />
-        : <ChevronDown className="w-4 h-4 text-text-secondary flex-shrink-0" />}
+        <div className="flex items-center border-l border-white/10 px-4">
+          {expanded ?
+            <ChevronUp className="h-4 w-4 text-white/75" />
+          : <ChevronDown className="h-4 w-4 text-white/75" />}
+        </div>
       </button>
 
       {expanded && (
-        <div className="px-4 pb-3">
+        <div className="bg-gradient-to-b from-surface-highlight/70 to-surface px-4 py-3">
           {loading ? (
-            <div className="h-16 flex items-center justify-center">
-              <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+            <div className="flex h-20 items-center justify-center rounded-lg border border-border bg-surface">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : error ? (
-            <p className="text-xs text-red-500 py-3">{error}</p>
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+              {error}
+            </p>
           ) : (
-            <div className="space-y-3 max-h-44 overflow-y-auto pr-1">
+            <div className="max-h-56 space-y-3 overflow-y-auto pr-1">
               {pinned.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {pinned.map((item) => (
@@ -264,10 +273,10 @@ export default function CommunityFeed() {
                       key={item.id}
                       type="button"
                       onClick={() => openItem("announcement", item)}
-                      className="inline-flex items-center gap-1 text-xs bg-[#b9123f]/10 text-[#b9123f] px-2 py-1 rounded-full hover:bg-[#b9123f]/15 transition-colors"
+                      className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
                       title={item.content}
                     >
-                      <Pin className="w-3 h-3" />
+                      <Pin className="h-3 w-3" />
                       {item.title}
                     </button>
                   ))}
@@ -275,15 +284,15 @@ export default function CommunityFeed() {
               )}
 
               {hasUpdates ? (
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-2">
-                  <section className="border border-border rounded-lg bg-surface-highlight/40 p-3 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-4 h-4 text-[#f83030] flex-shrink-0" />
-                      <h3 className="text-xs font-semibold uppercase text-text-secondary">
+                <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+                  <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+                      <Calendar className="h-4 w-4 flex-shrink-0 text-primary" />
+                      <h3 className="text-xs font-black uppercase text-neutral-dark">
                         Next Up
                       </h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 p-3">
                       {upcomingEvents.length > 0 ?
                         upcomingEvents.map((event) => (
                           <div
@@ -293,9 +302,9 @@ export default function CommunityFeed() {
                             <button
                               type="button"
                               onClick={() => openItem("event", event)}
-                              className="min-w-0 text-left hover:text-primary transition-colors"
+                              className="min-w-0 text-left transition-colors hover:text-primary"
                             >
-                              <p className="text-sm font-medium text-neutral-dark truncate">
+                              <p className="truncate text-sm font-semibold text-neutral-dark">
                                 {event.title}
                               </p>
                               <p className="text-xs text-text-secondary">
@@ -308,10 +317,10 @@ export default function CommunityFeed() {
                                   e.stopPropagation();
                                   handleRsvp(event.id);
                                 }}
-                                className={`flex-shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                                className={`flex-shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
                                   event.user_rsvp === "attending" ?
-                                    "bg-[#f83030]/15 text-[#f83030] border border-[#f83030]/30"
-                                  : "bg-[#f83030] text-white hover:bg-[#f83030]/90"
+                                    "border border-primary/30 bg-primary/10 text-primary"
+                                  : "bg-primary text-white hover:bg-primary/90"
                                 }`}
                               >
                                 {event.user_rsvp === "attending" ? "Going" : "RSVP"}
@@ -326,65 +335,47 @@ export default function CommunityFeed() {
                     </div>
                   </section>
 
-                  <section className="border border-border rounded-lg bg-surface-highlight/40 p-3 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-[#b9123f] text-lg">🎉</div>
-                      <h3 className="text-xs font-semibold uppercase text-text-secondary">
+                  <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+                      <PartyPopper className="h-4 w-4 text-primary" />
+                      <h3 className="text-xs font-black uppercase text-neutral-dark">
                         Welcomes
                       </h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 p-3">
                       {welcomeItems.length > 0 ?
                         welcomeItems.map((welcome) => {
                           if (welcome.type === "introductionGroup") {
                             return (
-                              <button
+                              <WelcomeButton
                                 key={`${welcome.cycle}-${welcome.latestDate}`}
-                                type="button"
+                                title="Welcome to the community"
+                                description={`${welcome.items.length} new residents joined ${
+                                  welcome.cycle === "ICAA" ?
+                                    "the ICAA community"
+                                  : `Cycle ${welcome.cycle}`
+                                }`}
                                 onClick={() =>
                                   openItem("introductionGroup", welcome)
                                 }
-                                className="block w-full min-w-0 text-left hover:bg-surface/70 rounded px-1 py-0.5 transition-colors"
-                              >
-                            <div className="bg-[#b9123f]/5 border border-[#b9123f]/20 rounded-lg px-3 py-2.5 flex items-center gap-2">
-                                <span className="text-[#b9123f] text-lg">🎉</span>
-                                <div>
-                                  <p className="text-sm font-semibold text-[#b9123f]">Welcome to the community</p>
-                                  <p className="text-xs text-text-secondary">
-                                    {welcome.items.length} new residents joined{" "}
-                                    {welcome.cycle === "ICAA" ?
-                                      "the ICAA community"
-                                    : `Cycle ${welcome.cycle}`}
-                                  </p>
-                                </div>
-                              </div>
-                              </button>
+                              />
                             );
                           }
 
                           return (
-                              <button
-                                key={`intro-${welcome.item.id}`}
-                                type="button"
-                                onClick={() =>
-                                  openItem("introduction", welcome.item)
-                                }
-                                className="block w-full min-w-0 text-left hover:bg-surface/70 rounded px-1 py-0.5 transition-colors"
-                              >
-                                <div className="bg-[#b9123f]/5 border border-[#b9123f]/20 rounded-lg px-3 py-2.5 flex items-center gap-2">
-                                  <span className="text-[#b9123f] text-lg">🎉</span>
-                                  <div>
-                                    <p className="text-sm font-semibold text-[#b9123f]">Welcome to the community</p>
-                                    <p className="text-xs text-text-secondary">
-                                      {getIntroductionName(welcome.item)} has joined{" "}
-                                      {getIntroductionCycle(welcome.item) === "ICAA" ?
-                                        "the ICAA community"
-                                      : `Cycle ${getIntroductionCycle(welcome.item)}`}
-                                    </p>
-                                  </div>
-                                </div>
-                              </button>
-                            );
+                            <WelcomeButton
+                              key={`intro-${welcome.item.id}`}
+                              title="Welcome to the community"
+                              description={`${getIntroductionName(welcome.item)} joined ${
+                                getIntroductionCycle(welcome.item) === "ICAA" ?
+                                  "the ICAA community"
+                                : `Cycle ${getIntroductionCycle(welcome.item)}`
+                              }`}
+                              onClick={() =>
+                                openItem("introduction", welcome.item)
+                              }
+                            />
+                          );
                         })
                       : <p className="text-xs text-text-secondary">
                           No recent introductions.
@@ -393,28 +384,28 @@ export default function CommunityFeed() {
                     </div>
                   </section>
 
-                  <section className="border border-border rounded-lg bg-surface-highlight/40 p-3 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Newspaper className="w-4 h-4 text-[#b9123f]" />
-                      <h3 className="text-xs font-semibold uppercase text-text-secondary">
+                  <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+                    <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+                      <Newspaper className="h-4 w-4 text-primary" />
+                      <h3 className="text-xs font-black uppercase text-neutral-dark">
                         News
                       </h3>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 p-3">
                       {news.length > 0 ?
                         news.slice(0, 4).map((item) => (
                           <button
                             key={item.id}
                             type="button"
                             onClick={() => openItem("announcement", item)}
-                            className="block w-full min-w-0 text-left hover:bg-surface/70 rounded px-1 py-0.5 transition-colors"
+                            className="block w-full rounded-md border-l-4 border-primary bg-surface-highlight/60 px-3 py-2 text-left transition-colors hover:bg-primary/5"
                           >
-                              <div className="border-l-4 border-[#b9123f] pl-3 py-1">
-                                <p className="text-sm font-semibold text-neutral-dark">{item.title}</p>
-                                <p className="text-xs text-text-secondary mt-0.5">
-                                  {item.content.substring(0, 80)}...
-                                </p>
-                              </div>
+                            <p className="truncate text-sm font-semibold text-neutral-dark">
+                              {item.title}
+                            </p>
+                            <p className="mt-0.5 line-clamp-2 text-xs text-text-secondary">
+                              {item.content}
+                            </p>
                           </button>
                         ))
                       : <p className="text-xs text-text-secondary">
@@ -425,9 +416,14 @@ export default function CommunityFeed() {
                   </section>
                 </div>
               ) : (
-                <p className="text-xs text-text-secondary py-2">
-                  No HQ updates yet.
-                </p>
+                <div className="rounded-lg border border-dashed border-border bg-surface px-4 py-5 text-center">
+                  <p className="text-sm font-semibold text-neutral-dark">
+                    HQ is quiet right now.
+                  </p>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    New announcements, events, and welcomes will appear here.
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -436,23 +432,23 @@ export default function CommunityFeed() {
 
       {selectedItem && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
           onClick={closeItem}
         >
           <div
-            className="w-full max-w-lg rounded-lg border border-border bg-surface shadow-xl"
+            className="w-full max-w-lg overflow-hidden rounded-xl border border-border bg-surface shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+            <div className="flex items-start justify-between gap-3 bg-accent px-5 py-4 text-white">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase text-text-secondary">
+                <p className="text-xs font-semibold uppercase text-white/65">
                   {selectedItem.type === "event" ? "Event"
                   : selectedItem.type === "introduction" ||
                     selectedItem.type === "introductionGroup" ?
                     "Welcome"
                   : selectedItem.item.announcement_type || "Announcement"}
                 </p>
-                <h2 className="text-lg font-bold text-[#b9123f] break-words uppercase">
+                <h2 className="break-words text-lg font-black text-white">
                   {selectedItem.type === "event" ?
                     selectedItem.item.title
                   : selectedItem.type === "introduction" ?
@@ -467,17 +463,17 @@ export default function CommunityFeed() {
               <button
                 type="button"
                 onClick={closeItem}
-                className="p-1 rounded hover:bg-surface-highlight"
+                className="rounded p-1 transition-colors hover:bg-white/10"
                 aria-label="Close HQ detail"
               >
-                <X className="w-5 h-5 text-text-secondary" />
+                <X className="h-5 w-5 text-white/75" />
               </button>
             </div>
 
-            <div className="px-5 py-4 space-y-4">
+            <div className="space-y-4 px-5 py-4">
               {selectedItem.type === "event" && (
                 <>
-                  <div className="text-sm text-text-secondary space-y-1">
+                  <div className="space-y-1 text-sm text-text-secondary">
                     <p>{formatEventDate(selectedItem.item.event_date)}</p>
                     {selectedItem.item.location && (
                       <p>{selectedItem.item.location}</p>
@@ -492,7 +488,7 @@ export default function CommunityFeed() {
                     )}
                   </div>
                   {selectedItem.item.description && (
-                    <p className="text-sm text-neutral-dark whitespace-pre-wrap">
+                    <p className="whitespace-pre-wrap text-sm text-neutral-dark">
                       {selectedItem.item.description}
                     </p>
                   )}
@@ -500,9 +496,9 @@ export default function CommunityFeed() {
                     <button
                       type="button"
                       onClick={() => handleRsvp(selectedItem.item.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                         selectedItem.item.user_rsvp === "attending" ?
-                          "bg-accent/15 text-accent border border-accent/30"
+                          "border border-primary/30 bg-primary/10 text-primary"
                         : "bg-primary text-white hover:bg-primary/90"
                       }`}
                     >
@@ -516,10 +512,10 @@ export default function CommunityFeed() {
 
               {selectedItem.type === "introduction" && (
                 <div>
-                  <p className="text-sm text-neutral-dark whitespace-pre-wrap">
+                  <p className="whitespace-pre-wrap text-sm text-neutral-dark">
                     {selectedItem.item.content}
                   </p>
-                  <p className="text-xs text-text-secondary mt-3">
+                  <p className="mt-3 text-xs text-text-secondary">
                     {formatRelativeDate(selectedItem.item.created_at)}
                   </p>
                 </div>
@@ -527,26 +523,26 @@ export default function CommunityFeed() {
 
               {selectedItem.type === "introductionGroup" && (
                 <div>
-                  <p className="text-sm text-text-secondary mb-3">
+                  <p className="mb-3 text-sm text-text-secondary">
                     {selectedItem.item.items.length} new residents joined{" "}
                     {selectedItem.item.cycle === "ICAA" ?
                       "the ICAA community"
                     : `Cycle ${selectedItem.item.cycle}`}
                     .
                   </p>
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
                     {selectedItem.item.items.map((intro) => (
                       <div
                         key={intro.id}
                         className="rounded-lg border border-border bg-surface-highlight/50 p-3"
                       >
-                        <p className="text-sm font-medium text-neutral-dark">
+                        <p className="text-sm font-semibold text-neutral-dark">
                           {getIntroductionName(intro)}
                         </p>
-                        <p className="text-xs text-text-secondary mt-1">
+                        <p className="mt-1 text-xs text-text-secondary">
                           {formatRelativeDate(intro.created_at)}
                         </p>
-                        <p className="text-sm text-text-secondary mt-2">
+                        <p className="mt-2 text-sm text-text-secondary">
                           {intro.content}
                         </p>
                       </div>
@@ -557,22 +553,22 @@ export default function CommunityFeed() {
 
               {selectedItem.type === "announcement" && (
                 <div className="space-y-4">
-                  <p className="text-sm text-neutral-dark whitespace-pre-wrap">
+                  <p className="whitespace-pre-wrap text-sm text-neutral-dark">
                     {selectedItem.item.content}
                   </p>
                   {selectedItem.item.has_poll ? (
                     <PollWidget announcementId={selectedItem.item.id} />
                   ) : null}
-                  <p className="text-xs text-text-secondary mt-3">
+                  <p className="mt-3 text-xs text-text-secondary">
                     Posted {formatRelativeDate(selectedItem.item.created_at)}
                   </p>
                   <button
                     type="button"
                     onClick={() => handleMarkRead(selectedItem.item.id)}
                     disabled={selectedItem.item.is_read}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                       selectedItem.item.is_read ?
-                        "bg-surface-highlight text-text-secondary cursor-default"
+                        "cursor-default bg-surface-highlight text-text-secondary"
                       : "bg-primary text-white hover:bg-primary/90"
                     }`}
                   >
@@ -585,5 +581,25 @@ export default function CommunityFeed() {
         </div>
       )}
     </div>
+  );
+}
+
+function WelcomeButton({ title, description, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="block w-full rounded-md border border-primary/15 bg-primary/5 px-3 py-2 text-left transition-colors hover:bg-primary/10"
+    >
+      <div className="flex gap-2">
+        <PartyPopper className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-primary">{title}</p>
+          <p className="line-clamp-2 text-xs text-text-secondary">
+            {description}
+          </p>
+        </div>
+      </div>
+    </button>
   );
 }

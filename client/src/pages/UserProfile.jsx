@@ -480,7 +480,7 @@ export default function UserProfile({ isPublic = false }) {
   };
 
   return (
-    <div className={isPublic ? "min-h-screen bg-background" : "flex h-screen bg-background"}>
+    <div className={isPublic ? "min-h-screen bg-neutralLight" : "flex h-screen bg-background"}>
       {/* Sidebar */}
       {!isPublic && (
         <Sidebar
@@ -504,18 +504,24 @@ export default function UserProfile({ isPublic = false }) {
           </div>
         )}
         {isPublic && (
-          <div className="border-b border-border bg-surface">
-            <div className="max-w-4xl mx-auto px-6 py-4">
-              <p className="text-sm font-semibold text-primary">
-                SyncUp * iCAA Public Profile
+          <div className="border-b border-accent bg-accent text-white">
+            <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+              <div>
+                <p className="text-xl font-black text-primary">*iCAA</p>
+                <p className="text-sm font-semibold text-white">
+                  SyncUp Public Profile
+                </p>
+              </div>
+              <p className="hidden text-xs text-white/65 sm:block">
+                Community credential
               </p>
             </div>
           </div>
         )}
 
         {/* Page Content */}
-        <div className={isPublic ? "p-6" : "flex-1 overflow-auto p-6"}>
-          <div className="max-w-4xl mx-auto">
+        <div className={isPublic ? "px-6 py-8" : "flex-1 overflow-auto p-6"}>
+          <div className="mx-auto max-w-5xl">
             {/* Back button — only show when not public */}
             {!isPublic && (
               <div className="mb-4">
@@ -529,8 +535,9 @@ export default function UserProfile({ isPublic = false }) {
               </div>
             )}
             {/* Header */}
-            <div className="bg-surface border border-border rounded-lg p-6 mb-6 relative">
-              <div className="flex items-start gap-4">
+            <div className="relative mb-6 overflow-hidden rounded-xl border border-border bg-surface p-6 shadow-sm">
+              <div className="absolute inset-x-0 top-0 h-1.5 bg-primary" />
+              <div className="flex flex-col gap-5 pt-2 md:flex-row md:items-start">
                 {/* Avatar */}
                 <div className="relative shrink-0">
                   {user.profile_pic ?
@@ -538,10 +545,10 @@ export default function UserProfile({ isPublic = false }) {
                       key={avatarKey}
                       src={getAvatarUrl(user.id)}
                       alt={user.name}
-                      className="w-16 h-16 rounded-full object-cover"
+                      className="h-24 w-24 rounded-2xl object-cover shadow-sm ring-4 ring-surface"
                     />
-                  : <div className="w-16 h-16 rounded-full bg-secondary/20 flex items-center justify-center">
-                      <span className="text-secondary text-2xl font-bold">
+                  : <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary/10 shadow-sm ring-4 ring-surface">
+                      <span className="text-3xl font-black text-primary">
                         {user.name.charAt(0)}
                       </span>
                     </div>
@@ -550,12 +557,12 @@ export default function UserProfile({ isPublic = false }) {
                     <button
                       onClick={() => avatarInputRef.current?.click()}
                       disabled={uploadingAvatar}
-                      className="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition shadow-md"
+                      className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary shadow-md transition hover:bg-primary/90"
                       title="Change avatar"
                     >
                       {uploadingAvatar ?
-                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      : <Camera className="w-3 h-3 text-white" />}
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      : <Camera className="h-3.5 w-3.5 text-white" />}
                     </button>
                   )}
                   <input
@@ -567,7 +574,7 @@ export default function UserProfile({ isPublic = false }) {
                   />
                 </div>
 
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   {isEditingProfile ?
                     <div className="space-y-3">
                       <input
@@ -673,15 +680,15 @@ export default function UserProfile({ isPublic = false }) {
                       </div>
                     </div>
                   : <>
-                      <h1 className="text-4xl font-bold text-neutral-dark">
+                      <h1 className="text-4xl font-black text-neutral-dark">
                         {user.name}
                       </h1>
                       {user.headline && (
-                        <p className="text-primary font-medium mt-1">
+                        <p className="mt-1 text-base font-semibold text-primary">
                           {user.headline}
                         </p>
                       )}
-                      <p className="text-text-secondary mt-1">
+                      <p className="mt-2 text-sm text-text-secondary">
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}{" "}
                         •{" "}
                         {new Date(user.join_date).toLocaleDateString("en-US", {
@@ -689,7 +696,7 @@ export default function UserProfile({ isPublic = false }) {
                           year: "numeric",
                         })}
                         {activity_streak > 0 && (
-                          <span className="ml-2 text-gray-400">
+                          <span className="ml-2 text-primary">
                             🔥 {activity_streak} day
                             {activity_streak !== 1 ? "s" : ""} streak
                           </span>
@@ -702,7 +709,7 @@ export default function UserProfile({ isPublic = false }) {
                             .join(" at ")}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 flex-wrap mt-2">
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
                         <RoleBadge role={user.role} />
                         {governance_positions.map((position) => (
                           <GovernanceBadge
@@ -719,8 +726,8 @@ export default function UserProfile({ isPublic = false }) {
                         )}
                       </div>
                       {user.bio && (
-                        <p className="text-text-secondary text-sm mt-3 max-w-2xl italic">
-                          "{user.bio}"
+                        <p className="mt-4 max-w-2xl border-l-4 border-primary/30 pl-4 text-sm leading-6 text-text-secondary">
+                          {user.bio}
                         </p>
                       )}
                       {credentialLinks.length > 0 && (
@@ -777,18 +784,18 @@ export default function UserProfile({ isPublic = false }) {
                           {savingProfile ? "Saving..." : "Save"}
                         </button>
                       </div>
-                    : <div className="absolute top-4 right-4 flex items-center gap-2">
+                    : <div className="flex flex-wrap items-center gap-2 md:absolute md:right-4 md:top-4">
                         <button
                           type="button"
                           onClick={handleCopyPublicLink}
-                          className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40 transition"
+                          className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm font-medium text-neutral-dark transition hover:border-primary/40 hover:text-primary"
                         >
                           <Copy className="w-4 h-4" />
                           Copy public link
                         </button>
                         <button
                           onClick={handleEditProfile}
-                          className="p-2 rounded-full hover:bg-surface-highlight text-gray-400 hover:text-primary transition"
+                          className="rounded-full p-2 text-text-secondary transition hover:bg-surface-highlight hover:text-primary"
                           title="Edit Profile"
                         >
                           <Edit2 className="w-4 h-4" />
@@ -800,14 +807,14 @@ export default function UserProfile({ isPublic = false }) {
                       {COMMUNITY_MENTOR_ROLES.includes(user.role) && (
                         <button
                           onClick={handleMentorshipRequest}
-                          className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition font-medium"
+                          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 font-medium text-white transition hover:bg-accent/90"
                         >
                           Request Session
                         </button>
                       )}
                       <button
                         onClick={handleContact}
-                        className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-neutral-dark rounded-lg hover:bg-border transition font-medium border border-border"
+                        className="flex items-center gap-2 rounded-lg border border-border bg-surface-highlight px-4 py-2 font-medium text-neutral-dark transition hover:bg-border"
                       >
                         <MessageSquare className="w-4 h-4" />
                         Message
@@ -821,7 +828,7 @@ export default function UserProfile({ isPublic = false }) {
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div
-                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                className="brand-card brand-card-hover p-4"
                 title="Total unique skills you've practiced across all projects"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -834,7 +841,7 @@ export default function UserProfile({ isPublic = false }) {
               </div>
 
               <div
-                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                className="brand-card brand-card-hover p-4"
                 title="Total skill points from all activities and validations"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -847,7 +854,7 @@ export default function UserProfile({ isPublic = false }) {
               </div>
 
               <div
-                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                className="brand-card brand-card-hover p-4"
                 title="Projects you own or are a member of"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -860,7 +867,7 @@ export default function UserProfile({ isPublic = false }) {
               </div>
 
               <div
-                className="bg-surface p-4 rounded-lg border border-border hover:shadow-md transition-all"
+                className="brand-card brand-card-hover p-4"
                 title="Days you've been active in the last 30 days"
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -875,25 +882,26 @@ export default function UserProfile({ isPublic = false }) {
 
             {/* Featured Project */}
             {featuredProject && (
-              <section className="bg-surface rounded-lg border border-border p-6 mb-6">
+              <section className="relative mb-6 overflow-hidden rounded-xl border border-border bg-surface p-6 shadow-sm">
+                <div className="absolute inset-y-0 left-0 w-1.5 bg-primary" />
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                  <div className="min-w-0">
+                  <div className="min-w-0 pl-2">
                     <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
                       {manuallyFeaturedProject ?
                         "Featured Project"
                       : "Suggested Featured Project"}
                     </p>
-                    <h2 className="text-xl font-bold text-primary">
+                    <h2 className="text-2xl font-black text-primary">
                       {featuredProject.title}
                     </h2>
-                    <p className="text-sm text-text-secondary mt-2 max-w-3xl">
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
                       {featuredProject.description || "No description yet."}
                     </p>
                     {(featuredProject.case_study_problem ||
                       featuredProject.case_study_solution) && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
                         {featuredProject.case_study_problem && (
-                          <div className="rounded-lg border border-border bg-surface-highlight p-3">
+                          <div className="rounded-lg border border-border bg-surface-highlight/70 p-3">
                             <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
                               Problem
                             </p>
@@ -903,7 +911,7 @@ export default function UserProfile({ isPublic = false }) {
                           </div>
                         )}
                         {featuredProject.case_study_solution && (
-                          <div className="rounded-lg border border-border bg-surface-highlight p-3">
+                          <div className="rounded-lg border border-border bg-surface-highlight/70 p-3">
                             <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
                               Solution
                             </p>
@@ -926,7 +934,7 @@ export default function UserProfile({ isPublic = false }) {
                         ))}
                       </div>
                     )}
-                    <div className="flex flex-wrap gap-3 text-xs text-text-secondary mt-4">
+                    <div className="mt-4 flex flex-wrap gap-3 text-xs text-text-secondary">
                       <span>
                         {featuredProject.team_size || 0} member
                         {featuredProject.team_size === 1 ? "" : "s"}
@@ -981,7 +989,7 @@ export default function UserProfile({ isPublic = false }) {
             )}
 
             {/* Growth Sources */}
-            <div className="bg-surface rounded-lg border border-border p-4 mb-6">
+            <div className="mb-6 rounded-xl border border-border bg-surface p-4 shadow-sm">
               <p className="text-sm text-text-secondary text-center">
                 <span className="font-medium text-neutral-dark">
                   Growth Sources:
@@ -993,7 +1001,7 @@ export default function UserProfile({ isPublic = false }) {
 
             {/* Credential Readiness */}
             {isOwnProfile && (
-              <section className="bg-surface rounded-lg border border-border p-5 mb-6">
+              <section className="mb-6 rounded-xl border border-border bg-surface p-5 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                   <div>
                     <h2 className="text-lg font-bold text-neutral-dark">
@@ -1010,7 +1018,7 @@ export default function UserProfile({ isPublic = false }) {
                       <span>Profile strength</span>
                       <span>{profileCompleteness.percent}%</span>
                     </div>
-                    <div className="h-2 rounded-full bg-surface-highlight overflow-hidden">
+                    <div className="h-2 overflow-hidden rounded-full bg-surface-highlight">
                       <div
                         className="h-full rounded-full bg-primary"
                         style={{ width: `${profileCompleteness.percent}%` }}
@@ -1043,8 +1051,8 @@ export default function UserProfile({ isPublic = false }) {
 
             {/* Credential Stats */}
             {user.role !== "intern" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-surface p-4 rounded-lg border border-border">
+              <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="brand-card p-4">
                   <p className="text-xs uppercase font-semibold text-text-secondary">
                     Mentorship
                   </p>
@@ -1055,7 +1063,7 @@ export default function UserProfile({ isPublic = false }) {
                     completed sessions
                   </p>
                 </div>
-                <div className="bg-surface p-4 rounded-lg border border-border">
+                <div className="brand-card p-4">
                   <p className="text-xs uppercase font-semibold text-text-secondary">
                     Residents Helped
                   </p>
@@ -1066,7 +1074,7 @@ export default function UserProfile({ isPublic = false }) {
                     unique interns mentored
                   </p>
                 </div>
-                <div className="bg-surface p-4 rounded-lg border border-border">
+                <div className="brand-card p-4">
                   <p className="text-xs uppercase font-semibold text-text-secondary">
                     Projects Advised
                   </p>

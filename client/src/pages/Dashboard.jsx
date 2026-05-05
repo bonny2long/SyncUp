@@ -70,7 +70,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-neutralLight overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-neutralLight">
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -79,7 +79,7 @@ export default function Dashboard() {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Navbar - flush to top */}
         <Navbar
           activeTab={activeTab}
@@ -87,7 +87,7 @@ export default function Dashboard() {
         />
 
         {/* Scrollable content below */}
-        <div key={activeTab} className="p-4 md:p-6 overflow-y-auto h-full">
+        <div key={activeTab} className="h-full overflow-y-auto p-4 md:p-6">
           <main
             className={`${
               activeTab === "chat" || activeTab === "lobby" ? "h-full" : "max-w-7xl mx-auto"
@@ -95,8 +95,13 @@ export default function Dashboard() {
           >
             <Suspense
               fallback={
-                <div className="flex items-center justify-center h-64">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+                <div className="flex h-64 items-center justify-center">
+                  <div className="rounded-xl border border-border bg-surface px-5 py-4 shadow-sm">
+                    <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <p className="mt-3 text-sm font-medium text-text-secondary">
+                      Loading SyncUp
+                    </p>
+                  </div>
                 </div>
               }
             >

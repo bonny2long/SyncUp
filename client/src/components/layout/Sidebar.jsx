@@ -76,7 +76,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
     items.push({ id: "portfolio", label: "Project Portfolio", path: "/portfolio" });
 
     return items;
-  }, [user?.role]);
+  }, [user?.is_admin, user?.role]);
 
   const handleTabClick = (tab) => {
     navigate(tab.path);
@@ -89,27 +89,27 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   };
 
   const content = (
-      <div className="w-64 bg-primary text-white flex flex-col p-6 rounded-r-2xl shadow-lg h-full">
-        <div className="mb-8">
-          <h2 className="text-3xl font-black text-white tracking-tighter">*iCAA</h2>
-          <p className="text-xs text-white/60 font-medium tracking-widest uppercase mt-0.5">
-            hq platform
+      <div className="relative flex h-full w-64 flex-col overflow-hidden rounded-r-2xl bg-primary p-6 text-white shadow-lg dark:bg-accent">
+        <div className="mb-10 pt-2">
+          <h2 className="text-3xl font-black text-white">*iCAA</h2>
+          <p className="mt-0.5 text-xs font-semibold uppercase text-white/60">
+            SyncUp HQ
           </p>
         </div>
 
       <nav
         aria-label="Main Navigation"
         data-onboarding="sidebar"
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-2"
       >
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab)}
-            className={`px-4 py-2 rounded-lg text-left font-medium transition-all duration-300 ${
+            className={`rounded-lg px-4 py-2.5 text-left text-sm font-semibold transition-all duration-300 ${
               getActiveTab() === tab.id ?
-                "bg-white text-primary shadow-md border-l-4 border-accent"
-              : "hover:bg-secondary/30 text-white/90"
+                "bg-white text-primary shadow-md ring-1 ring-white/60"
+              : "text-white/90 hover:bg-white/10 hover:text-white"
             }`}
             aria-current={getActiveTab() === tab.id ? "page" : undefined}
           >
@@ -120,8 +120,9 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
 
 
 
-      <footer className="mt-auto pt-6 text-xs text-white/80 border-t border-white/20">
-        v{version} | iCAA HQ
+      <footer className="mt-auto border-t border-white/15 pt-6 text-xs text-white/80">
+        <p className="font-semibold">SyncUp v{version}</p>
+        <p className="mt-1 text-white/55">iCAA community platform</p>
       </footer>
     </div>
   );
