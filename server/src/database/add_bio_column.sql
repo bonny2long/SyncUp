@@ -1,2 +1,8 @@
--- Add bio column to users table
-ALTER TABLE users ADD COLUMN bio TEXT NULL AFTER role;
+SET @has_bio = (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'bio'
+);
+SET @ddl = IF(@has_bio = 0, 'ALTER TABLE users ADD COLUMN bio TEXT NULL AFTER role', 'SELECT 1');
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

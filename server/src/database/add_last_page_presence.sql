@@ -1,5 +1,8 @@
--- =============================================
--- Add last_page to user_presence
--- =============================================
-
-ALTER TABLE user_presence ADD COLUMN last_page VARCHAR(255) DEFAULT NULL;
+SET @has_col = (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_presence' AND COLUMN_NAME = 'last_page'
+);
+SET @ddl = IF(@has_col = 0, 'ALTER TABLE user_presence ADD COLUMN last_page VARCHAR(255) DEFAULT NULL', 'SELECT 1');
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

@@ -1,25 +1,24 @@
 -- Fix user roles: Separate identity from permissions
--- Run this on your dev DB first, verify, then production
 
--- 1. Add is_admin column to users table
-ALTER TABLE users 
-ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+SET @has_col = (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'is_admin'
+);
+SET @ddl = IF(@has_col = 0, 'ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE', 'SELECT 1');
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- 2. Migrate existing admin users to alumni + is_admin
--- They went through the program so they're alumni
-UPDATE users 
-SET role = 'alumni', is_admin = TRUE 
+-- Migrate existing admin users to alumni + is_admin
+UPDATE users
+SET role = 'alumni', is_admin = TRUE
 WHERE role = 'admin';
 
--- 3. Migrate existing mentor users to alumni
--- Mentor is earned behavior, not a role
-UPDATE users 
-SET role = 'alumni' 
+-- Migrate existing mentor users to alumni
+UPDATE users
+SET role = 'alumni'
 WHERE role = 'mentor';
 
--- 4. Update role enum to remove admin and mentor
-ALTER TABLE users 
+-- Update role enum to remove admin and mentor (MODIFY is idempotent)
+ALTER TABLE users
 MODIFY COLUMN role ENUM('intern', 'resident', 'alumni') DEFAULT 'intern';
-
--- 5. Verify the changes
--- SELECT id, name, email, role, is_admin FROM users;

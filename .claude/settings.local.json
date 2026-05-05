@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"C:\\\\Program Files\\\\MySQL\\\\MySQL Server 8.0\\\\bin\\\\mysql.exe\" -h localhost -u root \"-pN!gga840\" syncup_local -e \"SOURCE C:/Users/BonnyMakaniankhondo/Documents/GitHub/SyncUp/server/src/database/cohort_messages.sql;\" 2>&1)"
+    ]
+  }
+}
