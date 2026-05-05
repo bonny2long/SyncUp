@@ -311,7 +311,7 @@ export const getPresence = async (req, res) => {
 // Update my presence
 export const updatePresence = async (req, res) => {
   const { user_id } = req.query;
-  const { status, current_channel_id } = req.body;
+  const { status, current_channel_id, last_page } = req.body;
 
   if (!user_id) {
     return res.status(400).json({ error: "User ID required" });
@@ -319,15 +319,17 @@ export const updatePresence = async (req, res) => {
 
   try {
     await pool.query(
-      `INSERT INTO user_presence (user_id, status, last_seen, current_channel_id) 
-       VALUES (?, ?, NOW(), ?)
-       ON DUPLICATE KEY UPDATE status = ?, last_seen = NOW(), current_channel_id = ?`,
+      `INSERT INTO user_presence (user_id, status, last_seen, current_channel_id, last_page) 
+       VALUES (?, ?, NOW(), ?, ?)
+       ON DUPLICATE KEY UPDATE status = ?, last_seen = NOW(), current_channel_id = ?, last_page = ?`,
       [
         user_id,
         status || "online",
         current_channel_id || null,
+        last_page || null,
         status || "online",
         current_channel_id || null,
+        last_page || null,
       ],
     );
     res.json({ success: true });
@@ -400,3 +402,66 @@ export const getDMUsers = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 };
+
+// =============================================
+// COHORT MESSAGES (Intern-to-Intern)
+// =============================================
+
+// Get cohort messages for a specific cycle
+export const getCohortMessages = async (req, res) => {
+  const { cycleId } = req.params;
+  try {
+    const [rows] = await pool.query(`
+      SELECT cm.id, cm.content, cm.created_at, cm.sender_id,
+             u.name as sender_name, u.profile_pic as sender_pic, u.role as sender_role
+      FROM cohort_messages cm
+      JOIN users u ON cm.sender_id = u.id
+      WHERE cm.cycle_id = ?
+      ORDER BY cm.created_at ASC
+      LIMIT 200
+    `, [cycleId]);
+    res.json(rows);
+  } catch (err) {
+    console.error("Cohort messages error:", err);
+    res.status(500).json({ error: "Failed to fetch cohort messages" });
+  }
+};
+
+// Send a message to cohort channel
+export const sendCohortMessage = async (req, res) => {
+  const { cycleId } = req.params;
+  const { content, sender_id } = req.body;
+
+  if (!content?.trim()) {
+    return res.status(400).json({ error: "Message content required" });
+  }
+
+  try {
+    // Verify sender is in this cycle
+    const [userRows] = await pool.query(
+      "SELECT id, role FROM users WHERE id = ? AND intern_cycle_id = ?",
+      [sender_id, cycleId]
+    );
+    if (!userRows.length) {
+      return res.status(403).json({ error: "You are not in this cohort" });
+    }
+
+    const [result] = await pool.query(
+      "INSERT INTO cohort_messages (cycle_id, sender_id, content) VALUES (?, ?, ?)",
+      [cycleId, sender_id, content.trim()]
+    );
+
+    const [rows] = await pool.query(
+      `SELECT cm.id, cm.content, cm.created_at, cm.sender_id,
+              u.name as sender_name
+       FROM cohort_messages cm
+       JOIN users u ON cm.sender_id = u.id
+       WHERE cm.id = ?`,
+      [result.insertId]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("Send cohort message error:", err);
+    res.status(500).json({ error: "Failed to send message" });
+  }
+};;

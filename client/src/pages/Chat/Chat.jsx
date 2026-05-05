@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquare, Hash, Send, Paperclip, Users, Loader2, File, Image, X } from "lucide-react";
+import { MessageSquare, Hash, Send, Paperclip, Users, Loader2, File, Image, X, Plus } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { useToast } from "../../context/ToastContext";
 import {
   fetchChannels,
+  createChannel,
   fetchChannelMessages,
   fetchDMMessages,
   sendMessage,
@@ -33,6 +34,10 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [showCreateChannel, setShowCreateChannel] = useState(false);
+  const [newChannelName, setNewChannelName] = useState("");
+  const [newChannelDesc, setNewChannelDesc] = useState("");
+  const [creatingChannel, setCreatingChannel] = useState(false);
   const fileInputRef = useRef(null);
 
   const getInitials = (name) => {
@@ -304,9 +309,21 @@ export default function Chat() {
       <div className="flex flex-1 gap-4 overflow-hidden">
         <div className="w-72 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
           <div className="p-3 border-b border-border">
-            <span className="text-xs font-semibold text-gray-500 uppercase">
-              Channels
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500 uppercase">
+                Channels
+              </span>
+              {/* Only admins can create channels */}
+              {user?.is_admin && (
+                <button
+                  onClick={() => setShowCreateChannel(true)}
+                  className="p-1 hover:bg-surface-highlight rounded"
+                  aria-label="Create new channel"
+                >
+                  <Plus className="w-4 h-4 text-text-secondary" />
+                </button>
+              )}
+            </div>
             <div className="mt-2 space-y-1">
               {channels.length === 0 ?
                 <p className="text-xs text-text-secondary">
@@ -330,6 +347,67 @@ export default function Chat() {
                   </button>
                 ))
               }
+              {/* Create Channel Form */}
+              {showCreateChannel && (
+                <div className="mt-2 p-2 bg-surface-highlight rounded-lg border border-border">
+                  <input
+                    type="text"
+                    value={newChannelName}
+                    onChange={(e) => setNewChannelName(e.target.value)}
+                    placeholder="Channel name..."
+                    className="w-full px-2 py-1 text-sm bg-surface border border-border rounded mb-2"
+                    maxLength={100}
+                  />
+                  <input
+                    type="text"
+                    value={newChannelDesc}
+                    onChange={(e) => setNewChannelDesc(e.target.value)}
+                    placeholder="Description (optional)..."
+                    className="w-full px-2 py-1 text-sm bg-surface border border-border rounded mb-2"
+                    maxLength={255}
+                  />
+                  <div className="flex gap-1">
+                    <button
+                      onClick={async () => {
+                        if (!newChannelName.trim()) return;
+                        setCreatingChannel(true);
+                        try {
+                          const newChannel = await createChannel(
+                            newChannelName.trim(),
+                            newChannelDesc.trim(),
+                            user.id,
+                          );
+                          setChannels((prev) => [...prev, newChannel]);
+                          setNewChannelName("");
+                          setNewChannelDesc("");
+                          setShowCreateChannel(false);
+                          setActiveChannel(newChannel);
+                          setActiveDM(null);
+                        } catch (err) {
+                          console.error("Failed to create channel:", err);
+                          addToast("Failed to create channel", "error");
+                        } finally {
+                          setCreatingChannel(false);
+                        }
+                      }}
+                      disabled={!newChannelName.trim() || creatingChannel}
+                      className="flex-1 px-2 py-1 text-xs bg-primary text-white rounded disabled:opacity-50"
+                    >
+                      {creatingChannel ? "Creating..." : "Create"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowCreateChannel(false);
+                        setNewChannelName("");
+                        setNewChannelDesc("");
+                      }}
+                      className="px-2 py-1 text-xs border border-border rounded hover:bg-surface-highlight"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

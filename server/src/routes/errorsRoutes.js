@@ -5,6 +5,7 @@ import {
   reportError,
   updateErrorStatus,
   deleteError,
+  clearAllErrors,
   getRecentErrors
 } from "../controllers/errorsController.js";
 
@@ -24,6 +25,9 @@ router.post("/", reportError);
 
 // PUT /api/errors/:id - Update error status
 router.put("/:id", updateErrorStatus);
+
+// DELETE /api/errors/clear - Clear all errors
+router.delete("/clear", clearAllErrors);
 
 // DELETE /api/errors/:id - Delete an error
 router.delete("/:id", deleteError);

@@ -1379,8 +1379,15 @@ export default function AdminDashboard() {
       {/* Header */}
       <header className="bg-surface border-b border-border px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-primary">Admin Dashboard</h1>
+            <button
+              onClick={() => navigate("/collaboration")}
+              className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              Back to Community
+            </button>
           </div>
           <div className="flex items-center gap-4 relative" ref={menuRef}>
             <button
@@ -1465,32 +1472,32 @@ export default function AdminDashboard() {
       />
 
       {/* Navigation Tabs */}
-      <nav
-        className="bg-surface border-b border-border px-6"
-        aria-label="Admin tabs"
-      >
-        <div className="flex gap-1" role="tablist">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              aria-label={tab.label}
-              className={`px-4 py-3 text-sm font-medium transition-all relative ${
-                activeTab === tab.id ?
-                  "text-accent"
-                : "text-gray-300 hover:text-white"
-              }`}
-            >
-              {tab.label}
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"></span>
-              )}
-            </button>
-          ))}
-        </div>
-      </nav>
+        <nav
+          className="bg-surface border-b border-border px-6"
+          aria-label="Admin tabs"
+        >
+          <div className="flex gap-1" role="tablist">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-label={tab.label}
+                className={`px-4 py-3 text-sm font-medium transition-all relative ${
+                  activeTab === tab.id ?
+                    "text-primary font-semibold"
+                  : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.id && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></span>
+                )}
+              </button>
+            ))}
+          </div>
+        </nav>
 
       {/* Content */}
       <main className="p-6">
@@ -2837,16 +2844,18 @@ export default function AdminDashboard() {
                           ) : null}
                         </td>
                         <td className="p-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-xs ${
-                              user.is_active === false ?
-                                "bg-gray-500/20 text-gray-400"
-                              : "bg-green-500/20 text-green-400"
-                            }`}
-                          >
-                            <Check size={12} />{" "}
-                            {user.is_active === false ? "Inactive" : "Active"}
-                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className={`flex items-center gap-1 text-xs ${
+                                user.is_active === false ?
+                                  "text-gray-400"
+                                : "text-green-400"
+                              }`}
+                            >
+                              <Check size={12} />
+                              {user.is_active === false ? "Inactive" : "Active"}
+                            </span>
+                          </div>
                         </td>
                         <td className="p-3">
                           <span className={`px-2 py-0.5 rounded text-xs ${
@@ -4059,7 +4068,8 @@ export default function AdminDashboard() {
                     DB Records:{" "}
                     {(platformStats?.totalUsers || 0) +
                       (platformStats?.totalProjects || 0) +
-                      (platformStats?.totalSessions || 0)}
+                      (platformStats?.totalSessions || 0) +
+                      (platformStats?.totalErrors || 0)}
                   </span>
                 </div>
               </div>
@@ -4356,7 +4366,21 @@ export default function AdminDashboard() {
                       message:
                         "This will permanently delete all error logs. This action cannot be undone.",
                       onConfirm: async () => {
-                        addToast("All error logs cleared", "success");
+                        try {
+                          const res = await fetch(`${API_BASE}/errors/clear`, {
+                            method: "DELETE",
+                            headers: getUserHeaders(),
+                          });
+                          if (res.ok) {
+                            addToast("All error logs cleared", "success");
+                            setErrorStats({ total: 0, open: 0, byType: [] });
+                            setErrors([]);
+                          } else {
+                            addToast("Failed to clear error logs", "error");
+                          }
+                        } catch {
+                          addToast("Failed to clear error logs", "error");
+                        }
                         setConfirmModal({ ...confirmModal, open: false });
                       },
                     });

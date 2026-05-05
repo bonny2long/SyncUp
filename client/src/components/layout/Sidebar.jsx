@@ -1,11 +1,26 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
+import { useState, useEffect } from "react";
+import { fetchHealth } from "../../utils/api";
+
+function useAppVersion() {
+  const [version, setVersion] = useState("2.0.0");
+  useEffect(() => {
+    fetchHealth()
+      .then((data) => {
+        if (data.version) setVersion(data.version);
+      })
+      .catch(() => {});
+  }, []);
+  return version;
+}
 
 export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useUser();
+  const version = useAppVersion();
 
   const tabs = React.useMemo(() => {
     if (user?.is_admin === true) {
@@ -106,7 +121,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
 
 
       <footer className="mt-auto pt-6 text-xs text-white/80 border-t border-white/20">
-        v2.0 | iCAA
+        v{version} | iCAA
       </footer>
     </div>
   );

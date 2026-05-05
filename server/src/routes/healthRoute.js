@@ -10,6 +10,7 @@ router.get("/", async (req, res) => {
     res.json({
       status: "ok",
       database: "connected",
+      version: "3.0.0",
       timestamp: rows[0].now,
     });
   } catch (err) {

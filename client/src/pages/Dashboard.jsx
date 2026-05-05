@@ -19,8 +19,28 @@ const OpportunityBoard = React.lazy(
   () => import("./Opportunities/OpportunityBoard"),
 );
 
+import { useEffect } from "react";
+import { useUser } from "../context/UserContext";
+import { updatePresence } from "../utils/api";
+
 export default function Dashboard() {
   const location = useLocation();
+  const { user } = useUser();
+
+  // Presence heartbeat
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Initial check-in
+    updatePresence(user.id, "online", location.pathname).catch(() => {});
+
+    // Heartbeat every 60 seconds
+    const interval = setInterval(() => {
+      updatePresence(user.id, "online", location.pathname).catch(() => {});
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [user?.id, location.pathname]);
 
   // Derive activeTab from location.pathname
   const activeTab = location.pathname.substring(1) || "collaboration";

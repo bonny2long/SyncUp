@@ -854,9 +854,27 @@ export const deleteUser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({ message: "Account deleted successfully" });
+      res.json({ message: "Account deleted successfully" });
   } catch (err) {
     console.error("Error deleting account:", err.message);
     res.status(500).json({ error: "Failed to delete account: " + err.message });
+  }
+};
+
+// Get all interns in a specific cohort/cycle
+export const getCohortUsers = async (req, res) => {
+  const { cycleId } = req.params;
+  try {
+    const [rows] = await pool.query(
+      `SELECT id, name, profile_pic, role 
+       FROM users 
+       WHERE intern_cycle_id = ? AND role = 'intern' AND (is_active IS NULL OR is_active != FALSE)
+       ORDER BY name`,
+      [cycleId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching cohort users:", err);
+    res.status(500).json({ error: "Failed to fetch cohort users" });
   }
 };

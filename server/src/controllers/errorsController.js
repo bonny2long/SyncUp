@@ -158,6 +158,17 @@ export const deleteError = async (req, res) => {
   }
 };
 
+// Clear all errors
+export const clearAllErrors = async (req, res) => {
+  try {
+    await pool.query("DELETE FROM system_errors");
+    res.json({ message: "All errors cleared successfully" });
+  } catch (err) {
+    console.error("Failed to clear errors:", err.message);
+    res.status(500).json({ error: "Failed to clear errors" });
+  }
+};
+
 // Get recent errors for overview
 export const getRecentErrors = async (req, res) => {
   try {

@@ -9,6 +9,7 @@ import {
   updateUserProfile,
   changePassword,
   deleteUser,
+  getCohortUsers,
 } from "../controllers/usersController.js";
 import { userValidators } from "../validators/index.js";
 
@@ -182,5 +183,23 @@ router.put("/:userId/password", userValidators.changePassword, changePassword);
  *         description: User not found
  */
 router.delete("/:userId", deleteUser);
+
+/**
+ * @swagger
+ * /users/cohort/{cycleId}:
+ *   get:
+ *     summary: Get interns in a specific cohort/cycle
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: cycleId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: List of interns in the cohort
+ */
+router.get("/cohort/:cycleId", getCohortUsers);
 
 export default router;

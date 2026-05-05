@@ -86,7 +86,7 @@ router.get("/platform-stats", async (req, res) => {
       totalSessions: sessionCount || 0,
       totalErrors: errorCount || 0,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      appVersion: "1.0.0",
+      appVersion: "3.0.0",
     });
   } catch (err) {
     console.error("Error fetching platform stats:", err);

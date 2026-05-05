@@ -860,11 +860,17 @@ export async function fetchPresence(userId) {
   return res.json();
 }
 
-export async function updatePresence(userId, status, channelId = null) {
+export async function updatePresence(userId, status, channelId = null, lastPage = null) {
+  const body = { status };
+  if (channelId && typeof channelId === "number") body.current_channel_id = channelId;
+  if (lastPage || (channelId && typeof channelId === "string")) {
+    body.last_page = lastPage || (typeof channelId === "string" ? channelId : null);
+  }
+
   const res = await fetch(`${API_BASE}/chat/presence?user_id=${userId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getUserHeaders() },
-    body: JSON.stringify({ status, current_channel_id: channelId }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error("Failed to update presence");
   return res.json();
@@ -879,6 +885,33 @@ export async function fetchDMUsers(userId, scope = "chat") {
     headers: getUserHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch DM users");
+  return res.json();
+}
+
+// Cohort Messages (intern-to-intern communication)
+export async function fetchCohortMessages(cycleId) {
+  const res = await fetch(`${API_BASE}/chat/cohort/${cycleId}/messages`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch cohort messages");
+  return res.json();
+}
+
+export async function sendCohortMessage(cycleId, senderId, content) {
+  const res = await fetch(`${API_BASE}/chat/cohort/${cycleId}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ content, sender_id: senderId }),
+  });
+  if (!res.ok) throw new Error("Failed to send cohort message");
+  return res.json();
+}
+
+export async function fetchCohortUsers(cycleId) {
+  const res = await fetch(`${API_BASE}/users/cohort/${cycleId}`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch cohort users");
   return res.json();
 }
 

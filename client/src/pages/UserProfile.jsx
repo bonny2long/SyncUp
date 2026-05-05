@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Award,
   BookOpen,
@@ -9,6 +9,7 @@ import {
   Rocket,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
   Edit2,
   Save,
   X,
@@ -50,6 +51,7 @@ export default function UserProfile({ isPublic = false }) {
   const { userId } = useParams();
   const { user: currentUser, updateUser } = useUser();
   const { addToast, handleError } = useToast();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -514,6 +516,18 @@ export default function UserProfile({ isPublic = false }) {
         {/* Page Content */}
         <div className={isPublic ? "p-6" : "flex-1 overflow-auto p-6"}>
           <div className="max-w-4xl mx-auto">
+            {/* Back button — only show when not public */}
+            {!isPublic && (
+              <div className="mb-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </button>
+              </div>
+            )}
             {/* Header */}
             <div className="bg-surface border border-border rounded-lg p-6 mb-6 relative">
               <div className="flex items-start gap-4">
@@ -716,7 +730,7 @@ export default function UserProfile({ isPublic = false }) {
                               key={link.label}
                               href={link.href}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-1.5 text-sm text-neutral-dark hover:text-primary hover:border-primary/40 transition"
                             >
                               {React.createElement(link.icon, {
@@ -928,39 +942,39 @@ export default function UserProfile({ isPublic = false }) {
                   </div>
 
                   <div className="flex flex-wrap gap-2 lg:justify-end">
-                    {featuredProject.github_url && (
-                      <a
-                        href={featuredProject.github_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
-                      >
-                        <Github className="w-4 h-4" />
-                        GitHub
-                      </a>
-                    )}
-                    {featuredProject.live_url && (
-                      <a
-                        href={featuredProject.live_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Live
-                      </a>
-                    )}
-                    {featuredProject.case_study_artifact_url && (
-                      <a
-                        href={featuredProject.case_study_artifact_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
-                      >
-                        <FileText className="w-4 h-4" />
-                        Artifact
-                      </a>
-                    )}
+                      {featuredProject.github_url && (
+                        <a
+                          href={featuredProject.github_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                        >
+                          <Github className="w-4 h-4" />
+                          GitHub
+                        </a>
+                      )}
+                      {featuredProject.live_url && (
+                        <a
+                          href={featuredProject.live_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Live
+                        </a>
+                      )}
+                      {featuredProject.case_study_artifact_url && (
+                        <a
+                          href={featuredProject.case_study_artifact_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Artifact
+                        </a>
+                      )}
                   </div>
                 </div>
               </section>
@@ -1300,7 +1314,7 @@ export default function UserProfile({ isPublic = false }) {
                                   <a
                                     href={project.github_url}
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
                                     className="text-xs text-text-secondary hover:text-primary"
                                     aria-label={`${project.title} GitHub`}
                                   >
@@ -1311,7 +1325,7 @@ export default function UserProfile({ isPublic = false }) {
                                   <a
                                     href={project.live_url}
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
                                     className="text-xs text-text-secondary hover:text-primary"
                                     aria-label={`${project.title} live project`}
                                   >
@@ -1322,7 +1336,7 @@ export default function UserProfile({ isPublic = false }) {
                                   <a
                                     href={project.case_study_artifact_url}
                                     target="_blank"
-                                    rel="noreferrer"
+                                    rel="noopener noreferrer"
                                     className="text-xs text-text-secondary hover:text-primary"
                                     aria-label={`${project.title} artifact`}
                                   >
