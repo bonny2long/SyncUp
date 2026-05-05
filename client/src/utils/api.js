@@ -4,7 +4,7 @@ export const API_BASE =
   import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 // Helper to get user header for auth
-function getUserHeaders() {
+export function getUserHeaders() {
   const userStr = localStorage.getItem("syncup_user");
   if (!userStr) return {};
   try {

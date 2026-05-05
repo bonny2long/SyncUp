@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- iCAA Red background -->
+  <rect width="32" height="32" rx="6" fill="#b9123f"/>
+  <!-- Asterisk mark in white -->
+  <text x="4" y="22" font-family="Arial, sans-serif" font-weight="900" 
+        font-size="22" fill="white">*</text>
+</svg>

@@ -48,6 +48,7 @@ import {
   fetchCycles,
   createCycle,
   updateCycleStatus,
+  getUserHeaders,
 } from "../utils/api";
 import HelpModal from "../components/shared/HelpModal";
 import ConfirmModal from "../components/shared/ConfirmModal";
@@ -1549,6 +1550,9 @@ export default function AdminDashboard() {
                   <AgCharts
                     options={{
                       data: growthData,
+                      background: {
+                        fill: isDarkMode ? "#282827" : "#ffffff",
+                      },
                       theme: {
                         baseTheme:
                           isDarkMode ? "ag-default-dark" : "ag-default",
@@ -1556,17 +1560,76 @@ export default function AdminDashboard() {
                           fills: ["#3b82f6", "#22c55e"],
                           strokes: ["#3b82f6", "#22c55e"],
                         },
+                        overrides: {
+                          line: {
+                            series: {
+                              highlightStyle: {
+                                series: {
+                                  strokeWidth: 4,
+                                },
+                              },
+                              marker: {
+                                size: 6,
+                                strokeWidth: 2,
+                              },
+                            },
+                          },
+                        },
                       },
-                      axes: {
-                        x: {
+                      axes: [
+                        {
                           type: "category",
                           position: "bottom",
-                          label: { enabled: false },
+                          label: {
+                            enabled: true,
+                            color: isDarkMode ? "#9ca3af" : "#6b7280",
+                            fontSize: 10,
+                            padding: 8,
+                            formatter: (params) => {
+                              // Simple date formatter: "Oct 12" instead of "2024-10-12"
+                              try {
+                                const d = new Date(params.value);
+                                return d.toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                });
+                              } catch {
+                                return params.value;
+                              }
+                            },
+                          },
                           tick: { enabled: false },
+                          line: { color: isDarkMode ? "#4a4848" : "#e5e7eb" },
                         },
-                        y: {
+                        {
                           type: "number",
                           position: "left",
+                          label: {
+                            color: isDarkMode ? "#9ca3af" : "#6b7280",
+                            fontSize: 11,
+                            padding: 8,
+                          },
+                          gridLine: {
+                            style: [
+                              {
+                                stroke: isDarkMode ? "#383838" : "#f1f5f9",
+                                lineDash: [4, 4],
+                              },
+                            ],
+                          },
+                          line: { color: isDarkMode ? "#4a4848" : "#e5e7eb" },
+                        },
+                      ],
+                      legend: {
+                        position: "top",
+                        item: {
+                          label: {
+                            color: isDarkMode ? "#e5e7eb" : "#374151",
+                            fontSize: 12,
+                          },
+                          marker: {
+                            padding: 4,
+                          },
                         },
                       },
                       series: [
@@ -1576,8 +1639,13 @@ export default function AdminDashboard() {
                           yKey: "users",
                           yName: "New Users",
                           stroke: "#3b82f6",
-                          strokeWidth: 2,
-                          marker: { enabled: true },
+                          strokeWidth: 3,
+                          marker: { 
+                            enabled: true,
+                            fill: "#3b82f6",
+                            stroke: isDarkMode ? "#282827" : "#ffffff",
+                            strokeWidth: 2
+                          },
                         },
                         {
                           type: "line",
@@ -1585,12 +1653,25 @@ export default function AdminDashboard() {
                           yKey: "projects",
                           yName: "New Projects",
                           stroke: "#22c55e",
-                          strokeWidth: 2,
-                          marker: { enabled: true },
+                          strokeWidth: 3,
+                          marker: { 
+                            enabled: true,
+                            fill: "#22c55e",
+                            stroke: isDarkMode ? "#282827" : "#ffffff",
+                            strokeWidth: 2
+                          },
                         },
                       ],
                       legend: {
                         position: "top",
+                        item: {
+                          label: {
+                            color: isDarkMode ? "#fdfdfd" : "#374151"
+                          },
+                          marker: {
+                             padding: 4
+                          }
+                        }
                       },
                     }}
                   />

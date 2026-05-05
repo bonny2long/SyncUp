@@ -12,13 +12,12 @@
     --color-text-secondary: #6b7280;
   }
   .dark {
-    --color-neutral-light: #1a1a2e; /* Dark background */
-    --color-neutral-dark: #e5e5e5; /* Light text */
-
-    --color-surface: #242645; /* Lighter than background */
-    --color-surface-highlight: #333555;
-    --color-border: #383a5c;
-    --color-text-secondary: #9ca3af;
+    --color-neutral-light: #1a1919;      /* Near iCAA Black */
+    --color-neutral-dark: #fdfdfd;       /* iCAA White for text */
+    --color-surface: #282827;            /* iCAA Black for cards */
+    --color-surface-highlight: #383838;   /* iCAA Gray for highlights */
+    --color-border: #4a4848;             /* Slightly lighter than surface */
+    --color-text-secondary: #9ca3af;     /* Neutral secondary text */
   }
 }
 
