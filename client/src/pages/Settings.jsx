@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Bell, Shield, Settings as SettingsIcon, ArrowLeft, Home } from "lucide-react";
+import { User, Bell, Shield, Settings as SettingsIcon, ArrowLeft } from "lucide-react";
 import ProfileSection from "../components/settings/ProfileSection";
 import NotificationsSection from "../components/settings/NotificationsSection";
 import PrivacySection from "../components/settings/PrivacySection";
@@ -16,6 +16,7 @@ const sections = [
 export default function Settings() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("profile");
+  const activeConfig = sections.find((section) => section.id === activeSection) || sections[0];
 
   const renderSection = () => {
     switch (activeSection) {
@@ -33,11 +34,16 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex h-screen bg-neutralLight dark:bg-[#1a1a2e] overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-neutralLight dark:bg-[#1a1a2e]">
       {/* Sidebar */}
-      <aside className="hidden md:flex w-64 bg-surface dark:bg-surface-highlight flex-col border-r border-border dark:border-gray-700">
+      <aside className="hidden w-72 flex-col bg-primary text-white shadow-xl dark:bg-accent md:flex">
         <div className="p-6">
-          <h2 className="text-xl font-semibold text-neutral-dark dark:text-white">Settings</h2>
+          <div className="text-3xl font-black leading-none tracking-normal">*iCAA</div>
+          <div className="mt-2 text-xs font-bold uppercase text-white/75">SyncUp HQ</div>
+          <div className="mt-8">
+            <p className="text-xs font-bold uppercase text-white/65">Account Center</p>
+            <h2 className="mt-1 text-2xl font-black">Settings</h2>
+          </div>
         </div>
         <nav className="flex-1 px-3">
           {sections.map((section) => {
@@ -46,25 +52,25 @@ export default function Settings() {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition-all duration-200 mb-1
+                className={`mb-1 flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-bold transition-all duration-200
                   ${
                     activeSection === section.id
-                      ? "bg-primary text-white shadow-md"
-                      : "text-neutral-dark dark:text-gray-300 hover:bg-neutralLight dark:hover:bg-gray-800"
+                      ? "bg-white text-primary shadow-md"
+                      : "text-white/90 hover:bg-white/10"
                   }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="h-4 w-4" />
                 {section.label}
               </button>
             );
           })}
         </nav>
-        <div className="p-3 border-t border-border dark:border-gray-700">
+        <div className="border-t border-white/20 p-3">
           <button
             onClick={() => navigate("/")}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium text-neutral-dark dark:text-gray-300 hover:bg-neutralLight dark:hover:bg-gray-800 transition-all duration-200"
+            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-bold text-white/90 transition-all duration-200 hover:bg-white/10"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="h-4 w-4" />
             Back to App
           </button>
         </div>
@@ -72,33 +78,52 @@ export default function Settings() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="p-4 md:p-6 overflow-y-auto h-full">
+        <div className="h-full overflow-y-auto p-4 md:p-6">
           {/* Mobile Header with Back Button */}
-          <div className="flex items-center gap-3 mb-4">
+          <div className="mb-4 flex items-center gap-3">
             <button
               onClick={() => navigate("/")}
-              className="flex items-center gap-1 text-sm text-neutral-dark dark:text-gray-300 hover:text-primary transition-colors"
+              className="flex items-center gap-1 text-sm font-semibold text-neutral-dark transition-colors hover:text-primary dark:text-gray-300"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="h-4 w-4" />
               Back
             </button>
             <span className="text-gray-300 dark:text-gray-600">|</span>
-            <span className="text-sm font-medium text-neutral-dark dark:text-white">Settings</span>
+            <span className="text-sm font-bold text-primary dark:text-white">Settings</span>
+          </div>
+
+          <div className="mx-auto mb-5 max-w-5xl">
+            <div className="brand-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase text-primary">Account Center</p>
+                <h1 className="mt-1 text-2xl font-black text-neutral-dark dark:text-white">
+                  {activeConfig.label}
+                </h1>
+                <p className="mt-1 text-sm text-text-secondary">
+                  Keep your SyncUp profile, notifications, and account controls aligned.
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <activeConfig.icon className="h-5 w-5" />
+              </div>
+            </div>
           </div>
 
           {/* Mobile Section Selector */}
-          <div className="md:hidden mb-4">
-            <select
-              value={activeSection}
-              onChange={(e) => setActiveSection(e.target.value)}
-              className="w-full border border-border dark:border-gray-600 rounded-lg px-4 py-3 bg-surface dark:bg-surface-highlight text-neutral-dark dark:text-white font-medium"
-            >
+          <div className="mb-4 grid grid-cols-2 gap-2 md:hidden">
               {sections.map((section) => (
-                <option key={section.id} value={section.id}>
+              <button
+                key={section.id}
+                onClick={() => setActiveSection(section.id)}
+                className={`rounded-lg border px-3 py-2 text-sm font-bold transition ${
+                  activeSection === section.id
+                    ? "border-primary bg-primary text-white"
+                    : "border-border bg-surface text-neutral-dark dark:bg-surface-highlight dark:text-white"
+                }`}
+              >
                   {section.label}
-                </option>
+              </button>
               ))}
-            </select>
           </div>
 
           {/* Section Content */}

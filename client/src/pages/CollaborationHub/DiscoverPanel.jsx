@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Search, Calendar, Users, Target } from "lucide-react";
+import { ArrowUpDown, FolderSearch, Search } from "lucide-react";
+import EmptyState from "../../components/brand/EmptyState";
 import DiscoverProjects from "./DiscoverProjects";
 import { fetchProjectSkills } from "../../utils/api";
 
@@ -17,7 +18,6 @@ export default function DiscoverPanel({
   const [availableSkills, setAvailableSkills] = useState([]);
   const [skillsLoading, setSkillsLoading] = useState(true);
 
-  // Load available skills from database
   useEffect(() => {
     async function loadSkills() {
       try {
@@ -34,15 +34,12 @@ export default function DiscoverPanel({
     loadSkills();
   }, []);
 
-  // Filter by search and skill
   const filteredProjects = projects.filter((p) => {
-    // Search filter
     const matchesSearch =
       !searchQuery ||
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Skill filter
     const matchesSkill =
       skillFilter === "all" ||
       (p.skill_ids && p.skill_ids.split(",").includes(skillFilter));
@@ -50,7 +47,6 @@ export default function DiscoverPanel({
     return matchesSearch && matchesSkill;
   });
 
-  // Sort projects
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     switch (sortBy) {
       case "newest":
@@ -75,31 +71,36 @@ export default function DiscoverPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-bold text-accent mb-3">
-          Discover Projects
-        </h2>
+      <div className="brand-card p-4">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <FolderSearch className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase text-primary">Project Discovery</p>
+            <h2 className="text-lg font-black text-neutral-dark">
+              Discover Projects
+            </h2>
+          </div>
+        </div>
 
-        {/* SEARCH BAR */}
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-secondary" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
           <input
             type="text"
             placeholder="Search projects..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-border bg-surface text-neutral-dark rounded-lg text-sm focus:ring-2 focus:ring-accent/40 focus:outline-none"
+            className="input bg-white pl-10"
           />
         </div>
 
-        {/* FILTERS ROW */}
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          {/* SKILL FILTER */}
+        <div className="mb-3 grid grid-cols-2 gap-3">
           <select
             value={skillFilter}
             onChange={(e) => setSkillFilter(e.target.value)}
             disabled={skillsLoading}
-            className="px-3 py-2 border border-border bg-surface text-neutral-dark rounded-lg text-sm focus:ring-2 focus:ring-accent/40 focus:outline-none"
+            className="input bg-white"
           >
             <option value="all">
               All Skills {!skillsLoading && `(${projects.length})`}
@@ -109,30 +110,31 @@ export default function DiscoverPanel({
                 {skill.skill_name} ({skill.project_count})
               </option>
             ))}
-            {availableSkills.length > 15 && <option disabled>──────</option>}
+            {availableSkills.length > 15 && <option disabled>------</option>}
             {availableSkills.length > 15 && (
               <option disabled>
-                {availableSkills.length - 15} more skills (use search)
+                {availableSkills.length - 15} more skills
               </option>
             )}
           </select>
 
-          {/* SORT DROPDOWN */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border border-border bg-surface text-neutral-dark rounded-lg text-sm focus:ring-2 focus:ring-accent/40 focus:outline-none"
-          >
-            <option value="newest">Newest First</option>
-            <option value="active">Most Active</option>
-            <option value="team_large">Largest Team</option>
-            <option value="team_small">Smallest Team</option>
-          </select>
+          <div className="relative">
+            <ArrowUpDown className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="input bg-white pl-10"
+            >
+              <option value="newest">Newest First</option>
+              <option value="active">Most Active</option>
+              <option value="team_large">Largest Team</option>
+              <option value="team_small">Smallest Team</option>
+            </select>
+          </div>
         </div>
 
-        {/* RESULTS COUNT */}
         {!loading && (
-          <p className="text-xs text-text-secondary mb-2">
+          <p className="text-xs font-semibold text-text-secondary">
             {sortedProjects.length === projects.length ?
               `Showing all ${projects.length} projects`
             : `Showing ${sortedProjects.length} of ${projects.length} projects`}
@@ -140,31 +142,33 @@ export default function DiscoverPanel({
         )}
       </div>
 
-      {/* PROJECT LIST */}
       {loading ?
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="animate-pulse bg-gray-200 h-24 rounded-lg"
+              className="h-24 animate-pulse rounded-xl bg-surface-highlight"
             />
           ))}
         </div>
       : sortedProjects.length === 0 ?
-        <div className="text-center py-12 bg-surface rounded-lg border border-border">
-          <p className="text-text-secondary text-lg mb-2">No projects found</p>
-          <p className="text-text-secondary text-sm">
-            {searchQuery || skillFilter !== "all" ?
-              "Try adjusting your search or filters"
-            : "No projects available yet"}
-          </p>
+        <div className="brand-card flex flex-col items-center justify-center p-8 text-center">
+          <EmptyState
+            icon={FolderSearch}
+            title="No projects found"
+            message={
+              searchQuery || skillFilter !== "all" ?
+                "Try adjusting your search or filters."
+              : "No projects are available yet."
+            }
+          />
           {(searchQuery || skillFilter !== "all") && (
             <button
               onClick={() => {
                 setSearchQuery("");
                 setSkillFilter("all");
               }}
-              className="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition text-sm"
+              className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90"
             >
               Clear Filters
             </button>

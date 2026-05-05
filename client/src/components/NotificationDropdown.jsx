@@ -184,17 +184,39 @@ export default function NotificationDropdown({
   };
 
   const renderEmpty = (icon, title, subtitle) => (
-    <div className="p-8 text-center bg-surface">
-      {React.cloneElement(icon, { className: "w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" })}
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{subtitle}</p>
+    <div className="flex min-h-64 flex-col items-center justify-center p-8 text-center">
+      <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        {React.cloneElement(icon, { className: "h-6 w-6" })}
+      </div>
+      <p className="text-sm font-black text-neutral-dark dark:text-gray-200">{title}</p>
+      <p className="mt-1 max-w-60 text-xs text-text-secondary">{subtitle}</p>
     </div>
   );
 
   return (
-    <div className="absolute right-0 top-12 w-[400px] bg-surface rounded-xl shadow-2xl border border-border z-50 max-h-[600px] flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="brand-card absolute right-0 top-12 z-50 flex max-h-[640px] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-white">
+        <div>
+          <p className="text-[10px] font-black uppercase text-white/70">SyncUp HQ</p>
+          <h3 className="text-sm font-black">Notifications</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          {counts?.total > 0 && (
+            <span className="rounded-full bg-white/15 px-2 py-1 text-[10px] font-black">
+              {counts.total} open
+            </span>
+          )}
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
       {/* Tabs */}
-      <div className="flex border-b border-border bg-gray-50/50 dark:bg-gray-900/50">
+      <div className="flex border-b border-border bg-surface">
         <TabButton 
           active={activeTab === "notifications"} 
           onClick={() => setActiveTab("notifications")}
@@ -226,8 +248,8 @@ export default function NotificationDropdown({
       </div>
 
       {/* Header */}
-      <div className="p-4 border-b border-border flex items-center justify-between bg-surface">
-        <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3">
+        <h3 className="flex items-center gap-2 text-sm font-black text-neutral-dark dark:text-gray-100">
           {activeTab === "notifications" && "Recent Notifications"}
           {activeTab === "mentorship" && "Mentorship Requests"}
           {activeTab === "projects" && "Project Join Requests"}
@@ -242,7 +264,7 @@ export default function NotificationDropdown({
         <div className="flex items-center gap-2">
           <button
             onClick={activeTab === "notifications" ? onRefresh : loadTabData}
-            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+            className="rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-primary/10 hover:text-primary"
             disabled={loading || tabLoading}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading || tabLoading ? "animate-spin" : ""}`} />
@@ -256,18 +278,15 @@ export default function NotificationDropdown({
               Mark all
             </button>
           )}
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="overflow-y-auto flex-1 bg-surfaceCustom">
+      <div className="flex-1 overflow-y-auto bg-surface">
         {tabLoading || loading ? (
-          <div className="p-12 text-center">
-            <RefreshCw className="w-8 h-8 mx-auto text-primary animate-spin mb-3 opacity-20" />
-            <p className="text-xs text-text-secondary animate-pulse">Updating dashboard...</p>
+          <div className="flex min-h-64 flex-col items-center justify-center p-12 text-center">
+            <RefreshCw className="mx-auto mb-3 h-8 w-8 animate-spin text-primary opacity-40" />
+            <p className="animate-pulse text-xs font-semibold text-text-secondary">Updating dashboard...</p>
           </div>
         ) : (
           <>
@@ -445,8 +464,8 @@ export default function NotificationDropdown({
       </div>
       
       {/* Footer Settings Link */}
-      <div className="p-3 bg-gray-50 dark:bg-gray-900/80 border-t border-border flex justify-between items-center">
-         <button onClick={() => { navigate("/settings"); onClose(); }} className="text-[11px] text-text-secondary hover:text-primary transition-colors flex items-center gap-1">
+      <div className="flex items-center justify-between border-t border-border bg-surface-highlight/50 p-3">
+         <button onClick={() => { navigate("/settings"); onClose(); }} className="flex items-center gap-1 text-[11px] font-bold text-text-secondary transition-colors hover:text-primary">
            Preferences
          </button>
          {notifications.length > 0 && activeTab === "notifications" && (
@@ -461,23 +480,23 @@ function TabButton({ active, onClick, icon, label, count }) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 py-3 px-2 text-[11px] font-bold flex flex-col items-center justify-center gap-1.5 transition-all relative ${
+      className={`relative flex flex-1 flex-col items-center justify-center gap-1.5 px-2 py-3 text-[11px] font-black transition-all ${
         active
-          ? "text-primary bg-surface"
-          : "text-text-secondary opacity-60 hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+          ? "bg-primary/10 text-primary"
+          : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark dark:hover:bg-gray-800"
       }`}
     >
-      <div className={`p-1.5 rounded-lg ${active ? 'bg-primary/10' : ''}`}>
+      <div className={`rounded-lg p-1.5 ${active ? "bg-white text-primary shadow-sm" : ""}`}>
         {icon}
       </div>
       {label}
       {count > 0 && (
-        <span className="absolute top-2 right-2 bg-[#b9123f] text-white text-[9px] min-w-[14px] h-[14px] rounded-full flex items-center justify-center shadow-lg transform translate-x-1 -translate-y-1">
-          {count > 9 ? '9+' : count}
+        <span className="absolute right-2 top-2 flex h-[14px] min-w-[14px] -translate-y-1 translate-x-1 transform items-center justify-center rounded-full bg-primary text-[9px] text-white shadow-lg">
+          {count > 9 ? "9+" : count}
         </span>
       )}
       {active && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full" />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full bg-primary" />
       )}
     </button>
   );
@@ -504,7 +523,6 @@ function NotificationItem({ notification, onClick, onDelete }) {
 
   const getIcon = (type) => {
     const iconClass = "w-5 h-5";
-    const iconColor = "text-gray-700 dark:text-gray-300";
 
     switch (type) {
       case "join_request_approved":

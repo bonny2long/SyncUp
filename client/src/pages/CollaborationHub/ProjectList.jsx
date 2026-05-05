@@ -228,7 +228,7 @@ export default function ProjectList({
     return (
       <div className="space-y-2">
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="animate-pulse bg-gray-200 h-20 rounded-xl" />
+          <div key={i} className="h-20 animate-pulse rounded-xl bg-surface-highlight" />
         ))}
       </div>
     );
@@ -276,7 +276,7 @@ export default function ProjectList({
         {error && <p className="text-xs text-red-500">{error}</p>}
 
         {/* Search and Sort */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-2">
+        <div className="brand-card mb-2 flex flex-col gap-2 p-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
             <input
@@ -284,7 +284,7 @@ export default function ProjectList({
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+              className="input bg-white pl-10"
             />
           </div>
           <div className="relative">
@@ -292,7 +292,7 @@ export default function ProjectList({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="pl-10 pr-8 py-2 text-sm bg-surface border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary appearance-none cursor-pointer"
+              className="input cursor-pointer appearance-none bg-white pl-10 pr-8"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
@@ -332,16 +332,16 @@ export default function ProjectList({
               onKeyDown={(e) => {
                 if (e.key === "Enter") setModalProject(project);
               }}
-              className={`w-full text-left p-4 rounded-xl border transition shadow-sm
+              className={`brand-card brand-card-hover w-full cursor-pointer p-4 text-left transition
                 ${
                   active ?
-                    "bg-secondary/20 border-secondary"
-                  : "bg-surface border-border hover:shadow-md"
+                    "border-primary bg-primary/10"
+                  : "hover:border-primary/30"
                 }
-                cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40`}
+                focus:outline-none focus:ring-2 focus:ring-primary/40`}
             >
               <div className="flex items-center justify-between gap-3">
-                <h3 className="font-semibold text-primary">{project.title}</h3>
+                <h3 className="font-black text-neutral-dark">{project.title}</h3>
 
                 <div className="flex items-center gap-2">
                   <span
@@ -433,7 +433,7 @@ export default function ProjectList({
                             initiateStatusChange(project.id, e.target.value);
                           }
                         }}
-                        className="text-[11px] border border-border rounded-md px-2 py-1 bg-surface text-text-secondary focus:outline-none hover:border-primary transition"
+                        className="rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-semibold text-text-secondary transition hover:border-primary focus:outline-none"
                         onClick={(e) => e.stopPropagation()} // Prevent card selection
                       >
                         {validActions.map((action) => (
@@ -458,7 +458,7 @@ export default function ProjectList({
                         project.is_member === 1 || project.is_member === true,
                       );
                     }}
-                    className={`text-[11px] px-2 py-1 rounded-full border transition ${
+                    className={`rounded-full border px-2 py-1 text-[11px] font-bold transition ${
                       project.is_member ?
                         "border-red-200 text-red-600 hover:bg-red-50"
                       : "border-primary text-primary hover:bg-primary/10"
@@ -482,7 +482,7 @@ export default function ProjectList({
                     e.stopPropagation();
                     setShowMembersFor(project);
                   }}
-                  className="underline-offset-2 hover:underline"
+                className="font-semibold underline-offset-2 hover:text-primary hover:underline"
                 >
                   Team:{" "}
                   <span className="font-medium">{project.team_count ?? 0}</span>
@@ -515,7 +515,7 @@ export default function ProjectList({
                     .map((name) => (
                       <span
                         key={name}
-                        className="text-[10px] px-2 py-1 rounded-full bg-surface-highlight text-neutral-dark border border-border"
+                        className="rounded-full border border-border bg-white px-2 py-1 text-[10px] font-semibold text-neutral-dark"
                       >
                         {name}
                       </span>
@@ -523,7 +523,7 @@ export default function ProjectList({
 
                   {project.team_members.split(", ").filter(Boolean).length >
                     4 && (
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-surface-highlight text-neutral-dark border border-border">
+                    <span className="rounded-full border border-border bg-white px-2 py-1 text-[10px] font-semibold text-neutral-dark">
                       +
                       {project.team_members.split(", ").filter(Boolean).length -
                         4}{" "}
@@ -552,10 +552,10 @@ export default function ProjectList({
                     return (
                       <div
                         key={day.toISOString() + idx}
-                        className="flex-1 bg-surface-highlight rounded-sm overflow-hidden"
+                    className="flex-1 overflow-hidden rounded-sm bg-surface-highlight"
                       >
                         <div
-                          className="w-full bg-primary/70 rounded-sm transition-all duration-300"
+                          className="w-full rounded-sm bg-primary transition-all duration-300"
                           style={{ height: `${height}%` }}
                         />
                       </div>
@@ -566,7 +566,7 @@ export default function ProjectList({
                 <div className="text-[11px] text-text-secondary flex items-center gap-2">
                   <span>Tasks</span>
                   <div className="flex-1 h-2 bg-surface-highlight rounded-full overflow-hidden">
-                    <div className="h-full w-1/4 bg-secondary/70" />
+                    <div className="h-full w-1/4 bg-primary/70" />
                   </div>
                   <span className="text-text-secondary">Coming soon</span>
                 </div>

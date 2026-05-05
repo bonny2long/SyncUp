@@ -15,6 +15,7 @@ export default function ChicagoAccent({
   image = "skyline",
   variant = "corner",
   className = "",
+  imageClassName = "",
 }) {
   const src = imageMap[image] || skyline;
   const variants = {
@@ -29,7 +30,11 @@ export default function ChicagoAccent({
       className={`pointer-events-none relative overflow-hidden border border-border bg-surface shadow-sm ${variants[variant]} ${className}`}
       aria-hidden="true"
     >
-      <img src={src} alt="" className="h-full w-full object-cover" />
+      <img
+        src={src}
+        alt=""
+        className={`h-full w-full object-cover ${imageClassName}`}
+      />
       <div className="absolute inset-0 bg-gradient-to-br from-accent/80 via-primary/35 to-accent/70" />
     </div>
   );

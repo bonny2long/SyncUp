@@ -1,4 +1,6 @@
 import React from "react";
+import { FolderKanban } from "lucide-react";
+import EmptyState from "../../components/brand/EmptyState";
 import ProjectList from "./ProjectList";
 
 const MyWorkPanel = React.memo(function MyWorkPanel({
@@ -12,15 +14,21 @@ const MyWorkPanel = React.memo(function MyWorkPanel({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-bold text-primary mb-1">
-          {isMentor ? "Projects You're Contributing To" : "Your Projects"}
-        </h2>
-        <p className="text-xs text-text-secondary">
-          {isMentor ?
-            "Teams you're helping as a mentor"
-          : "Projects you own or are part of"}
-        </p>
+      <div className="brand-card flex items-center gap-3 p-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <FolderKanban className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase text-primary">My Work</p>
+          <h2 className="text-lg font-black text-neutral-dark">
+            {isMentor ? "Projects You're Contributing To" : "Your Projects"}
+          </h2>
+          <p className="text-xs text-text-secondary">
+            {isMentor ?
+              "Teams you're helping as a mentor"
+            : "Projects you own or are part of"}
+          </p>
+        </div>
       </div>
 
       {loading ?
@@ -28,23 +36,20 @@ const MyWorkPanel = React.memo(function MyWorkPanel({
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="animate-pulse bg-gray-200 h-20 rounded-lg"
+              className="h-20 animate-pulse rounded-xl bg-surface-highlight"
             />
           ))}
         </div>
       : projects.length === 0 ?
-        <div className="text-center py-8 text-text-secondary">
-          <p className="text-sm">
-            {isMentor ?
-              "Not contributing to any projects yet"
-            : "No projects yet"}
-          </p>
-          <p className="text-xs mt-1">
-            {isMentor ?
-              "Browse projects and request to join teams"
-            : "Create or join one to get started"}
-          </p>
-        </div>
+        <EmptyState
+          icon={FolderKanban}
+          title={isMentor ? "Not contributing to any projects yet" : "No projects yet"}
+          message={
+            isMentor ?
+              "Browse projects and request to join teams."
+            : "Create or join a project to get started."
+          }
+        />
       : <ProjectList
           selectedProject={selectedProject}
           setSelectedProject={setSelectedProject}

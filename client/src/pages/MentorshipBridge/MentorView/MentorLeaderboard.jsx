@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchMentorEngagementAnalytics } from "../../../utils/api";
 import { Trophy, Users, CheckCircle, Clock, Star } from "lucide-react";
+import EmptyState from "../../../components/brand/EmptyState";
 
 export default function MentorLeaderboard() {
   const [mentors, setMentors] = useState([]);
@@ -25,25 +26,30 @@ export default function MentorLeaderboard() {
 
   if (loading) {
     return (
-      <div className="bg-surface rounded-lg border border-border p-6">
-        <p className="text-sm text-text-secondary">Loading leaderboard...</p>
+      <div className="brand-card flex h-48 items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm font-semibold text-text-secondary">Loading leaderboard...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-surface rounded-lg border border-border p-6">
-        <p className="text-sm text-red-500">{error}</p>
+      <div className="brand-card border-red-200 p-6">
+        <p className="text-sm font-semibold text-red-600">{error}</p>
       </div>
     );
   }
 
   if (mentors.length === 0) {
     return (
-      <div className="bg-surface rounded-lg border border-border p-6">
-        <p className="text-sm text-text-secondary">No mentor data available</p>
-      </div>
+      <EmptyState
+        icon={Trophy}
+        title="No mentor data available"
+        message="Mentor activity will appear here after sessions are requested and completed."
+      />
     );
   }
 
@@ -69,36 +75,41 @@ export default function MentorLeaderboard() {
   };
 
   return (
-    <div className="bg-surface rounded-lg border border-border p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Star className="w-5 h-5 text-amber-500" />
-        <h2 className="text-lg font-semibold text-neutral-dark">
-          Mentor Leaderboard
-        </h2>
+    <div className="brand-card overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-border p-5">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Star className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase text-primary">Mentor Credibility</p>
+          <h2 className="text-lg font-black text-neutral-dark">
+            Mentor Leaderboard
+          </h2>
+        </div>
       </div>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-blue-500/10 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-blue-500">
+      <div className="grid gap-3 p-5 sm:grid-cols-3">
+        <div className="rounded-xl border border-border bg-primary/5 p-4 text-center">
+          <p className="text-2xl font-black text-primary">
             {mentors.reduce(
               (sum, m) => sum + (Number(m.total_sessions) || 0),
               0,
             )}
           </p>
-          <p className="text-xs text-blue-500">Total Sessions</p>
+          <p className="text-xs font-bold uppercase text-text-secondary">Total Sessions</p>
         </div>
-        <div className="bg-green-500/10 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-green-500">
+        <div className="rounded-xl border border-border bg-primary/5 p-4 text-center">
+          <p className="text-2xl font-black text-primary">
             {mentors.reduce(
               (sum, m) => sum + (Number(m.completed_sessions) || 0),
               0,
             )}
           </p>
-          <p className="text-xs text-green-500">Completed</p>
+          <p className="text-xs font-bold uppercase text-text-secondary">Completed</p>
         </div>
-        <div className="bg-amber-500/10 rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold text-amber-500">
+        <div className="rounded-xl border border-border bg-primary/5 p-4 text-center">
+          <p className="text-2xl font-black text-primary">
             {mentors.length > 0 ?
               Math.round(
                 mentors.reduce((sum, m) => sum + getResponseRate(m), 0) /
@@ -107,33 +118,33 @@ export default function MentorLeaderboard() {
             : 0}
             %
           </p>
-          <p className="text-xs text-amber-500">Avg Response</p>
+          <p className="text-xs font-bold uppercase text-text-secondary">Avg Response</p>
         </div>
       </div>
 
       {/* Leaderboard Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto px-5 pb-5">
         <table className="w-full">
           <thead>
-            <tr className="text-left text-xs text-text-secondary border-b border-border">
-              <th className="pb-3 font-medium">Rank</th>
-              <th className="pb-3 font-medium">Mentor</th>
-              <th className="pb-3 font-medium text-center">
+            <tr className="border-b border-border text-left text-xs uppercase text-text-secondary">
+              <th className="pb-3 font-black">Rank</th>
+              <th className="pb-3 font-black">Mentor</th>
+              <th className="pb-3 text-center font-black">
                 <div className="flex items-center justify-center gap-1">
                   <Users className="w-3 h-3" /> Sessions
                 </div>
               </th>
-              <th className="pb-3 font-medium text-center">
+              <th className="pb-3 text-center font-black">
                 <div className="flex items-center justify-center gap-1">
                   <CheckCircle className="w-3 h-3" /> Completed
                 </div>
               </th>
-              <th className="pb-3 font-medium text-center">
+              <th className="pb-3 text-center font-black">
                 <div className="flex items-center justify-center gap-1">
                   <Clock className="w-3 h-3" /> Pending
                 </div>
               </th>
-              <th className="pb-3 font-medium text-center">Response Rate</th>
+              <th className="pb-3 text-center font-black">Response Rate</th>
             </tr>
           </thead>
           <tbody>
@@ -142,7 +153,7 @@ export default function MentorLeaderboard() {
               return (
                 <tr
                   key={mentor.id}
-                  className={`border-b border-border ${index < 3 ? "bg-surface-highlight/50" : ""}`}
+                  className={`border-b border-border ${index < 3 ? "bg-primary/5" : ""}`}
                 >
                   <td className="py-3">
                     <div className="flex items-center justify-center">
@@ -151,25 +162,25 @@ export default function MentorLeaderboard() {
                   </td>
                   <td className="py-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                        <span className="text-sm font-black text-primary">
                           {mentor.name.charAt(0)}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-neutral-dark">
+                        <p className="text-sm font-black text-neutral-dark">
                           {mentor.name}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 text-center">
-                    <span className="text-sm font-medium text-neutral-dark">
+                    <span className="text-sm font-bold text-neutral-dark">
                       {mentor.total_sessions || 0}
                     </span>
                   </td>
                   <td className="py-3 text-center">
-                    <span className="text-sm font-medium text-green-600">
+                    <span className="text-sm font-bold text-primary">
                       {mentor.completed_sessions || 0}
                     </span>
                   </td>
@@ -181,14 +192,7 @@ export default function MentorLeaderboard() {
                   <td className="py-3 text-center">
                     <div className="flex items-center justify-center">
                       <div className="w-16 h-2 bg-surface-highlight rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${
-                            responseRate >= 80 ? "bg-green-500"
-                            : responseRate >= 50 ? "bg-amber-500"
-                            : "bg-red-500"
-                          }`}
-                          style={{ width: `${responseRate}%` }}
-                        />
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${responseRate}%` }} />
                       </div>
                       <span className="text-xs ml-2 text-text-secondary">
                         {responseRate}%

@@ -9,7 +9,7 @@ export default function DiscoverProjects({
   onViewProject,
 }) {
   return (
-    <div className="space-y-3 max-h-[650px] overflow-y-auto pr-2">
+    <div className="max-h-[650px] space-y-3 overflow-y-auto pr-2">
       {projects.map((project) => {
         const isSelected = selectedProject?.id === project.id;
 
@@ -17,18 +17,18 @@ export default function DiscoverProjects({
           <div
             key={project.id}
             onClick={() => setSelectedProject(project)}
-            className={`p-4 rounded-lg border-2 transition cursor-pointer ${
+            className={`brand-card brand-card-hover cursor-pointer p-4 transition ${
               isSelected ?
-                "border-accent bg-accent/10 shadow-md"
-              : "border-accent/30 bg-surface hover:border-accent hover:shadow-md"
+                "border-primary bg-primary/10 shadow-md"
+              : "hover:border-primary/30"
             }`}
           >
             {/* Header row: title + status badge */}
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="font-semibold text-neutral-dark text-sm">
+            <div className="mb-2 flex items-start justify-between">
+              <h4 className="text-sm font-black text-neutral-dark">
                 {project.title}
               </h4>
-              <span className="text-[10px] px-2 py-1 bg-accent/20 text-accent rounded-full font-medium shrink-0 ml-2">
+              <span className="ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold capitalize text-primary">
                 {project.status}
               </span>
             </div>
@@ -39,8 +39,8 @@ export default function DiscoverProjects({
             </p>
 
             {/* Footer row: meta info + compact action button */}
-            <div className="flex justify-between items-center text-xs text-text-secondary">
-              <div className="flex gap-3 items-center">
+            <div className="flex items-center justify-between text-xs text-text-secondary">
+              <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   <span>{project.team_count ?? 0}</span>
@@ -64,7 +64,7 @@ export default function DiscoverProjects({
                     e.stopPropagation();
                     onJoinClick(project);
                   }}
-                  className="px-3 py-1 bg-primary text-white text-xs rounded-lg hover:bg-primary/90 transition font-medium flex items-center gap-1 shrink-0"
+                  className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-1 text-xs font-bold text-white transition hover:bg-primary/90"
                 >
                   <UserPlus className="w-3 h-3" />
                   Join
@@ -74,7 +74,7 @@ export default function DiscoverProjects({
                     e.stopPropagation();
                     onViewProject(project);
                   }}
-                  className="px-3 py-1 bg-surface-highlight text-text-secondary text-xs rounded-lg hover:bg-border transition font-medium shrink-0"
+                  className="shrink-0 rounded-lg bg-surface-highlight px-3 py-1 text-xs font-bold text-text-secondary transition hover:bg-border"
                 >
                   View
                 </button>

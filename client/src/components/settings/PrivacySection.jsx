@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
 import ToggleSwitch from "../shared/ToggleSwitch";
+import { Eye, Lock, Shield, UsersRound } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
@@ -81,64 +82,88 @@ export default function PrivacySection() {
     return `Saved at ${lastSaved.toLocaleTimeString()}`;
   };
 
-  return (
-    <div className="bg-surface dark:bg-surface-highlight rounded-xl border border-border dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-neutral-dark dark:text-white mb-1">
-        Privacy & Visibility
-      </h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        Control who can see your information
-      </p>
+  const visibilityOptions = [
+    {
+      value: "anyone",
+      label: "Anyone",
+      detail: "Public profile can be viewed outside SyncUp.",
+      icon: Eye,
+    },
+    {
+      value: "team",
+      label: "Community",
+      detail: "Visible to logged-in iCAA community members.",
+      icon: UsersRound,
+    },
+    {
+      value: "me",
+      label: "Private",
+      detail: "Only you can see profile details.",
+      icon: Lock,
+    },
+  ];
 
-      <div className="space-y-6">
+  return (
+    <div className="brand-card overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-border p-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Shield className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase text-primary">Visibility Rules</p>
+          <h3 className="text-lg font-black text-neutral-dark dark:text-white">
+            Privacy & Visibility
+          </h3>
+          <p className="text-sm text-text-secondary">
+            Control what is visible on your community profile.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-6 p-5">
         {/* Who can see your profile */}
         <div>
-          <h4 className="text-sm font-medium text-neutral-dark dark:text-gray-300 mb-3">
+          <h4 className="mb-3 text-sm font-black text-neutral-dark dark:text-gray-300">
             Who can see your profile?
           </h4>
-          <div className="space-y-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="visibility"
-                value="anyone"
-                checked={visibility === "anyone"}
-                onChange={(e) => handleVisibilityChange(e.target.value)}
-                className="w-4 h-4 text-primary"
-              />
-              <span className="text-sm text-neutral-dark dark:text-gray-300">Anyone (Public)</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="visibility"
-                value="team"
-                checked={visibility === "team"}
-                onChange={(e) => handleVisibilityChange(e.target.value)}
-                className="w-4 h-4 text-primary"
-              />
-              <span className="text-sm text-neutral-dark dark:text-gray-300">Team members only</span>
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="visibility"
-                value="me"
-                checked={visibility === "me"}
-                onChange={(e) => handleVisibilityChange(e.target.value)}
-                className="w-4 h-4 text-primary"
-              />
-              <span className="text-sm text-neutral-dark dark:text-gray-300">Only me (Private)</span>
-            </label>
+          <div className="grid gap-3 md:grid-cols-3">
+            {visibilityOptions.map((option) => {
+              const Icon = option.icon;
+              const selected = visibility === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleVisibilityChange(option.value)}
+                  className={`rounded-xl border p-4 text-left transition ${
+                    selected
+                      ? "border-primary bg-primary text-white shadow-md"
+                      : "border-border bg-surface-highlight/50 text-neutral-dark hover:border-primary/30 dark:bg-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  <div
+                    className={`mb-3 flex h-9 w-9 items-center justify-center rounded-lg ${
+                      selected ? "bg-white/15 text-white" : "bg-primary/10 text-primary"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="text-sm font-black">{option.label}</p>
+                  <p className={`mt-1 text-xs ${selected ? "text-white/80" : "text-text-secondary"}`}>
+                    {option.detail}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Divider */}
-        <div className="border-t border-border dark:border-gray-700 pt-6">
-          <h4 className="text-sm font-medium text-neutral-dark dark:text-gray-300 mb-4">
+        <div className="border-t border-border pt-6 dark:border-gray-700">
+          <h4 className="mb-4 text-sm font-black text-neutral-dark dark:text-gray-300">
             Public Information
           </h4>
-          <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
             <ToggleSwitch
               checked={settings.showEmail}
               onChange={() => handleToggle("showEmail")}
@@ -159,11 +184,11 @@ export default function PrivacySection() {
 
         {/* Mentorship (community mentors) */}
         {isMentor && (
-          <div className="border-t border-border dark:border-gray-700 pt-6">
-            <h4 className="text-sm font-medium text-neutral-dark dark:text-gray-300 mb-4">
+          <div className="border-t border-border pt-6 dark:border-gray-700">
+            <h4 className="mb-4 text-sm font-black text-neutral-dark dark:text-gray-300">
               Mentorship (Community mentors)
             </h4>
-            <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
               <ToggleSwitch
                 checked={settings.acceptMentorship}
                 onChange={() => handleToggle("acceptMentorship")}
@@ -182,12 +207,12 @@ export default function PrivacySection() {
       </div>
 
       {/* Auto-save indicator */}
-      <div className="mt-6 pt-4 border-t border-border dark:border-gray-700">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="border-t border-border p-5 dark:border-gray-700">
+        <p className="text-xs font-semibold text-text-secondary">
           {saving ? (
             <span className="text-primary">Saving...</span>
           ) : (
-            <span className="text-green-600 dark:text-green-400">{formatLastSaved() || "Changes save automatically"}</span>
+            <span className="text-primary">{formatLastSaved() || "Changes save automatically"}</span>
           )}
         </p>
       </div>

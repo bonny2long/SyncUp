@@ -9,6 +9,7 @@ import {
   Filter,
   X,
 } from "lucide-react";
+import EmptyState from "../../../components/brand/EmptyState";
 
 export default function SessionHistory({ sessions, loading, error }) {
   const [expandedId, setExpandedId] = useState(null);
@@ -26,18 +27,24 @@ export default function SessionHistory({ sessions, loading, error }) {
     setFilters({ mentor: "", topic: "", dateRange: "all" });
   };
 
-  const hasActiveFilters = filters.mentor || filters.topic || filters.dateRange !== "all";
+  const hasActiveFilters =
+    filters.mentor || filters.topic || filters.dateRange !== "all";
 
   // Filter sessions
   const filteredSessions = useMemo(() => {
     return sessions.filter((session) => {
       if (filters.mentor && session.mentor_name !== filters.mentor) return false;
-      if (filters.topic && !session.topic.toLowerCase().includes(filters.topic.toLowerCase())) return false;
+      if (
+        filters.topic &&
+        !session.topic.toLowerCase().includes(filters.topic.toLowerCase())
+      ) {
+        return false;
+      }
       if (filters.dateRange !== "all") {
         const sessionDate = new Date(session.session_date);
         const now = new Date();
         const daysDiff = Math.floor((now - sessionDate) / (1000 * 60 * 60 * 24));
-        
+
         switch (filters.dateRange) {
           case "30days":
             if (daysDiff > 30) return false;
@@ -61,34 +68,27 @@ export default function SessionHistory({ sessions, loading, error }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-text-secondary">
-          Loading session history...
-        </p>
+      <div className="brand-card flex h-48 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-        <p className="text-red-400">{error}</p>
+      <div className="brand-card border-red-200 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/30">
+        <p className="font-semibold text-red-700 dark:text-red-300">{error}</p>
       </div>
     );
   }
 
   if (sessions.length === 0) {
     return (
-      <div className="text-center py-12">
-        <Award className="w-16 h-16 text-text-secondary mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-neutral-dark mb-2">
-          No completed sessions yet
-        </h3>
-        <p className="text-sm text-text-secondary">
-          Complete your first mentorship session to start building your learning
-          history!
-        </p>
-      </div>
+      <EmptyState
+        icon={Award}
+        title="No completed sessions yet"
+        description="Complete your first mentorship session to start building your learning history."
+      />
     );
   }
 
@@ -98,60 +98,73 @@ export default function SessionHistory({ sessions, loading, error }) {
   ).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      <div className="brand-card flex items-center gap-3 p-5">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Award className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase text-primary">
+            Session History
+          </p>
+          <h2 className="text-xl font-bold text-neutral-dark">
+            Your mentorship record
+          </h2>
+          <p className="text-sm text-text-secondary">
+            Review completed sessions and the skill signals earned along the way.
+          </p>
+        </div>
+      </div>
+
       {/* Stats Cards - Compact */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard
-          icon={<Award className="w-4 h-4" />}
+          icon={<Award className="h-4 w-4" />}
           label="Total"
           value={totalSessions}
-          color="text-primary"
         />
         <StatCard
-          icon={<Zap className="w-4 h-4" />}
+          icon={<Zap className="h-4 w-4" />}
           label="Technical"
           value={technicalSessions}
-          color="text-secondary"
         />
         <StatCard
-          icon={<Target className="w-4 h-4" />}
+          icon={<Target className="h-4 w-4" />}
           label="Career"
           value={totalSessions - technicalSessions}
-          color="text-accent"
         />
         <StatCard
-          icon={<Calendar className="w-4 h-4" />}
+          icon={<Calendar className="h-4 w-4" />}
           label="This Month"
           value={filteredSessions.length}
-          color="text-green-500"
         />
       </div>
 
       {/* Filter Toggle */}
-      <div className="flex items-center justify-between">
+      <div className="brand-card flex items-center justify-between p-4">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
             showFilters || hasActiveFilters
               ? "bg-primary text-white"
-              : "bg-surface-highlight text-text-secondary hover:text-neutral-dark"
+              : "border border-border bg-surface-highlight text-text-secondary hover:border-primary/30 hover:text-primary"
           }`}
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="h-4 w-4" />
           Filters
           {hasActiveFilters && (
-            <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded text-xs">
-              {Object.values(filters).filter(v => v && v !== "all").length}
+            <span className="ml-1 rounded bg-white/20 px-1.5 py-0.5 text-xs">
+              {Object.values(filters).filter((v) => v && v !== "all").length}
             </span>
           )}
         </button>
-        
+
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 text-xs text-text-secondary hover:text-red-500"
+            className="flex items-center gap-1 rounded-full px-3 py-2 text-xs font-semibold text-text-secondary transition hover:bg-red-50 hover:text-red-600"
           >
-            <X className="w-3 h-3" />
+            <X className="h-3 w-3" />
             Clear filters
           </button>
         )}
@@ -159,48 +172,56 @@ export default function SessionHistory({ sessions, loading, error }) {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="bg-surface-highlight border border-border rounded-lg p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="brand-card bg-surface-highlight p-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Mentor Filter */}
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
+              <label className="mb-1 block text-xs font-bold uppercase text-text-secondary">
                 Mentor
               </label>
               <select
                 value={filters.mentor}
-                onChange={(e) => setFilters({ ...filters, mentor: e.target.value })}
-                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                onChange={(e) =>
+                  setFilters({ ...filters, mentor: e.target.value })
+                }
+                className="input w-full text-sm"
               >
                 <option value="">All Mentors</option>
                 {uniqueMentors.map((mentor) => (
-                  <option key={mentor} value={mentor}>{mentor}</option>
+                  <option key={mentor} value={mentor}>
+                    {mentor}
+                  </option>
                 ))}
               </select>
             </div>
 
             {/* Topic Search */}
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
+              <label className="mb-1 block text-xs font-bold uppercase text-text-secondary">
                 Topic
               </label>
               <input
                 type="text"
                 value={filters.topic}
-                onChange={(e) => setFilters({ ...filters, topic: e.target.value })}
+                onChange={(e) =>
+                  setFilters({ ...filters, topic: e.target.value })
+                }
                 placeholder="Search topics..."
-                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                className="input w-full text-sm"
               />
             </div>
 
             {/* Date Range Filter */}
             <div>
-              <label className="block text-xs font-medium text-text-secondary mb-1">
+              <label className="mb-1 block text-xs font-bold uppercase text-text-secondary">
                 Time Period
               </label>
               <select
                 value={filters.dateRange}
-                onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
-                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary/40 focus:outline-none"
+                onChange={(e) =>
+                  setFilters({ ...filters, dateRange: e.target.value })
+                }
+                className="input w-full text-sm"
               >
                 <option value="all">All Time</option>
                 <option value="30days">Last 30 Days</option>
@@ -214,7 +235,7 @@ export default function SessionHistory({ sessions, loading, error }) {
 
       {/* Results Count */}
       {hasActiveFilters && (
-        <p className="text-sm text-text-secondary">
+        <p className="text-sm font-medium text-text-secondary">
           Showing {filteredSessions.length} of {sessions.length} sessions
         </p>
       )}
@@ -222,11 +243,11 @@ export default function SessionHistory({ sessions, loading, error }) {
       {/* Session Timeline - Compact Cards */}
       <div className="space-y-2">
         {filteredSessions.length === 0 ? (
-          <div className="text-center py-8 bg-surface-highlight rounded-lg">
-            <p className="text-text-secondary text-sm">
-              No sessions match your filters
-            </p>
-          </div>
+          <EmptyState
+            icon={Filter}
+            title="No sessions match your filters"
+            description="Adjust the filters to see more completed sessions."
+          />
         ) : (
           filteredSessions.map((session) => (
             <HistoryCard
@@ -242,12 +263,14 @@ export default function SessionHistory({ sessions, loading, error }) {
   );
 }
 
-function StatCard({ icon, label, value, color }) {
+function StatCard({ icon, label, value }) {
   return (
-    <div className="bg-surface p-3 rounded-lg border border-border">
-      <div className={`flex items-center gap-2 mb-1 ${color}`}>
+    <div className="brand-card bg-surface p-4">
+      <div className="mb-2 flex items-center gap-2 text-primary">
         {icon}
-        <p className="text-xs text-text-secondary">{label}</p>
+        <p className="text-xs font-bold uppercase text-text-secondary">
+          {label}
+        </p>
       </div>
       <p className="text-2xl font-bold text-neutral-dark">{value}</p>
     </div>
@@ -280,34 +303,34 @@ function HistoryCard({ session, isExpanded, onToggle }) {
   const hasDetails = session.details || session.notes;
 
   return (
-    <div className="bg-surface border border-border rounded-lg hover:border-primary/30 transition-colors">
-      {/* Collapsed header — always visible */}
+    <div className="brand-card-hover bg-surface">
+      {/* Collapsed header - always visible */}
       <button
         onClick={onToggle}
-        className="w-full text-left px-3 py-2.5 flex items-center justify-between gap-2"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
-        <div className="flex-1 min-w-0 flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-neutral-dark text-sm truncate">
+              <h3 className="truncate text-sm font-semibold text-neutral-dark">
                 {session.topic}
               </h3>
               {isTechnical && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400 flex items-center gap-0.5 shrink-0">
-                  <Zap className="w-2.5 h-2.5" />
+                <span className="flex shrink-0 items-center gap-0.5 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                  <Zap className="h-2.5 w-2.5" />
                   3x
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-0.5 text-xs text-text-secondary">
-              <span className="font-medium text-primary truncate">
+            <div className="mt-1 flex items-center gap-2 text-xs text-text-secondary">
+              <span className="truncate font-medium text-primary">
                 {session.mentor_name}
               </span>
-              <span className="shrink-0">•</span>
+              <span className="shrink-0">-</span>
               <span className="shrink-0">{formatDate(session.session_date)}</span>
               {session.session_focus && (
                 <>
-                  <span className="shrink-0">•</span>
+                  <span className="shrink-0">-</span>
                   <span className="truncate">{formatFocus(session.session_focus)}</span>
                 </>
               )}
@@ -317,27 +340,29 @@ function HistoryCard({ session, isExpanded, onToggle }) {
 
         {hasDetails && (
           <div className="shrink-0 text-text-secondary">
-            {isExpanded ?
-              <ChevronUp className="w-4 h-4" />
-            : <ChevronDown className="w-4 h-4" />}
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </div>
         )}
       </button>
 
       {/* Expanded details */}
       {isExpanded && hasDetails && (
-        <div className="px-3 pb-2.5 border-t border-border pt-2 space-y-2">
+        <div className="space-y-3 border-t border-border px-4 pb-3 pt-3">
           {session.details && (
-            <p className="text-xs text-text-secondary bg-surface-highlight p-2 rounded">
+            <p className="rounded-xl bg-surface-highlight p-3 text-sm text-text-secondary">
               {session.details}
             </p>
           )}
           {session.notes && (
             <div>
-              <p className="text-[10px] font-semibold text-text-secondary mb-1">
+              <p className="mb-1 text-[10px] font-bold uppercase text-text-secondary">
                 Notes:
               </p>
-              <p className="text-xs text-text-secondary">{session.notes}</p>
+              <p className="text-sm text-text-secondary">{session.notes}</p>
             </div>
           )}
         </div>

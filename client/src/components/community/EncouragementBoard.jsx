@@ -146,16 +146,18 @@ export default function EncouragementBoard({
 
   return (
     <section className="bg-surface border border-border rounded-lg overflow-hidden">
-      <div className="px-4 py-3 border-b border-border bg-surface-highlight/40 flex items-center justify-between gap-3">
+      <div className={`${compact ? "px-3 py-2" : "px-4 py-3"} border-b border-border bg-surface-highlight/40 flex items-center justify-between gap-3`}>
         <div className="flex items-center gap-2">
           <Heart className="w-4 h-4 text-primary" />
           <div>
             <h2 className="font-semibold text-sm text-neutral-dark">
               From the ICAA Community
             </h2>
-            <p className="text-xs text-text-secondary">
-              Encouragement from residents and alumni who walked this path.
-            </p>
+            {!compact && (
+              <p className="text-xs text-text-secondary">
+                Encouragement from residents and alumni who walked this path.
+              </p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -223,8 +225,8 @@ export default function EncouragementBoard({
       )}
 
       <div
-        className={`p-4 space-y-3 overflow-y-auto ${
-          compact ? "max-h-28" : "max-h-[420px]"
+        className={`${compact ? "p-3" : "p-4"} space-y-3 overflow-y-auto ${
+          compact ? "max-h-20" : "max-h-[420px]"
         }`}
       >
         {loading ? (

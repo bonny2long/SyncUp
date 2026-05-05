@@ -6,6 +6,7 @@ import ProjectCard from "../components/shared/ProjectCard"; // CHANGED: Use shar
 import ProjectDetailModal from "../components/modals/ProjectDetailModal";
 import Navbar from "../components/layout/Navbar";
 import Sidebar from "../components/layout/Sidebar";
+import EmptyState from "../components/brand/EmptyState";
 import { useProjects } from "../hooks/useProjects"; // NEW: Use shared hook
 import { Award, ExternalLink, FileText, Github, Users } from "lucide-react";
 
@@ -133,16 +134,21 @@ export default function ProjectPortfolio() {
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto">
-          <div className="min-h-screen bg-neutralLight p-6">
+          <div className="page-shell min-h-screen p-6">
             <div className="max-w-7xl mx-auto">
               {/* Header */}
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-neutral-dark mb-2">
-                  Project Portfolio
-                </h1>
-                <p className="text-text-secondary text-sm">
-                  Showcase your completed work and achievements
-                </p>
+              <div className="relative mb-6 overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-sm">
+                <div className="absolute inset-y-0 left-0 w-1.5 bg-primary" />
+                <div className="pl-2">
+                  <p className="page-kicker font-semibold uppercase">
+                    Community showcase
+                  </p>
+                  <h1 className="page-title mt-1">Project Portfolio</h1>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
+                    Showcase completed work, active builds, and the case
+                    studies that tell the story behind each project.
+                  </p>
+                </div>
               </div>
 
               {/* Loading state */}
@@ -158,11 +164,11 @@ export default function ProjectPortfolio() {
                 </div>
               : <>
                   {/* Inline Filters */}
-                  <div className="flex flex-wrap gap-3 mb-6">
+                  <div className="brand-card mb-6 flex flex-wrap gap-3 p-3">
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark focus:outline-none focus:ring-2 focus:ring-primary/40"
                     >
                       {STATUS_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -174,7 +180,7 @@ export default function ProjectPortfolio() {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark focus:outline-none focus:ring-2 focus:ring-primary/40"
                     >
                       {SORT_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -186,48 +192,49 @@ export default function ProjectPortfolio() {
 
                   {/* Empty state */}
                   {sortedProjects.length === 0 ?
-                    <div className="text-center py-12 bg-surface rounded-lg border border-border">
-                      <p className="text-text-secondary text-lg mb-2">
-                        No projects yet
-                      </p>
-                      <p className="text-text-secondary/70 text-sm">
-                        Create your first project in CollaborationHub
-                      </p>
-                    </div>
+                    <EmptyState
+                      icon={Award}
+                      title="No projects yet"
+                      description="Create your first project in Collaboration Hub, then use this page to showcase the work."
+                      image="skyline"
+                    />
                   : /* Featured Project + Projects Grid */
                     <>
                       {featuredProject && (
-                        <section className="mb-6 rounded-xl border border-border bg-surface p-5 shadow-sm">
+                        <section className="relative mb-6 overflow-hidden rounded-xl border border-border bg-surface p-6 shadow-sm">
+                          <div className="absolute inset-x-0 top-0 h-1.5 bg-primary" />
                           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                            <div className="min-w-0">
+                            <div className="min-w-0 pt-2">
                               <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
-                                Featured Project
+                                {manuallyFeaturedProject ?
+                                  "Featured Project"
+                                : "Suggested Featured Project"}
                               </p>
-                              <h2 className="text-xl font-semibold text-primary">
+                              <h2 className="text-2xl font-black text-primary">
                                 {featuredProject.title}
                               </h2>
-                              <p className="text-sm text-text-secondary mt-2 max-w-3xl">
+                              <p className="text-sm leading-6 text-text-secondary mt-2 max-w-3xl">
                                 {featuredProject.description ||
                                   "No description yet."}
                               </p>
                               {featuredCaseStudy.hasCaseStudy && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 max-w-4xl">
                                   {featuredProject.case_study_problem && (
-                                    <div className="rounded-lg border border-border bg-surface-highlight p-3">
+                                    <div className="rounded-lg border border-border bg-surface-highlight/70 p-3">
                                       <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
                                         Problem
                                       </p>
-                                      <p className="text-sm text-neutral-dark line-clamp-3">
+                                      <p className="text-sm leading-6 text-neutral-dark line-clamp-3">
                                         {featuredProject.case_study_problem}
                                       </p>
                                     </div>
                                   )}
                                   {featuredProject.case_study_solution && (
-                                    <div className="rounded-lg border border-border bg-surface-highlight p-3">
+                                    <div className="rounded-lg border border-border bg-surface-highlight/70 p-3">
                                       <p className="text-xs font-semibold uppercase text-text-secondary mb-1">
                                         Solution
                                       </p>
-                                      <p className="text-sm text-neutral-dark line-clamp-3">
+                                      <p className="text-sm leading-6 text-neutral-dark line-clamp-3">
                                         {featuredProject.case_study_solution}
                                       </p>
                                     </div>
@@ -269,7 +276,7 @@ export default function ProjectPortfolio() {
                                   href={featuredProject.github_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm font-medium text-neutral-dark hover:text-primary hover:border-primary/40"
                                 >
                                   <Github className="w-4 h-4" />
                                   GitHub
@@ -280,7 +287,7 @@ export default function ProjectPortfolio() {
                                   href={featuredProject.live_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm font-medium text-neutral-dark hover:text-primary hover:border-primary/40"
                                 >
                                   <ExternalLink className="w-4 h-4" />
                                   Live
@@ -291,7 +298,7 @@ export default function ProjectPortfolio() {
                                   href={featuredProject.case_study_artifact_url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm text-neutral-dark hover:text-primary hover:border-primary/40"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-2 text-sm font-medium text-neutral-dark hover:text-primary hover:border-primary/40"
                                 >
                                   <FileText className="w-4 h-4" />
                                   Artifact
@@ -300,7 +307,7 @@ export default function ProjectPortfolio() {
                               <button
                                 type="button"
                                 onClick={() => handleProjectClick(featuredProject)}
-                                className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
+                                className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
                               >
                                 View Details
                               </button>
@@ -309,7 +316,7 @@ export default function ProjectPortfolio() {
                         </section>
                       )}
 
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                         {gridProjects
                           .slice(0, displayCount)
                           .map((project) => (

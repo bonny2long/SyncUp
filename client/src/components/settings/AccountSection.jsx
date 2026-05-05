@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useUser } from "../../context/UserContext";
 import { useToast } from "../../context/ToastContext";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CalendarDays, KeyRound, ShieldCheck, Trash2 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
@@ -53,7 +53,7 @@ export default function AccountSection() {
 
       setPasswordSuccess(true);
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      addToast({ type: "success", message: "Password changed successfully!" });
+      addToast({ type: "success", message: "Password changed successfully." });
       setTimeout(() => {
         setShowPasswordModal(false);
         setPasswordSuccess(false);
@@ -77,46 +77,65 @@ export default function AccountSection() {
 
       addToast({ type: "success", message: "Account deleted successfully" });
       logout();
-    } catch (err) {
+    } catch {
       addToast({ type: "error", message: "Failed to delete account" });
     }
   };
 
   return (
-    <div className="bg-surface dark:bg-surface-highlight rounded-xl border border-border dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-neutral-dark dark:text-white mb-1">
-        Account & Security
-      </h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        Manage your account settings
-      </p>
-
-      <div className="space-y-6">
-        {/* Password */}
+    <div className="brand-card overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-border p-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <ShieldCheck className="h-5 w-5" />
+        </div>
         <div>
-          <h4 className="text-sm font-medium text-neutral-dark dark:text-gray-300 mb-2">
-            Password
-          </h4>
-          <button
-            onClick={() => setShowPasswordModal(true)}
-            className="text-sm text-primary hover:underline font-medium"
-          >
-            Change Password →
-          </button>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Last changed: Never
+          <p className="text-xs font-bold uppercase text-primary">Security</p>
+          <h3 className="text-lg font-black text-neutral-dark dark:text-white">
+            Account & Security
+          </h3>
+          <p className="text-sm text-text-secondary">
+            Manage account access and high-impact actions.
           </p>
         </div>
+      </div>
 
-        {/* Divider */}
-        <div className="border-t border-border dark:border-gray-700 pt-6">
-          <h4 className="text-sm font-medium text-neutral-dark dark:text-gray-300 mb-2">
-            Account Information
-          </h4>
-          <div className="space-y-2 text-sm">
-            <p className="text-gray-500 dark:text-gray-400">
-              Account created:{" "}
-              <span className="text-neutral-dark dark:text-gray-300">
+      <div className="grid gap-4 p-5 md:grid-cols-2">
+        <div className="rounded-xl border border-border bg-surface-highlight/50 p-4 dark:bg-gray-800">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <KeyRound className="h-4 w-4" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-neutral-dark dark:text-gray-300">
+                Password
+              </h4>
+              <p className="text-xs text-text-secondary">Last changed: Never</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary/90"
+          >
+            Change Password
+          </button>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface-highlight/50 p-4 dark:bg-gray-800">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <CalendarDays className="h-4 w-4" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-neutral-dark dark:text-gray-300">
+                Account Information
+              </h4>
+              <p className="text-xs text-text-secondary">Membership and access status</p>
+            </div>
+          </div>
+          <div className="space-y-2 text-sm text-text-secondary">
+            <p>
+              Account created{" "}
+              <span className="font-semibold text-neutral-dark dark:text-gray-300">
                 {user?.join_date
                   ? new Date(user.join_date).toLocaleDateString("en-US", {
                       month: "long",
@@ -126,41 +145,51 @@ export default function AccountSection() {
                   : "N/A"}
               </span>
             </p>
-            <p className="text-gray-500 dark:text-gray-400">
-              Last login:{" "}
-              <span className="text-neutral-dark dark:text-gray-300">Today</span>
+            <p>
+              Last login{" "}
+              <span className="font-semibold text-neutral-dark dark:text-gray-300">Today</span>
             </p>
           </div>
         </div>
 
-        {/* Danger Zone */}
-        <div className="border-t border-border dark:border-gray-700 pt-6">
-          <h4 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            Danger Zone
-          </h4>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/20 md:col-span-2">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-red-700 dark:text-red-400">
+                Danger Zone
+              </h4>
+              <p className="text-xs text-red-700/70 dark:text-red-300/70">
+                This action cannot be undone.
+              </p>
+            </div>
+          </div>
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-medium rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors text-sm"
+            className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-600 transition-colors hover:bg-red-100 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
           >
+            <Trash2 className="h-4 w-4" />
             Delete My Account
           </button>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            This action cannot be undone
-          </p>
         </div>
       </div>
 
-      {/* Change Password Modal */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface dark:bg-surface-highlight rounded-xl border border-border dark:border-gray-700 p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-neutral-dark dark:text-white mb-4">
-              Change Password
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="brand-card w-full max-w-md p-6 dark:bg-surface-highlight">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <KeyRound className="h-5 w-5" />
+              </div>
+              <h3 className="text-lg font-black text-neutral-dark dark:text-white">
+                Change Password
+              </h3>
+            </div>
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-dark dark:text-gray-300 mb-1">
+                <label className="mb-1 block text-sm font-bold text-neutral-dark dark:text-gray-300">
                   Current Password
                 </label>
                 <input
@@ -169,12 +198,12 @@ export default function AccountSection() {
                   onChange={(e) =>
                     setPasswordData({ ...passwordData, currentPassword: e.target.value })
                   }
-                  className="w-full border border-border dark:border-gray-600 rounded-lg px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-neutral-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="input bg-white dark:bg-gray-800 dark:text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-dark dark:text-gray-300 mb-1">
+                <label className="mb-1 block text-sm font-bold text-neutral-dark dark:text-gray-300">
                   New Password
                 </label>
                 <input
@@ -183,12 +212,12 @@ export default function AccountSection() {
                   onChange={(e) =>
                     setPasswordData({ ...passwordData, newPassword: e.target.value })
                   }
-                  className="w-full border border-border dark:border-gray-600 rounded-lg px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-neutral-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="input bg-white dark:bg-gray-800 dark:text-white"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-dark dark:text-gray-300 mb-1">
+                <label className="mb-1 block text-sm font-bold text-neutral-dark dark:text-gray-300">
                   Confirm New Password
                 </label>
                 <input
@@ -197,15 +226,13 @@ export default function AccountSection() {
                   onChange={(e) =>
                     setPasswordData({ ...passwordData, confirmPassword: e.target.value })
                   }
-                  className="w-full border border-border dark:border-gray-600 rounded-lg px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-neutral-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="input bg-white dark:bg-gray-800 dark:text-white"
                   required
                 />
               </div>
-              {passwordError && (
-                <p className="text-sm text-red-500">{passwordError}</p>
-              )}
+              {passwordError && <p className="text-sm font-semibold text-red-500">{passwordError}</p>}
               {passwordSuccess && (
-                <p className="text-sm text-green-600 dark:text-green-400">Password changed successfully!</p>
+                <p className="text-sm font-semibold text-primary">Password changed successfully.</p>
               )}
               <div className="flex gap-3 pt-2">
                 <button
@@ -215,14 +242,14 @@ export default function AccountSection() {
                     setPasswordError("");
                     setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
                   }}
-                  className="flex-1 px-4 py-2.5 border border-border dark:border-gray-600 rounded-lg text-sm font-medium text-neutral-dark dark:text-gray-300 hover:bg-neutralLight dark:hover:bg-gray-800 transition-colors"
+                  className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-neutral-dark transition-colors hover:bg-neutralLight dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={changingPassword}
-                  className="flex-1 px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
                 >
                   {changingPassword ? "Changing..." : "Change Password"}
                 </button>
@@ -232,32 +259,31 @@ export default function AccountSection() {
         </div>
       )}
 
-      {/* Delete Account Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface dark:bg-surface-highlight rounded-xl border border-border dark:border-gray-700 p-6 w-full max-w-md">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="brand-card w-full max-w-md p-6 dark:bg-surface-highlight">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                <AlertTriangle className="h-5 w-5" />
               </div>
-              <h3 className="text-lg font-semibold text-neutral-dark dark:text-white">
+              <h3 className="text-lg font-black text-neutral-dark dark:text-white">
                 Delete Account
               </h3>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete your account? This action cannot be
-              undone and all your data will be permanently removed.
+            <p className="mb-6 text-sm text-text-secondary">
+              Are you sure you want to delete your account? This action cannot be undone and all
+              your data will be permanently removed.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 px-4 py-2.5 border border-border dark:border-gray-600 rounded-lg text-sm font-medium text-neutral-dark dark:text-gray-300 hover:bg-neutralLight dark:hover:bg-gray-800 transition-colors"
+                className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-neutral-dark transition-colors hover:bg-neutralLight dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                className="flex-1 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700"
               >
                 Delete My Account
               </button>

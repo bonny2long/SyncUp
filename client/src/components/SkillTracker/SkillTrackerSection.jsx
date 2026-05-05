@@ -1,22 +1,29 @@
+import { BarChart3 } from "lucide-react";
 import SkillDistributionCards from "./SkillDistributionCards";
 import SkillActivityChart from "./SkillActivityChart";
 import SkillSnapshotList from "./SkillSnapshotList";
 
 export default function SkillTrackerSection() {
   return (
-    <div className="space-y-3">
-      {/* HEADER */}
-      <div className="mb-2">
-        <h2 className="text-xl font-bold text-neutral-dark tracking-tight">
-          Skill Tracker
-        </h2>
-        <p className="text-sm text-text-secondary mt-1">
-          Growth derived from your real work across projects, updates, and
-          mentorship.
-        </p>
+    <div className="page-shell space-y-5">
+      <div className="brand-card flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="page-kicker font-semibold uppercase">
+              Growth signal
+            </p>
+            <h2 className="page-title mt-1">Skill Tracker</h2>
+            <p className="mt-1 max-w-2xl text-sm text-text-secondary">
+              Growth derived from your real work across projects, updates, and
+              mentorship.
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* STEP 1: Where you stand — full width */}
       <StoryCard
         step="1"
         title="Where you stand"
@@ -25,8 +32,7 @@ export default function SkillTrackerSection() {
         <SkillSnapshotList />
       </StoryCard>
 
-      {/* STEP 2 + 3: Side by side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <StoryCard
           step="2"
           title="Where you're heading"
@@ -38,7 +44,7 @@ export default function SkillTrackerSection() {
         <StoryCard
           step="3"
           title="What's driving it"
-          description="Signal sources: Real work across projects and collaboration"
+          description="Signal sources from projects, collaboration, and mentorship"
         >
           <SkillActivityChart />
         </StoryCard>
@@ -48,28 +54,19 @@ export default function SkillTrackerSection() {
 }
 
 function StoryCard({ step, title, description, children }) {
-  // Each step gets a distinct accent color so the three cards feel connected but distinct
-  const accent =
-    step === "1" ? "border-l-emerald-500 shadow-emerald-500/5"
-    : step === "2" ? "border-l-sky-500 shadow-sky-500/5"
-    : "border-l-orange-500 shadow-orange-500/5";
-
   return (
-    <div
-      className={`bg-surface border border-border border-l-4 ${accent} rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow`}
-    >
-      <div className="flex items-center gap-3 mb-1">
-        <span className="text-xs font-bold text-white bg-primary rounded-full w-6 h-6 flex items-center justify-center shrink-0 shadow-sm">
+    <div className="brand-card brand-card-hover relative overflow-hidden p-5">
+      <div className="absolute inset-y-0 left-0 w-1.5 bg-primary" />
+      <div className="mb-1 flex items-center gap-3 pl-1">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white shadow-sm">
           {step}
         </span>
-        <h3 className="font-bold text-neutral-dark text-base tracking-tight">
+        <h3 className="text-base font-bold tracking-tight text-neutral-dark">
           {title}
         </h3>
       </div>
-      <p className="text-xs text-text-secondary mb-4 ml-9 italic">
-        {description}
-      </p>
-      <div className="ml-1">{children}</div>
+      <p className="mb-4 ml-10 text-xs text-text-secondary">{description}</p>
+      <div className="pl-1">{children}</div>
     </div>
   );
 }

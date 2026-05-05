@@ -195,7 +195,8 @@ export default function Register() {
         <ChicagoAccent
           image="groupPhoto"
           variant="panel"
-          className="absolute inset-0 border-0 shadow-none"
+          className="absolute inset-0 border-0 bg-accent shadow-none"
+          imageClassName="object-contain object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-accent/80 via-primary/40 to-accent/90" />
         <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">

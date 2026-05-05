@@ -94,7 +94,7 @@ export default function CohortChat({ cycleId, cycle }) {
 
   if (loading && messages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 bg-surface rounded-lg border border-border">
+      <div className="brand-card flex h-64 flex-col items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
         <p className="text-sm text-text-secondary">Loading cohort hub...</p>
       </div>
@@ -104,8 +104,8 @@ export default function CohortChat({ cycleId, cycle }) {
   return (
     <div className="flex flex-1 gap-4 overflow-hidden animate-fade-in">
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
-        <div className="px-4 py-3 border-b border-border bg-surface-highlight/20 flex items-center justify-between">
+      <div className="brand-card flex flex-1 flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border bg-surface-highlight/50 px-4 py-3">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-primary" />
             <h2 className="font-bold text-neutral-dark">Cohort Channel: {cycle}</h2>
@@ -116,7 +116,7 @@ export default function CohortChat({ cycleId, cycle }) {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/20">
+        <div className="flex-1 space-y-4 overflow-y-auto bg-neutralLight/60 p-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
@@ -141,7 +141,7 @@ export default function CohortChat({ cycleId, cycle }) {
                       </span>
                     </div>
                     <div className={`px-3 py-2 rounded-2xl text-sm shadow-sm ${
-                      isMe ? "bg-primary text-white rounded-tr-none" : "bg-white text-neutral-dark border border-border rounded-tl-none"
+                      isMe ? "bg-primary text-white rounded-tr-none" : "bg-surface text-neutral-dark border border-border rounded-tl-none"
                     }`}>
                       {msg.content}
                     </div>
@@ -161,7 +161,7 @@ export default function CohortChat({ cycleId, cycle }) {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Message your cohort..."
-              className="flex-1 px-4 py-2 bg-background border border-border rounded-xl text-sm transition-all outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="flex-1 rounded-xl border border-border bg-surface px-4 py-2 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary"
               disabled={sending}
             />
             <button
@@ -176,8 +176,8 @@ export default function CohortChat({ cycleId, cycle }) {
       </div>
 
       {/* Members Sidebar */}
-      <div className="w-64 bg-surface border border-border rounded-xl overflow-hidden flex flex-col shadow-sm hidden md:flex">
-        <div className="p-3 border-b border-border bg-surface-highlight/30">
+      <div className="brand-card hidden w-64 flex-col overflow-hidden md:flex">
+        <div className="border-b border-border bg-surface-highlight/50 p-3">
           <h3 className="text-xs font-bold text-text-secondary uppercase">Cohort Members</h3>
         </div>
         <div className="flex-1 overflow-y-auto p-2">

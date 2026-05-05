@@ -120,28 +120,34 @@ const StatCard = memo(function StatCard({
 }) {
   const colorClasses = {
     blue: "text-primary",
-    green: "text-green-500",
-    purple: "text-secondary",
-    yellow: "text-yellow-500",
+    green: "text-emerald-600",
+    purple: "text-primary",
+    yellow: "text-amber-600",
+    red: "text-red-600",
+  };
+  const dotClasses = {
+    green: "bg-emerald-500",
+    yellow: "bg-amber-500",
+    red: "bg-red-500",
+    blue: "bg-primary",
+    purple: "bg-primary",
   };
   return (
-    <div className="bg-surface rounded-xl p-5 border border-border hover:border-accent/30 transition-all duration-200 hover:-translate-y-0.5">
-      <div className="flex justify-between items-start mb-3">
-        <span className={`${colorClasses[color] || "text-gray-400"}`}>
-          {React.createElement(Icon, { size: 24 })}
+    <div className="brand-card brand-card-hover relative overflow-hidden p-5">
+      <div className="absolute inset-y-0 left-0 w-1 bg-primary" />
+      <div className="mb-3 flex items-start justify-between">
+        <span
+          className={`flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ${colorClasses[color] || "text-primary"}`}
+        >
+          {React.createElement(Icon, { size: 20 })}
         </span>
         <span
-          className={`w-2 h-2 rounded-full ${
-            color === "green" ? "bg-green-500"
-            : color === "yellow" ? "bg-yellow-500"
-            : color === "red" ? "bg-red-500"
-            : "bg-primary"
-          }`}
+          className={`h-2 w-2 rounded-full ${dotClasses[color] || "bg-primary"}`}
         ></span>
       </div>
-      <p className="text-3xl font-bold text-primary">{value}</p>
-      <p className="text-sm text-gray-400 mt-1">{label}</p>
-      {subtext && <p className="text-xs text-green-500 mt-1">{subtext}</p>}
+      <p className="text-3xl font-black text-neutral-dark dark:text-white">{value}</p>
+      <p className="mt-1 text-sm font-semibold text-text-secondary">{label}</p>
+      {subtext && <p className="mt-1 text-xs font-semibold text-primary">{subtext}</p>}
     </div>
   );
 });
@@ -153,14 +159,14 @@ const ActivityItem = memo(function ActivityItem({
   color,
 }) {
   return (
-    <div className="py-3 border-b border-border last:border-0 hover:bg-surface-highlight/30 px-2 rounded transition">
+    <div className="rounded-lg border border-transparent px-3 py-3 transition last:border-0 hover:border-primary/20 hover:bg-primary/5">
       <div className="flex items-center gap-3">
-        <span className={color}>
-          {React.createElement(Icon, { size: 18 })}
+        <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 ${color}`}>
+          {React.createElement(Icon, { size: 16 })}
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-primary truncate">{text}</p>
-          <p className="text-xs text-gray-500">{time}</p>
+          <p className="truncate text-sm font-semibold text-neutral-dark dark:text-gray-100">{text}</p>
+          <p className="text-xs text-text-secondary">{time}</p>
         </div>
       </div>
     </div>
@@ -175,20 +181,20 @@ const AlertItem = memo(function AlertItem({
   onClick,
 }) {
   const severityColors = {
-    critical: "border-l-red-500 bg-red-500/10",
-    warning: "border-l-yellow-500 bg-yellow-500/10",
-    info: "border-l-secondary bg-secondary/10",
-    error: "border-l-red-500 bg-red-500/10",
+    critical: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20",
+    warning: "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20",
+    info: "border-primary/20 bg-primary/5",
+    error: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20",
   };
   const iconColors = {
-    critical: "text-red-500",
-    warning: "text-yellow-500",
-    info: "text-secondary",
-    error: "text-red-500",
+    critical: "text-red-600",
+    warning: "text-amber-600",
+    info: "text-primary",
+    error: "text-red-600",
   };
   return (
     <div
-      className={`p-3 rounded-r border-l-4 ${severityColors[severity]} mb-2 ${onClick ? "cursor-pointer hover:opacity-80" : ""}`}
+      className={`mb-2 rounded-xl border p-3 ${severityColors[severity]} ${onClick ? "cursor-pointer hover:opacity-80" : ""}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
@@ -196,10 +202,10 @@ const AlertItem = memo(function AlertItem({
           <span className={iconColors[severity]}>
             {React.createElement(Icon, { size: 16 })}
           </span>
-          <span className="text-sm text-primary">{text}</span>
+          <span className="text-sm font-semibold text-neutral-dark dark:text-gray-100">{text}</span>
         </div>
         {count !== undefined && count !== null && (
-          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+          <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-black text-white">
             {count}
           </span>
         )}
@@ -589,20 +595,21 @@ export default function AdminDashboard() {
   }, []);
 
   const tabs = [
-    { id: "overview", label: "Overview" },
-    { id: "users", label: "Users" },
-    { id: "projects", label: "Projects" },
-    { id: "mentorship", label: "Mentorship" },
-    { id: "governance", label: "Governance" },
-    { id: "cycles", label: "Cycles" },
-    { id: "chat", label: "Chat" },
-    { id: "announcements", label: "Announcements" },
-    { id: "events", label: "Events" },
-    { id: "errors", label: "Errors" },
-    { id: "system", label: "System" },
-    { id: "settings", label: "Settings" },
-    { id: "invitations", label: "Invitations" },
+    { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "users", label: "Users", icon: Users },
+    { id: "projects", label: "Projects", icon: FolderKanban },
+    { id: "mentorship", label: "Mentorship", icon: GraduationCap },
+    { id: "governance", label: "Governance", icon: Medal },
+    { id: "cycles", label: "Cycles", icon: Activity },
+    { id: "chat", label: "Chat", icon: MessageSquare },
+    { id: "announcements", label: "Announcements", icon: Bell },
+    { id: "events", label: "Events", icon: Calendar },
+    { id: "errors", label: "Errors", icon: AlertTriangle },
+    { id: "system", label: "System", icon: Server },
+    { id: "settings", label: "Settings", icon: Settings },
+    { id: "invitations", label: "Invitations", icon: UserPlus },
   ];
+  const activeTabConfig = tabs.find((tab) => tab.id === activeTab) || tabs[0];
 
   // Load errors when Errors tab is active
   const loadErrors = async (page = 1) => {
@@ -1369,22 +1376,33 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+      <div className="flex min-h-screen items-center justify-center bg-neutralLight">
+        <div className="brand-card flex flex-col items-center gap-3 p-8">
+          <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm font-bold text-text-secondary">Loading admin dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-neutralLight dark:bg-[#1a1a2e]">
       {/* Header */}
-      <header className="bg-surface border-b border-border px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-primary">Admin Dashboard</h1>
+      <header className="px-4 pt-4 md:px-6">
+        <div className="brand-card flex items-center justify-between px-4 py-3">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-white">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase text-primary">iCAA Admin</p>
+              <h1 className="truncate text-xl font-black text-neutral-dark dark:text-white">
+                Admin Dashboard
+              </h1>
+            </div>
             <button
               onClick={() => navigate("/collaboration")}
-              className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors"
+              className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-bold text-text-secondary transition-colors hover:bg-primary/10 hover:text-primary sm:flex"
             >
               <ChevronRight className="w-4 h-4 rotate-180" />
               Back to Community
@@ -1393,19 +1411,19 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4 relative" ref={menuRef}>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-full hover:bg-surface-highlight transition"
+              className="rounded-xl border border-border p-2 text-neutral-dark transition hover:border-primary/30 hover:bg-primary/10 hover:text-primary dark:text-white"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-haspopup="true"
               aria-expanded={menuOpen}
             >
               {menuOpen ?
-                <X className="w-5 h-5 text-neutral-dark" />
-              : <Menu className="w-5 h-5 text-neutral-dark" />}
+                <X className="w-5 h-5" />
+              : <Menu className="w-5 h-5" />}
             </button>
 
             {/* Hamburger Menu */}
             {menuOpen && (
-              <div className="absolute right-0 top-12 w-56 bg-surface shadow-lg rounded-xl border border-border z-10 overflow-hidden">
+              <div className="absolute right-0 top-12 z-10 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
                 <ul className="text-sm">
                   <li>
                     <button
@@ -1413,7 +1431,7 @@ export default function AdminDashboard() {
                         setShowHelp(true);
                         setMenuOpen(false);
                       }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-neutralLight text-neutral-dark transition-colors flex items-center gap-3"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left font-semibold text-neutral-dark transition-colors hover:bg-primary/10 hover:text-primary"
                     >
                       <HelpCircle className="w-4 h-4 text-gray-500" />
                       Help & Support
@@ -1426,7 +1444,7 @@ export default function AdminDashboard() {
                         toggleTheme();
                         setMenuOpen(false);
                       }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-neutralLight text-neutral-dark transition-colors flex items-center justify-between"
+                      className="flex w-full items-center justify-between px-4 py-2.5 text-left font-semibold text-neutral-dark transition-colors hover:bg-primary/10 hover:text-primary"
                       aria-label={
                         isDarkMode ?
                           "Switch to light mode"
@@ -1473,35 +1491,47 @@ export default function AdminDashboard() {
       />
 
       {/* Navigation Tabs */}
-        <nav
-          className="bg-surface border-b border-border px-6"
-          aria-label="Admin tabs"
-        >
-          <div className="flex gap-1" role="tablist">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                aria-label={tab.label}
-                className={`px-4 py-3 text-sm font-medium transition-all relative ${
-                  activeTab === tab.id ?
-                    "text-primary font-semibold"
-                  : "text-gray-400 hover:text-white"
-                }`}
-              >
-                {tab.label}
-                {activeTab === tab.id && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"></span>
-                )}
-              </button>
-            ))}
+      <nav className="px-4 py-4 md:px-6" aria-label="Admin tabs">
+        <div className="brand-card overflow-hidden p-2">
+          <div className="mb-3 flex items-center gap-3 px-2 pt-1">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              {React.createElement(activeTabConfig.icon, { className: "h-4 w-4" })}
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase text-primary">Current Workspace</p>
+              <h2 className="text-lg font-black text-neutral-dark dark:text-white">
+                {activeTabConfig.label}
+              </h2>
+            </div>
           </div>
-        </nav>
+          <div className="flex gap-1 overflow-x-auto" role="tablist">
+            {tabs.map((tab) => {
+              const TabIcon = tab.icon;
+              const selected = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  role="tab"
+                  aria-selected={selected}
+                  aria-label={tab.label}
+                  className={`inline-flex flex-shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-black transition-all ${
+                    selected
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-text-secondary hover:bg-primary/10 hover:text-primary"
+                  }`}
+                >
+                  <TabIcon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
 
       {/* Content */}
-      <main className="p-6">
+      <main className="px-4 pb-6 md:px-6">
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Stats Cards */}
@@ -1662,17 +1692,6 @@ export default function AdminDashboard() {
                           },
                         },
                       ],
-                      legend: {
-                        position: "top",
-                        item: {
-                          label: {
-                            color: isDarkMode ? "#fdfdfd" : "#374151"
-                          },
-                          marker: {
-                             padding: 4
-                          }
-                        }
-                      },
                     }}
                   />
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Bell } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { fetchNotifications, fetchUnifiedCounts } from "../utils/api";
@@ -19,6 +19,31 @@ export default function NotificationBell() {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
 
+  const loadCounts = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const data = await fetchUnifiedCounts(user.id);
+      setCounts(data);
+    } catch (err) {
+      console.error("Failed to load counts:", err);
+    }
+  }, [user?.id]);
+
+  const loadNotifications = useCallback(async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    try {
+      const data = await fetchNotifications(user.id, 20);
+      setNotifications(data);
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
   // Load unified counts on mount
   useEffect(() => {
     if (!user?.id) return;
@@ -27,14 +52,14 @@ export default function NotificationBell() {
     // Poll for new counts every 5 seconds
     const interval = setInterval(loadCounts, 5000);
     return () => clearInterval(interval);
-  }, [user?.id]);
+  }, [loadCounts, user?.id]);
 
   // Load notifications data when dropdown opens
   useEffect(() => {
     if (showDropdown && user?.id) {
       loadNotifications();
     }
-  }, [showDropdown, user?.id]);
+  }, [loadNotifications, showDropdown, user?.id]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -51,31 +76,6 @@ export default function NotificationBell() {
     }
   }, [showDropdown]);
 
-  const loadCounts = async () => {
-    if (!user?.id) return;
-
-    try {
-      const data = await fetchUnifiedCounts(user.id);
-      setCounts(data);
-    } catch (err) {
-      console.error("Failed to load counts:", err);
-    }
-  };
-
-  const loadNotifications = async () => {
-    if (!user?.id) return;
-
-    setLoading(true);
-    try {
-      const data = await fetchNotifications(user.id, 20);
-      setNotifications(data);
-    } catch (err) {
-      console.error("Failed to load notifications:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleRefresh = () => {
     loadNotifications();
     loadCounts();
@@ -91,14 +91,20 @@ export default function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className={`relative rounded-xl border p-2 transition-colors ${
+          showDropdown
+            ? "border-primary bg-primary/10 text-primary"
+            : "border-transparent text-gray-600 hover:border-primary/20 hover:bg-primary/10 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800"
+        }`}
         aria-label="Notifications"
       >
         <Bell
-          className={`w-5 h-5 transition-transform ${
+          className={`h-5 w-5 transition-transform ${
             !digestMode && isActive
-              ? "text-primary animate-bounce"
-              : "text-gray-600 dark:text-gray-400"
+              ? "animate-bounce text-primary"
+              : showDropdown
+                ? "text-primary"
+                : "text-current"
           }`}
         />
 

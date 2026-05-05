@@ -47,28 +47,63 @@ export default function MentorView() {
   const completedSessions = sessions.filter((s) => s.status === "completed");
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="page-shell flex flex-col gap-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-primary mb-2">Mentorship</h1>
-        <p className="text-sm text-text-secondary">
-          Review session requests and guide the next generation of developers
-        </p>
+      <div className="relative overflow-hidden rounded-xl border border-border bg-surface p-5 shadow-sm">
+        <div className="absolute inset-y-0 left-0 w-1.5 bg-primary" />
+        <div className="flex flex-col gap-4 pl-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="page-kicker font-semibold uppercase">
+              Mentorship Bridge
+            </p>
+            <h1 className="page-title mt-1">Mentorship</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
+              Review session requests, guide current interns, and keep the
+              mentorship pipeline moving.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg border border-border bg-surface-highlight px-3 py-2">
+              <p className="text-lg font-black text-primary">
+                {pendingSessions.length}
+              </p>
+              <p className="text-[10px] font-semibold uppercase text-text-secondary">
+                Pending
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface-highlight px-3 py-2">
+              <p className="text-lg font-black text-primary">
+                {acceptedSessions.length}
+              </p>
+              <p className="text-[10px] font-semibold uppercase text-text-secondary">
+                Active
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface-highlight px-3 py-2">
+              <p className="text-lg font-black text-primary">
+                {completedSessions.length}
+              </p>
+              <p className="text-[10px] font-semibold uppercase text-text-secondary">
+                Done
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-border">
+      <div className="brand-card flex flex-wrap gap-1 p-1">
         <button
           onClick={() => setActiveTab("requests")}
-          className={`px-4 py-3 font-medium transition-all relative ${
+          className={`relative rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "requests" ?
-              "text-primary border-b-2 border-primary"
-            : "text-text-secondary hover:text-neutral-dark"
+              "bg-primary text-white shadow-sm"
+            : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"
           }`}
         >
           Incoming Requests
           {pendingSessions.length > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs text-white">
               {pendingSessions.length}
             </span>
           )}
@@ -76,10 +111,10 @@ export default function MentorView() {
 
         <button
           onClick={() => setActiveTab("sessions")}
-          className={`px-4 py-3 font-medium transition-all ${
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "sessions" ?
-              "text-secondary border-b-2 border-secondary"
-            : "text-text-secondary hover:text-neutral-dark"
+              "bg-primary text-white shadow-sm"
+            : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"
           }`}
         >
           My Sessions ({acceptedSessions.length})
@@ -87,10 +122,10 @@ export default function MentorView() {
 
         <button
           onClick={() => setActiveTab("history")}
-          className={`px-4 py-3 font-medium transition-all ${
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "history" ?
-              "text-accent border-b-2 border-accent"
-            : "text-text-secondary hover:text-neutral-dark"
+              "bg-primary text-white shadow-sm"
+            : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"
           }`}
         >
           History ({completedSessions.length})
@@ -98,10 +133,10 @@ export default function MentorView() {
 
         <button
           onClick={() => setActiveTab("leaderboard")}
-          className={`px-4 py-3 font-medium transition-all ${
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "leaderboard" ?
-              "text-amber-600 border-b-2 border-amber-500"
-            : "text-text-secondary hover:text-neutral-dark"
+              "bg-primary text-white shadow-sm"
+            : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"
           }`}
         >
           Leaderboard
@@ -109,10 +144,10 @@ export default function MentorView() {
 
         <button
           onClick={() => setActiveTab("encouragement")}
-          className={`px-4 py-3 font-medium transition-all ${
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "encouragement" ?
-              "text-primary border-b-2 border-primary"
-            : "text-text-secondary hover:text-neutral-dark"
+              "bg-primary text-white shadow-sm"
+            : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"
           }`}
         >
           Encouragement

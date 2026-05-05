@@ -5,7 +5,6 @@ import { fetchUpdates } from "../../utils/api";
 import { getErrorMessage } from "../../utils/errorHandler";
 import { useProjects } from "../../hooks/useProjects"; // Custom hook integrated
 import { BarChart3, MousePointerClick } from "lucide-react";
-import SkeletonLoader from "../../components/shared/SkeletonLoader";
 
 // Lazy load components
 const CreateProjectForm = lazy(() => import("./CreateProjectForm"));
@@ -107,7 +106,7 @@ function ActivityPanelSkeleton() {
 
 function TeamAnalyticsSkeleton() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="page-shell flex flex-col gap-6">
       {/* Project Selector Skeleton */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface border border-border rounded-xl p-4 shadow-sm">
         <div className="flex items-center gap-3">
@@ -177,7 +176,14 @@ export default function CollaborationHub() {
         setLastFetchTime(Date.now());
       }
     }
-  }, [projectsLoading, userProjects, discoverProjects]);
+  }, [
+    CACHE_DURATION,
+    cachedProjects.length,
+    discoverProjects,
+    lastFetchTime,
+    projectsLoading,
+    userProjects,
+  ]);
 
   // Use cached data for initial render, but still show fresh data
   const displayProjects =
@@ -190,7 +196,6 @@ export default function CollaborationHub() {
     : discoverProjects;
 
   const [allUpdates, setAllUpdates] = useState([]);
-  const [updatesLoading, setUpdatesLoading] = useState(true);
   const [updatesError, setUpdatesError] = useState("");
 
   // Combined status - only show loading on first load
@@ -223,14 +228,11 @@ export default function CollaborationHub() {
     if (!currentUser?.id) return;
     try {
       setUpdatesError("");
-      setUpdatesLoading(true);
       const updatesData = await fetchUpdates();
       setAllUpdates(updatesData);
     } catch (err) {
       const { message } = getErrorMessage(err);
       setUpdatesError(message);
-    } finally {
-      setUpdatesLoading(false);
     }
   }, [currentUser?.id]);
 
@@ -348,7 +350,7 @@ export default function CollaborationHub() {
       )}
 
       {isMentor && (
-        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-6 rounded-xl border border-primary/20 dark:from-primary/20 dark:to-secondary/20">
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-6">
           <h3 className="text-lg font-bold text-primary mb-2">
             Share Your Expertise
           </h3>
@@ -359,14 +361,17 @@ export default function CollaborationHub() {
       )}
 
       {/* STATS CARDS */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {statsCards.map((stat, idx) => (
           <div
             key={idx}
-            className="bg-surface p-4 rounded-lg border border-border shadow-sm"
+            className="brand-card brand-card-hover relative overflow-hidden p-4"
           >
-            <p className="text-xs text-text-secondary mb-2">{stat.label}</p>
-            <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+            <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
+            <p className="mb-2 text-xs font-semibold uppercase text-text-secondary">
+              {stat.label}
+            </p>
+            <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
       </div>
@@ -378,13 +383,13 @@ export default function CollaborationHub() {
       )}
 
       {/* NAVIGATION */}
-      <div className="flex gap-4 border-b border-border">
+      <div className="brand-card flex flex-wrap gap-1 p-1">
         <button
           onClick={() => handleTabChange(isMentor ? "browse" : "mywork")}
-          className={`px-4 py-3 font-medium transition-all duration-300 ${
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
             activeTab === (isMentor ? "browse" : "mywork") ?
-              "text-primary border-b-2 border-primary"
-            : "text-text-secondary"
+              "bg-primary text-white shadow-sm"
+            : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"
           }`}
         >
           {isMentor ? "Browse Projects" : "My Work"} (
@@ -393,10 +398,10 @@ export default function CollaborationHub() {
 
         <button
           onClick={() => handleTabChange(isMentor ? "myprojects" : "discover")}
-          className={`px-4 py-3 font-medium transition-all duration-300 ${
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${
             activeTab === (isMentor ? "myprojects" : "discover") ?
-              "text-accent border-b-2 border-accent"
-            : "text-text-secondary"
+              "bg-primary text-white shadow-sm"
+            : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"
           }`}
         >
           {isMentor ? "My Projects" : "Discover"} (
@@ -406,7 +411,7 @@ export default function CollaborationHub() {
         {(isIntern || mentorOwnsProjects) && (
           <button
             onClick={() => handleTabChange("requests")}
-            className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "requests" ? "text-secondary border-b-2 border-secondary" : "text-text-secondary"}`}
+            className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${activeTab === "requests" ? "bg-primary text-white shadow-sm" : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"}`}
           >
             Requests
           </button>
@@ -414,7 +419,7 @@ export default function CollaborationHub() {
 
         <button
           onClick={() => handleTabChange("activity")}
-          className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "activity" ? "text-secondary border-b-2 border-secondary" : "text-text-secondary"}`}
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${activeTab === "activity" ? "bg-primary text-white shadow-sm" : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"}`}
         >
           {isMentor ? "Contributions" : "Activity"} ({userUpdates.length})
         </button>
@@ -429,7 +434,7 @@ export default function CollaborationHub() {
                 setTeamAnalyticsProject(displayProjects[0]);
               }
             }}
-            className={`px-4 py-3 font-medium transition-all duration-300 ${activeTab === "team" ? "text-secondary border-b-2 border-secondary" : "text-text-secondary"}`}
+            className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${activeTab === "team" ? "bg-primary text-white shadow-sm" : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"}`}
           >
             Team Analytics
           </button>
@@ -441,7 +446,7 @@ export default function CollaborationHub() {
         {activeTab === "team" ?
           <div className="w-full animate-fade-in">
             {/* Project Selector - Always visible */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface border border-border rounded-xl p-4 shadow-sm mb-6">
+            <div className="brand-card mb-6 flex flex-col items-center justify-between gap-4 p-4 md:flex-row">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg text-primary">
                   <BarChart3 className="w-5 h-5" />
@@ -489,7 +494,7 @@ export default function CollaborationHub() {
               </div>
             }
           </div>
-        : <div className="grid grid-cols-2 gap-6 text-left">
+        : <div className="grid grid-cols-1 gap-6 text-left xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.78fr)]">
             {/* LEFT COLUMN: Panels */}
             <div className="text-left">
               {activeTab === (isMentor ? "browse" : "discover") && (
@@ -533,8 +538,8 @@ export default function CollaborationHub() {
 
               {activeTab === "activity" && (
                 <div className="space-y-4">
-                  <div className="bg-surface rounded-lg border border-border p-5">
-                    <h2 className="text-lg font-bold text-secondary mb-1">
+                  <div className="brand-card p-5">
+                    <h2 className="text-lg font-bold text-primary mb-1">
                       {isMentor ? "Your Contributions" : "Your Updates"}
                     </h2>
                     <p className="text-sm text-text-secondary">
@@ -543,7 +548,7 @@ export default function CollaborationHub() {
 
                     <div className="grid grid-cols-2 gap-4 mt-6">
                       <div className="p-3 bg-surface-highlight rounded-xl border border-border">
-                        <p className="text-2xl font-bold text-secondary">
+                        <p className="text-2xl font-bold text-primary">
                           {
                             allUpdates.filter(
                               (u) => u.user_id === currentUser?.id,
@@ -600,7 +605,7 @@ export default function CollaborationHub() {
             {/* RIGHT COLUMN: Previews / Activity Feed */}
             <div className="text-left">
               {(activeTab === "discover" || activeTab === "browse") && (
-                <div className="bg-surface rounded-lg border border-border p-6">
+                <div className="brand-card p-6">
                   <h2 className="text-lg font-bold text-neutral-dark mb-4">
                     Project Preview
                   </h2>
@@ -639,8 +644,8 @@ export default function CollaborationHub() {
                       )}
                     </div>
                   : <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                        <MousePointerClick className="w-6 h-6 text-accent" />
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <MousePointerClick className="w-6 h-6 text-primary" />
                       </div>
                       <p className="text-sm font-medium text-neutral-dark">
                         Select a project

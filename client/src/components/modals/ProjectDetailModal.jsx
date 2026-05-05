@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ExternalLink, FileText, Github, Send, X } from "lucide-react";
+import {
+  Activity,
+  ExternalLink,
+  FileText,
+  Github,
+  MessageSquare,
+  Send,
+  Star,
+  Users,
+  X,
+} from "lucide-react";
 import ConfirmModal from "../shared/ConfirmModal";
 import {
   updateProjectStatus,
@@ -399,28 +409,47 @@ export default function ProjectDetailModal({
       <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 p-2 rounded-full hover:bg-surface-highlight transition"
+          className="absolute right-4 top-4 z-10 rounded-xl border border-border bg-surface p-2 text-text-secondary transition hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
         >
-          <X className="w-5 h-5 text-text-secondary" />
+          <X className="h-5 w-5" />
         </button>
 
-        <h2 className="text-xl font-semibold text-primary mb-1 pr-8">
-          {localProject.title}
-        </h2>
-        <p className="text-text-secondary text-sm mb-1">
-          {localProject.description}
-        </p>
-        {skillIdeas.length > 0 && (
-          <p className="text-xs text-text-secondary mb-3">
-            <span className="font-medium">Focus:</span> {skillIdeas.join(", ")}
-          </p>
-        )}
+        <div className="mb-4 rounded-xl border border-border bg-surface-highlight/50 p-5 pr-14">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase text-primary">
+                Project Workspace
+              </p>
+              <h2 className="mt-1 text-2xl font-black text-neutral-dark">
+                {localProject.title}
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm text-text-secondary">
+                {localProject.description}
+              </p>
+            </div>
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-black capitalize text-primary">
+              {localProject.status || "active"}
+            </span>
+          </div>
+          {skillIdeas.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {skillIdeas.map((skill) => (
+                <span
+                  key={skill}
+                  className="rounded-full border border-border bg-white px-2.5 py-1 text-xs font-semibold text-neutral-dark"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="mb-3">
           {linkEditing ? (
             <form
               onSubmit={handleLinkSave}
-              className="rounded-lg border border-border bg-surface-highlight/50 p-3 space-y-3"
+              className="space-y-3 rounded-xl border border-border bg-surface-highlight/50 p-4"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <label className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
@@ -552,7 +581,7 @@ export default function ProjectDetailModal({
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-1.5 text-sm text-neutral-dark hover:border-primary/40 hover:text-primary transition"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-highlight px-3 py-1.5 text-sm font-bold text-neutral-dark transition hover:border-primary/40 hover:text-primary"
                 >
                   {React.createElement(link.icon, { className: "w-4 h-4" })}
                   {link.label}
@@ -563,8 +592,9 @@ export default function ProjectDetailModal({
                   type="button"
                   onClick={handleFeatureProject}
                   disabled={featureSaving || isFeaturedProject}
-                  className="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:text-primary hover:bg-surface-highlight disabled:opacity-60 disabled:cursor-default"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-bold text-text-secondary hover:bg-surface-highlight hover:text-primary disabled:cursor-default disabled:opacity-60"
                 >
+                  <Star className="h-4 w-4" />
                   {isFeaturedProject ?
                     "Featured on Profile"
                   : featureSaving ?
@@ -579,7 +609,7 @@ export default function ProjectDetailModal({
                     resetLinkDraft();
                     setLinkEditing(true);
                   }}
-                  className="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-sm text-text-secondary hover:text-primary hover:bg-surface-highlight"
+                  className="inline-flex items-center rounded-lg border border-border px-3 py-1.5 text-sm font-bold text-text-secondary hover:bg-surface-highlight hover:text-primary"
                 >
                   {hasCaseStudy || projectLinks.length > 0 ?
                     "Edit Case Study"
@@ -590,36 +620,49 @@ export default function ProjectDetailModal({
           )}
         </div>
 
-        <div className="flex gap-1 border-b border-border mb-4 mt-3">
-          {["overview", "activity", "discussion"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-medium capitalize transition-all border-b-2 -mb-px ${
-                activeTab === tab ?
-                  "border-primary text-primary"
-                : "border-transparent text-text-secondary hover:text-neutral-dark"
-              }`}
-            >
-              {tab === "activity" ?
-                `Activity${displayUpdates.length > 0 ? ` (${displayUpdates.length})` : ""}`
-              : tab === "discussion" ?
-                `Discussion${discussionMessages.length > 0 ? ` (${discussionMessages.length})` : ""}`
-              : "Overview"}
-            </button>
-          ))}
+        <div className="mb-4 mt-3 flex gap-1 rounded-xl border border-border bg-surface-highlight/50 p-1">
+          {[
+            { id: "overview", label: "Overview", icon: FileText },
+            {
+              id: "activity",
+              label: `Activity${displayUpdates.length > 0 ? ` (${displayUpdates.length})` : ""}`,
+              icon: Activity,
+            },
+            {
+              id: "discussion",
+              label: `Discussion${discussionMessages.length > 0 ? ` (${discussionMessages.length})` : ""}`,
+              icon: MessageSquare,
+            },
+          ].map((tab) => {
+            const TabIcon = tab.icon;
+            const selected = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-black transition ${
+                  selected ?
+                    "bg-primary text-white shadow-sm"
+                  : "text-text-secondary hover:bg-white hover:text-primary"
+                }`}
+              >
+                <TabIcon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {activeTab === "overview" && (
           <div className="space-y-5">
             {currentUser && (
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface-highlight/40 p-3">
                 {validActions.length > 1 ?
                   <select
                     value={localProject.status}
                     onChange={(e) => handleStatusChange(e.target.value)}
                     disabled={statusLoading}
-                    className="border border-border bg-surface text-neutral-dark rounded-lg px-3 py-1 text-sm hover:border-primary transition"
+                    className="rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold text-neutral-dark transition hover:border-primary"
                   >
                     {validActions.map((action) => (
                       <option
@@ -631,7 +674,7 @@ export default function ProjectDetailModal({
                       </option>
                     ))}
                   </select>
-                : <span className="text-sm px-3 py-1 rounded-lg bg-surface-highlight text-text-secondary capitalize">
+                : <span className="rounded-lg bg-white px-3 py-2 text-sm font-bold capitalize text-text-secondary">
                     {localProject.status}
                   </span>
                 }
@@ -640,7 +683,7 @@ export default function ProjectDetailModal({
                   <button
                     onClick={handleMembership}
                     disabled={loading}
-                    className={`text-sm px-3 py-1 rounded-lg border transition ${
+                    className={`rounded-lg border px-3 py-2 text-sm font-bold transition ${
                       localProject.is_member ?
                         "border-red-500/30 text-red-500 hover:bg-red-500/10"
                       : "border-primary text-primary hover:bg-primary/10"
@@ -651,7 +694,7 @@ export default function ProjectDetailModal({
                 )}
 
                 {localProject.visibility === "public" && (
-                  <span className="text-sm px-3 py-1 rounded-lg bg-blue-500/10 text-blue-500">
+                  <span className="rounded-lg bg-primary/10 px-3 py-2 text-sm font-bold text-primary">
                     Public - View Only
                   </span>
                 )}
@@ -661,7 +704,7 @@ export default function ProjectDetailModal({
             {hasCaseStudy && (
               <div className="rounded-xl border border-border bg-surface-highlight/40 p-4">
                 <div className="flex items-center justify-between gap-3 mb-3">
-                  <h3 className="text-sm font-semibold text-primary">
+                  <h3 className="text-sm font-black text-primary">
                     Case Study
                   </h3>
                   {techStackItems.length > 0 && (
@@ -669,7 +712,7 @@ export default function ProjectDetailModal({
                       {techStackItems.slice(0, 6).map((item) => (
                         <span
                           key={item}
-                          className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                        className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary"
                         >
                           {item}
                         </span>
@@ -715,7 +758,8 @@ export default function ProjectDetailModal({
             )}
 
             <div>
-              <h3 className="text-sm font-semibold text-primary mb-2">
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-black text-primary">
+                <Users className="h-4 w-4" />
                 Team Members
               </h3>
               {displayTeam.length > 0 ?
@@ -723,9 +767,9 @@ export default function ProjectDetailModal({
                   {displayTeam.map((member) => (
                     <div
                       key={member.id}
-                      className="p-3 bg-surface-highlight rounded-lg border border-border"
+                      className="rounded-xl border border-border bg-surface-highlight p-3"
                     >
-                      <p className="font-medium text-neutral-dark text-sm">
+                      <p className="text-sm font-black text-neutral-dark">
                         {member.name}
                       </p>
                       <p className="text-xs text-text-secondary capitalize">
@@ -741,7 +785,7 @@ export default function ProjectDetailModal({
                     .map((name) => (
                       <span
                         key={name}
-                        className="text-[11px] px-2 py-1 bg-surface-highlight border border-border text-neutral-dark rounded-full"
+                        className="rounded-full border border-border bg-surface-highlight px-2 py-1 text-[11px] font-semibold text-neutral-dark"
                       >
                         {name}
                       </span>
@@ -779,21 +823,22 @@ export default function ProjectDetailModal({
         {activeTab === "activity" && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-primary mb-2">
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-black text-primary">
+                <Activity className="h-4 w-4" />
                 Recent Updates
               </h3>
               {displayUpdates.length === 0 ?
-                <p className="text-xs text-text-secondary">
+                <p className="rounded-xl border border-dashed border-border bg-surface-highlight/50 p-6 text-center text-xs text-text-secondary">
                   No updates for this project yet.
                 </p>
               : <div className="flex flex-col gap-2">
                   {displayUpdates.slice(0, 10).map((u) => (
                     <div
                       key={u.id}
-                      className="p-3 border border-border rounded-xl bg-surface-highlight"
+                      className="rounded-xl border border-border bg-surface-highlight p-3"
                     >
                       <p className="text-[12px] mb-1">
-                        <span className="font-semibold text-secondary">
+                        <span className="font-black text-primary">
                           {u.user_name}
                         </span>{" "}
                         - {new Date(u.created_at).toLocaleDateString()}
@@ -815,9 +860,9 @@ export default function ProjectDetailModal({
                     {portfolioDetails.sessions.map((session) => (
                       <div
                         key={session.id}
-                        className="p-3 bg-surface-highlight rounded-lg border border-border"
+                        className="rounded-xl border border-border bg-surface-highlight p-3"
                       >
-                        <p className="font-medium text-blue-400 text-sm">
+                        <p className="text-sm font-black text-primary">
                           {session.topic}
                         </p>
                         <p className="text-xs text-text-secondary mt-0.5">
@@ -834,7 +879,7 @@ export default function ProjectDetailModal({
         {activeTab === "discussion" && (
           <div className="space-y-4">
             {!currentUser ? (
-              <p className="text-xs text-text-secondary">
+              <p className="rounded-xl border border-dashed border-border bg-surface-highlight/50 p-6 text-center text-xs text-text-secondary">
                 Sign in to view project discussion.
               </p>
             ) : discussionLoading ? (
@@ -846,7 +891,7 @@ export default function ProjectDetailModal({
                 <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                   {discussionMessages.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-border bg-surface-highlight/50 px-4 py-6 text-center">
-                      <p className="text-sm font-medium text-neutral-dark">
+                      <p className="text-sm font-black text-neutral-dark">
                         No project discussion yet
                       </p>
                       <p className="text-xs text-text-secondary mt-1">
@@ -857,11 +902,11 @@ export default function ProjectDetailModal({
                     discussionMessages.map((message) => (
                       <div
                         key={message.id}
-                        className="rounded-lg border border-border bg-surface-highlight p-3"
+                        className="rounded-xl border border-border bg-surface-highlight p-3"
                       >
                         <div className="flex items-center justify-between gap-3 mb-1">
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-neutral-dark truncate">
+                            <p className="truncate text-sm font-black text-neutral-dark">
                               {message.user_name}
                             </p>
                             <p className="text-xs text-text-secondary capitalize">
@@ -899,14 +944,14 @@ export default function ProjectDetailModal({
                       }
                       rows={2}
                       placeholder="Ask a project question or share a decision..."
-                      className="flex-1 min-h-[44px] max-h-28 resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark outline-none focus:border-primary"
+                      className="min-h-[44px] max-h-28 flex-1 resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark outline-none focus:border-primary"
                     />
                     <button
                       type="submit"
                       disabled={
                         discussionPosting || discussionDraft.trim().length === 0
                       }
-                      className="h-11 w-11 inline-flex items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label="Post project discussion"
                     >
                       <Send className="w-4 h-4" />

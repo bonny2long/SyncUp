@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import { useUser } from "../../context/UserContext";
 import ToggleSwitch from "../shared/ToggleSwitch";
+import {
+  AtSign,
+  Bell,
+  Briefcase,
+  CalendarDays,
+  Heart,
+  Mail,
+  MessageSquare,
+  Repeat,
+  Users,
+} from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
@@ -92,109 +103,161 @@ export default function NotificationsSection() {
     return `Saved at ${lastSaved.toLocaleTimeString()}`;
   };
 
+  const groups = [
+    {
+      title: "Always-On Channels",
+      description: "The messages and direct activity that keep work moving.",
+      items: [
+        {
+          key: "emailNotifications",
+          icon: Mail,
+          label: "Email Notifications",
+          description: "Receive notifications via email",
+        },
+        {
+          key: "directMessages",
+          icon: MessageSquare,
+          label: "Direct messages",
+          description: "Messages sent directly to you",
+        },
+        {
+          key: "teamMentions",
+          icon: AtSign,
+          label: "Mentions",
+          description: "When someone mentions you in a project or conversation",
+        },
+      ],
+    },
+    {
+      title: "Community Updates",
+      description: "Signals from SyncChat, HQ, and shared opportunities.",
+      items: [
+        {
+          key: "channelMessages",
+          icon: Users,
+          label: "Channel messages",
+          description: "Community channel activity when enabled",
+        },
+        {
+          key: "opportunities",
+          icon: Briefcase,
+          label: "Opportunities",
+          description: "New opportunities shared by the community",
+        },
+        {
+          key: "events",
+          icon: CalendarDays,
+          label: "Events",
+          description: "New community events",
+        },
+        {
+          key: "encouragements",
+          icon: Heart,
+          label: "Encouragements",
+          description: "Community encouragement activity",
+        },
+      ],
+    },
+    {
+      title: "Project And Digest",
+      description: "Less urgent updates you may want batched over time.",
+      items: [
+        {
+          key: "newJoinRequests",
+          icon: Users,
+          label: "New project join requests",
+          description: "When someone wants to join your project",
+        },
+        {
+          key: "sessionReminders",
+          icon: CalendarDays,
+          label: "Mentorship session reminders",
+          description: "Upcoming mentorship session notifications",
+        },
+        {
+          key: "projectUpdates",
+          icon: Repeat,
+          label: "Project updates",
+          description: "Progress updates from your projects",
+        },
+        {
+          key: "weeklySummary",
+          icon: Mail,
+          label: "Weekly activity summary",
+          description: "A weekly digest of your activity",
+        },
+        {
+          key: "digestMode",
+          icon: Repeat,
+          label: "Daily digest mode",
+          description: "Batch non-urgent updates when digest delivery is added",
+        },
+      ],
+    },
+  ];
+
   return (
-    <div className="bg-surface dark:bg-surface-highlight rounded-xl border border-border dark:border-gray-700 p-6">
-      <h3 className="text-lg font-semibold text-neutral-dark dark:text-white mb-1">
-        Notification Preferences
-      </h3>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        Choose how you want to be notified
-      </p>
-
-      <div className="space-y-6">
-        {/* Email Notifications */}
-        <div className="pb-4 border-b border-border dark:border-gray-700">
-          <ToggleSwitch
-            checked={settings.emailNotifications}
-            onChange={() => handleToggle("emailNotifications")}
-            label="Email Notifications"
-            description="Receive notifications via email"
-          />
+    <div className="brand-card overflow-hidden">
+      <div className="flex items-center gap-3 border-b border-border p-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Bell className="h-5 w-5" />
         </div>
-
-        {/* Notify me about */}
         <div>
-          <h4 className="text-sm font-medium text-neutral-dark dark:text-gray-300 mb-4">
-            Notify me about
-          </h4>
-          <div className="space-y-4">
-            <ToggleSwitch
-              checked={settings.newJoinRequests}
-              onChange={() => handleToggle("newJoinRequests")}
-              label="New project join requests"
-              description="When someone wants to join your project"
-            />
-            <ToggleSwitch
-              checked={settings.teamMentions}
-              onChange={() => handleToggle("teamMentions")}
-              label="Team member mentions"
-              description="When someone mentions you in a project"
-            />
-            <ToggleSwitch
-              checked={settings.sessionReminders}
-              onChange={() => handleToggle("sessionReminders")}
-              label="Mentorship session reminders"
-              description="Upcoming mentorship session notifications"
-            />
-            <ToggleSwitch
-              checked={settings.projectUpdates}
-              onChange={() => handleToggle("projectUpdates")}
-              label="Project updates"
-              description="Progress updates from your projects"
-            />
-            <ToggleSwitch
-              checked={settings.channelMessages}
-              onChange={() => handleToggle("channelMessages")}
-              label="Channel messages"
-              description="Community channel activity when enabled"
-            />
-            <ToggleSwitch
-              checked={settings.directMessages}
-              onChange={() => handleToggle("directMessages")}
-              label="Direct messages"
-              description="Messages sent directly to you"
-            />
-            <ToggleSwitch
-              checked={settings.opportunities}
-              onChange={() => handleToggle("opportunities")}
-              label="Opportunities"
-              description="New opportunities shared by the community"
-            />
-            <ToggleSwitch
-              checked={settings.events}
-              onChange={() => handleToggle("events")}
-              label="Events"
-              description="New community events"
-            />
-            <ToggleSwitch
-              checked={settings.encouragements}
-              onChange={() => handleToggle("encouragements")}
-              label="Encouragements"
-              description="Community encouragement activity"
-            />
-            <ToggleSwitch
-              checked={settings.weeklySummary}
-              onChange={() => handleToggle("weeklySummary")}
-              label="Weekly activity summary"
-              description="A weekly digest of your activity"
-            />
-            <ToggleSwitch
-              checked={settings.digestMode}
-              onChange={() => handleToggle("digestMode")}
-              label="Daily digest mode"
-              description="Batch non-urgent updates when digest delivery is added"
-            />
-          </div>
+          <p className="text-xs font-bold uppercase text-primary">Notification Control</p>
+          <h3 className="text-lg font-black text-neutral-dark dark:text-white">
+            Notification Preferences
+          </h3>
+          <p className="text-sm text-text-secondary">
+            Choose the signals that deserve your attention.
+          </p>
         </div>
       </div>
 
+      <div className="divide-y divide-border">
+        {groups.map((group) => (
+          <section key={group.title} className="p-5">
+            <div className="mb-4">
+              <h4 className="text-sm font-black text-neutral-dark dark:text-gray-200">
+                {group.title}
+              </h4>
+              <p className="text-xs text-text-secondary">{group.description}</p>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.key}
+                    className="rounded-lg border border-border bg-surface-highlight/50 p-3 dark:bg-gray-800"
+                  >
+                    <div className="flex gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <ToggleSwitch
+                          checked={settings[item.key]}
+                          onChange={() => handleToggle(item.key)}
+                          label={item.label}
+                          description={item.description}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+
       {/* Auto-save indicator */}
-      <div className="mt-6 pt-4 border-t border-border dark:border-gray-700">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="border-t border-border p-5">
+        <p className="text-xs font-semibold text-text-secondary">
           {saving ? (
             <span className="text-primary">Saving...</span>
           ) : (
-            <span className="text-green-600 dark:text-green-400">{formatLastSaved() || "Changes save automatically"}</span>
+            <span className="text-primary">{formatLastSaved() || "Changes save automatically"}</span>
           )}
         </p>
       </div>

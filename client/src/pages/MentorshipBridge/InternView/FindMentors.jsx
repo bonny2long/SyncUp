@@ -7,6 +7,8 @@ import {
 import MentorProfileModal from "../shared/MentorProfileModal";
 import RequestSessionModal from "./RequestSessionModal";
 import MentorCard from "../shared/MentorCard";
+import EmptyState from "../../../components/brand/EmptyState";
+import { BriefcaseBusiness, Search, Users } from "lucide-react";
 
 export default function FindMentors({ onSessionRequested }) {
   const [mentors, setMentors] = useState([]);
@@ -58,8 +60,8 @@ export default function FindMentors({ onSessionRequested }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-text-secondary">Loading mentors...</p>
+      <div className="brand-card flex h-48 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -144,56 +146,85 @@ export default function FindMentors({ onSessionRequested }) {
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Tabs */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setTab("available")}
-          className={`px-4 py-2 text-sm rounded-lg border transition ${
-            tab === "available" ?
-              "bg-primary text-white border-primary"
-            : "bg-surface text-text-secondary border-border hover:border-primary/40"
-          }`}
-        >
-          Available Mentors
-        </button>
-        <button
-          onClick={() => setTab("project")}
-          className={`px-4 py-2 text-sm rounded-lg border transition ${
-            tab === "project" ?
-              "bg-secondary text-white border-secondary"
-            : "bg-surface text-text-secondary border-border hover:border-secondary/40"
-          }`}
-        >
-          Project Mentors
-        </button>
+    <div className="flex flex-col gap-5">
+      <div className="brand-card flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Users className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase text-primary">
+              Find Mentors
+            </p>
+            <h2 className="text-xl font-bold text-neutral-dark">
+              Connect with iCAA support
+            </h2>
+            <p className="text-sm text-text-secondary">
+              Choose open slots or find mentors connected to active projects.
+            </p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="inline-flex rounded-xl border border-border bg-surface-highlight p-1">
+          <button
+            onClick={() => setTab("available")}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              tab === "available" ?
+                "bg-primary text-white shadow-sm"
+              : "text-text-secondary hover:text-primary"
+            }`}
+          >
+            <Users className="h-4 w-4" />
+            Available
+          </button>
+          <button
+            onClick={() => setTab("project")}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              tab === "project" ?
+                "bg-primary text-white shadow-sm"
+              : "text-text-secondary hover:text-primary"
+            }`}
+          >
+            <BriefcaseBusiness className="h-4 w-4" />
+            Project
+          </button>
+        </div>
       </div>
 
       {/* Search */}
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder={`Search ${tab === "available" ? "available" : "project"} mentors...`}
-        className="w-full p-3 text-sm border border-border rounded-lg bg-surface text-neutral-dark placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
-      />
+      <div className="brand-card flex items-center gap-3 p-3">
+        <Search className="h-4 w-4 text-text-secondary" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={`Search ${tab === "available" ? "available" : "project"} mentors...`}
+          className="w-full bg-transparent text-sm text-neutral-dark outline-none placeholder:text-text-secondary"
+        />
+      </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="brand-card border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/30">
+          <p className="text-sm font-semibold text-red-700 dark:text-red-300">
+            {error}
+          </p>
         </div>
       )}
 
       {/* Mentor Grid */}
       {filtered.length === 0 && !error ?
-        <div className="text-center py-12">
-          <p className="text-text-secondary">
-            {search ?
-              "No mentors found matching your search"
-            : "No mentors available"}
-          </p>
-        </div>
-      : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <EmptyState
+          icon={Users}
+          title={search ? "No mentors found" : "No mentors available"}
+          description={
+            search ?
+              "Try a different name or email."
+            : "Available mentors will appear here when they open session slots."
+          }
+          image="groupPhoto"
+        />
+      : <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((mentor) => (
             <MentorCard
               key={mentor.id}

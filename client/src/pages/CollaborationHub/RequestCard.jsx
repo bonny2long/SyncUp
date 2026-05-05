@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { useToast } from "../../context/ToastContext";
 import { approveJoinRequest, rejectJoinRequest } from "../../utils/api";
 import { getErrorMessage } from "../../utils/errorHandler";
+import { Check, X } from "lucide-react";
 
 export default function RequestCard({ request, onResolved }) {
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(null); // "approve" or "reject"
 
   const handleApprove = async () => {
@@ -55,50 +55,56 @@ export default function RequestCard({ request, onResolved }) {
   };
 
   return (
-    <div className="p-4 bg-surface border border-border rounded-lg flex items-center justify-between">
+    <div className="flex items-center justify-between rounded-xl border border-border bg-surface-highlight/40 p-4">
       {/* Left: User Info */}
       <div className="flex-1">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-            <span className="text-primary font-bold text-sm">
+        <div className="mb-2 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <span className="text-sm font-black text-primary">
               {request.name.charAt(0).toUpperCase()}
             </span>
           </div>
           <div>
-            <p className="font-semibold text-neutral-dark">{request.name}</p>
+            <p className="font-black text-neutral-dark">{request.name}</p>
             <p className="text-xs text-text-secondary">{request.email}</p>
           </div>
         </div>
-        <p className="text-xs text-text-secondary mt-2">
+        <p className="mt-2 text-xs font-semibold text-text-secondary">
           Requested {getTimeAgo(request.created_at)}
         </p>
       </div>
 
       {/* Right: Action Buttons */}
-      <div className="flex gap-2 ml-4">
+      <div className="ml-4 flex gap-2">
         <button
           onClick={handleReject}
           disabled={actionLoading !== null}
-          className="px-3 py-2 border border-border text-text-secondary text-sm rounded-lg hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-500 transition disabled:opacity-50"
+          className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-bold text-text-secondary transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500 disabled:opacity-50"
         >
           {actionLoading === "reject" ?
             <span className="flex items-center gap-1">
               <span className="w-3 h-3 border-2 border-text-secondary border-t-transparent rounded-full animate-spin" />
             </span>
-          : "Reject"}
+          : <>
+              <X className="h-3 w-3" />
+              Reject
+            </>}
         </button>
 
         <button
           onClick={handleApprove}
           disabled={actionLoading !== null}
-          className="px-3 py-2 bg-secondary text-white text-sm rounded-lg hover:bg-secondary/90 transition disabled:opacity-50 flex items-center gap-1"
+          className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-bold text-white transition hover:bg-primary/90 disabled:opacity-50"
         >
           {actionLoading === "approve" ?
             <>
               <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Approving...
             </>
-          : "Approve"}
+          : <>
+              <Check className="h-3 w-3" />
+              Approve
+            </>}
         </button>
       </div>
     </div>

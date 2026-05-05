@@ -2,10 +2,18 @@ import React, { useState } from "react";
 import { rescheduleSession, deleteSession } from "../../../utils/api";
 import { useToast } from "../../../context/ToastContext";
 import { useUser } from "../../../context/UserContext";
-import { Calendar, Clock, Target, XCircle, Users, ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  Clock,
+  Target,
+  Users,
+  XCircle,
+} from "lucide-react";
 import ConfirmModal from "../../../components/shared/ConfirmModal";
 import RescheduleModal from "../../../components/shared/RescheduleModal";
 import SessionChat from "../shared/SessionChat";
+import EmptyState from "../../../components/brand/EmptyState";
 
 export default function MyRequests({
   pending,
@@ -54,7 +62,7 @@ export default function MyRequests({
       setShowConfirmModal(false);
       setSessionToAction(null);
       onRefresh();
-    } catch (err) {
+    } catch {
       addToast({ type: "error", message: "Failed to cancel request" });
     } finally {
       setActionLoading(false);
@@ -95,7 +103,7 @@ export default function MyRequests({
       setShowRescheduleModal(false);
       setSessionToAction(null);
       onRefresh();
-    } catch (err) {
+    } catch {
       addToast({ type: "error", message: "Failed to reschedule session" });
     } finally {
       setActionLoading(false);
@@ -104,19 +112,19 @@ export default function MyRequests({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-text-secondary">Loading your requests...</p>
+      <div className="brand-card flex h-48 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">{error}</p>
+      <div className="brand-card border-red-200 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/30">
+        <p className="font-semibold text-red-700 dark:text-red-300">{error}</p>
         <button
           onClick={onRefresh}
-          className="mt-2 text-sm text-red-600 hover:underline"
+          className="mt-3 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
         >
           Try again
         </button>
@@ -124,12 +132,53 @@ export default function MyRequests({
     );
   }
 
+  const totalRequests = pending.length + accepted.length + declined.length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      <div className="brand-card flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Users className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase text-primary">
+              Mentorship Requests
+            </p>
+            <h2 className="text-xl font-bold text-neutral-dark">
+              Your support pipeline
+            </h2>
+            <p className="text-sm text-text-secondary">
+              Track requests, upcoming sessions, and mentor replies in one place.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-xl border border-border bg-surface-highlight px-4 py-2">
+            <p className="text-lg font-bold text-neutral-dark">
+              {pending.length}
+            </p>
+            <p className="text-xs text-text-secondary">Pending</p>
+          </div>
+          <div className="rounded-xl border border-border bg-surface-highlight px-4 py-2">
+            <p className="text-lg font-bold text-primary">
+              {accepted.length}
+            </p>
+            <p className="text-xs text-text-secondary">Upcoming</p>
+          </div>
+          <div className="rounded-xl border border-border bg-surface-highlight px-4 py-2">
+            <p className="text-lg font-bold text-neutral-dark">
+              {totalRequests}
+            </p>
+            <p className="text-xs text-text-secondary">Total</p>
+          </div>
+        </div>
+      </div>
+
       {/* Pending Requests */}
-      <section>
-        <h2 className="text-lg font-semibold text-neutral-dark mb-3 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-yellow-600" />
+      <section className="brand-card p-5">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-dark">
+          <Clock className="h-5 w-5 text-primary" />
           Pending Requests
           {pending.length > 0 && (
             <span className="text-sm font-normal text-text-secondary">
@@ -138,23 +187,22 @@ export default function MyRequests({
           )}
         </h2>
         {pending.length === 0 ?
-          <div className="bg-surface-highlight border border-dashed border-border rounded-lg p-6 text-center">
-            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-              <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <p className="text-sm text-text-secondary mb-3">
-              No pending requests. Find a mentor to get started!
-            </p>
-            {onFindMentors && (
-              <button
-                onClick={onFindMentors}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition font-medium"
-              >
-                Find a Mentor
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={Clock}
+            title="No pending requests"
+            description="Find a mentor when you are ready to ask for project, resume, or career support."
+            action={
+              onFindMentors && (
+                <button
+                  onClick={onFindMentors}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
+                >
+                  Find a Mentor
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )
+            }
+          />
         : <div className="space-y-3">
             {pending.map((session) => (
               <RequestCard
@@ -169,9 +217,9 @@ export default function MyRequests({
       </section>
 
       {/* Upcoming Sessions (Accepted) */}
-      <section>
-        <h2 className="text-lg font-semibold text-neutral-dark mb-3 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-green-600" />
+      <section className="brand-card p-5">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-dark">
+          <Calendar className="h-5 w-5 text-primary" />
           Upcoming Sessions
           {accepted.length > 0 && (
             <span className="text-sm font-normal text-text-secondary">
@@ -180,26 +228,28 @@ export default function MyRequests({
           )}
         </h2>
         {accepted.length === 0 ?
-          <div className="bg-surface-highlight border border-dashed border-border rounded-lg p-6 text-center">
-            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-green-100 dark:bg-green-900/30">
-              <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-            <p className="text-sm text-text-secondary mb-3">
-              No upcoming sessions scheduled
-            </p>
-            {onFindMentors && (
-              <button
-                onClick={onFindMentors}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition font-medium"
-              >
-                Book Your First Session
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        : <div className="space-y-3">
+          <EmptyState
+            icon={Calendar}
+            title="No upcoming sessions"
+            description="Accepted sessions will appear here with your session chat."
+            action={
+              onFindMentors && (
+                <button
+                  onClick={onFindMentors}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
+                >
+                  Book Your First Session
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )
+            }
+          />
+        : <div className="space-y-4">
             {accepted.map((session) => (
-              <div key={session.id}>
+              <div
+                key={session.id}
+                className="overflow-hidden rounded-xl border border-border"
+              >
                 <RequestCard
                   session={session}
                   type="accepted"
@@ -221,9 +271,9 @@ export default function MyRequests({
 
       {/* Declined Requests */}
       {declined.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-neutral-dark mb-3 flex items-center gap-2">
-            <XCircle className="w-5 h-5 text-red-600" />
+        <section className="brand-card p-5">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-dark">
+            <XCircle className="h-5 w-5 text-red-600" />
             Declined Requests ({declined.length})
           </h2>
           <div className="space-y-3">
@@ -267,6 +317,12 @@ export default function MyRequests({
 
 // Helper component for individual request cards
 function RequestCard({ session, type, onCancel, onReschedule }) {
+  const statusConfig = {
+    pending: "border-primary/20 bg-primary/10 text-primary",
+    accepted: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    declined: "border-red-200 bg-red-50 text-red-700",
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return "No date set";
     const date = new Date(dateStr);
@@ -304,11 +360,11 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
   };
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-4 hover:shadow-md transition">
-      <div className="flex items-start justify-between mb-2">
+    <div className="brand-card-hover bg-surface p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex-1">
           <h3 className="font-semibold text-neutral-dark">{session.topic}</h3>
-          <p className="text-sm text-text-secondary mt-1">
+          <p className="mt-1 text-sm text-text-secondary">
             With:{" "}
             <span className="font-medium text-primary">
               {session.mentor_name}
@@ -316,45 +372,43 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
           </p>
         </div>
         <span
-          className={`text-xs px-2 py-1 rounded-full font-medium whitespace-nowrap ${
-            type === "pending" ? "bg-yellow-100 text-yellow-700"
-            : type === "accepted" ? "bg-green-100 text-green-700"
-            : "bg-red-100 text-red-700"
+          className={`whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold capitalize ${
+            statusConfig[type]
           }`}
         >
           {type}
         </span>
       </div>
 
-      <div className="text-sm text-text-secondary space-y-1 mb-3">
+      <div className="mb-3 grid gap-2 text-sm text-text-secondary sm:grid-cols-2">
         <p className="flex items-center gap-2">
-          <Calendar className="w-4 h-4" />
+          <Calendar className="h-4 w-4 text-primary" />
           {formatDate(session.session_date)}
         </p>
         <p className="flex items-center gap-2">
-          <Target className="w-4 h-4" />
+          <Target className="h-4 w-4 text-primary" />
           Focus:{" "}
           <span className="font-medium">
             {formatFocus(session.session_focus)}
           </span>
         </p>
-        <p className="text-xs text-text-secondary">
+        <p className="text-xs text-text-secondary sm:col-span-2">
           Requested {formatTimeAgo(session.created_at)}
         </p>
       </div>
 
       {session.details && (
-        <p className="text-sm text-text-secondary bg-surface-highlight p-2 rounded mb-3">
+        <p className="mb-3 rounded-xl border border-border bg-surface-highlight p-3 text-sm text-text-secondary">
           {session.details}
         </p>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {type === "pending" && (
           <button
             onClick={() => onCancel(session)}
-            className="text-sm px-4 py-2 rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
+            className="rounded-full border border-border bg-surface-highlight px-4 py-2 text-sm font-semibold text-text-secondary transition hover:border-primary/30 hover:text-primary"
           >
             Cancel Request
           </button>
@@ -364,13 +418,13 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
           <>
             <button
               onClick={() => onReschedule(session)}
-              className="text-sm px-4 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition font-medium"
+              className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
             >
               Reschedule
             </button>
             <button
               onClick={() => onCancel(session)}
-              className="text-sm px-4 py-2 rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
+              className="rounded-full border border-border bg-surface-highlight px-4 py-2 text-sm font-semibold text-text-secondary transition hover:border-primary/30 hover:text-primary"
             >
               Cancel
             </button>
@@ -378,7 +432,7 @@ function RequestCard({ session, type, onCancel, onReschedule }) {
         )}
 
         {type === "declined" && (
-          <p className="text-sm text-red-600">
+          <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
             This mentor declined your request. You can request again from the
             Find Mentors tab.
           </p>

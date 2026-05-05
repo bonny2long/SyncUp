@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { updateSessionStatus, deleteSession } from "../../../utils/api";
+import { updateSessionStatus } from "../../../utils/api";
 import { useToast } from "../../../context/ToastContext";
-import { Calendar, Target, User, Mail, Clock } from "lucide-react";
+import { Calendar, Check, Clock, Mail, Target, User, X } from "lucide-react";
 import ConfirmModal from "../../../components/shared/ConfirmModal";
+import EmptyState from "../../../components/brand/EmptyState";
 
 export default function IncomingRequests({
   sessions,
@@ -20,7 +21,7 @@ export default function IncomingRequests({
       await updateSessionStatus(sessionId, { status: "accepted" });
       addToast({ type: "success", message: "Session accepted!" });
       onRefresh();
-    } catch (err) {
+    } catch {
       addToast({ type: "error", message: "Failed to accept session" });
     }
   };
@@ -40,7 +41,7 @@ export default function IncomingRequests({
       setShowConfirmModal(false);
       setSessionToDecline(null);
       onRefresh();
-    } catch (err) {
+    } catch {
       addToast({ type: "error", message: "Failed to decline session request" });
     } finally {
       setActionLoading(false);
@@ -49,19 +50,22 @@ export default function IncomingRequests({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-text-secondary">Loading requests...</p>
+      <div className="brand-card flex h-48 items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm font-semibold text-text-secondary">Loading requests...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">{error}</p>
+      <div className="brand-card border-red-200 p-4">
+        <p className="font-semibold text-red-700">{error}</p>
         <button
           onClick={onRefresh}
-          className="mt-2 text-sm text-red-600 hover:underline"
+          className="mt-2 text-sm font-bold text-red-600 hover:underline"
         >
           Try again
         </button>
@@ -71,24 +75,23 @@ export default function IncomingRequests({
 
   if (sessions.length === 0) {
     return (
-      <div className="text-center py-12">
-        <Clock className="w-16 h-16 text-text-secondary mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-neutral-dark mb-2">
-          No pending requests
-        </h3>
-        <p className="text-sm text-text-secondary">
-          You're all caught up! New session requests will appear here.
-        </p>
-      </div>
+      <EmptyState
+        icon={Clock}
+        title="No pending requests"
+        message="New mentorship requests will appear here when interns ask for support."
+      />
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-neutral-dark">
-          Pending Requests ({sessions.length})
-        </h2>
+      <div className="brand-card flex items-center justify-between p-4">
+        <div>
+          <p className="text-xs font-bold uppercase text-primary">Mentorship Queue</p>
+          <h2 className="text-lg font-black text-neutral-dark">
+            Pending Requests ({sessions.length})
+          </h2>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -159,31 +162,31 @@ function RequestCard({ session, onAccept, onDecline }) {
   };
 
   return (
-    <div className="bg-surface border-2 border-yellow-200/50 rounded-lg p-4 hover:shadow-lg transition">
+    <div className="brand-card brand-card-hover overflow-hidden border-primary/20">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between gap-3 border-b border-border p-4">
         <div className="flex-1">
-          <h3 className="font-semibold text-neutral-dark text-lg">
+          <h3 className="text-lg font-black text-neutral-dark">
             {session.topic}
           </h3>
-          <p className="text-xs text-yellow-600 mt-1">
+          <p className="mt-1 text-xs font-semibold text-primary">
             Requested {formatTimeAgo(session.created_at)}
           </p>
         </div>
-        <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+        <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-black text-primary">
           New Request
         </span>
       </div>
 
       {/* Intern Info */}
-      <div className="bg-surface-highlight rounded-lg p-3 mb-3 space-y-2">
+      <div className="m-4 space-y-2 rounded-xl bg-surface-highlight p-3">
         <div className="flex items-center gap-2 text-sm">
           <User className="w-4 h-4 text-text-secondary" />
-          <span className="font-medium text-neutral-dark">
+          <span className="font-black text-neutral-dark">
             {session.intern_name}
           </span>
           {session.intern_role && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
               {session.intern_role}
             </span>
           )}
@@ -195,38 +198,40 @@ function RequestCard({ session, onAccept, onDecline }) {
       </div>
 
       {/* Session Details */}
-      <div className="space-y-2 mb-3">
+      <div className="mx-4 mb-3 space-y-2">
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Calendar className="w-4 h-4 text-primary" />
           <span className="font-medium">Preferred Time:</span>
           {formatDate(session.session_date)}
         </div>
         <div className="flex items-center gap-2 text-sm text-text-secondary">
-          <Target className="w-4 h-4 text-secondary" />
+          <Target className="w-4 h-4 text-primary" />
           <span className="font-medium">Focus:</span>
           {formatFocus(session.session_focus)}
         </div>
       </div>
 
       {session.details && (
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-3">
-          <p className="text-xs font-semibold text-blue-900 mb-1">Details:</p>
-          <p className="text-sm text-blue-800">{session.details}</p>
+        <div className="mx-4 mb-3 rounded-xl border border-border bg-surface-highlight p-3">
+          <p className="mb-1 text-xs font-black uppercase text-primary">Details</p>
+          <p className="text-sm text-neutral-dark">{session.details}</p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 pt-3 border-t border-border">
+      <div className="flex gap-2 border-t border-border p-4">
         <button
           onClick={() => onAccept(session.id)}
-          className="flex-1 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-medium"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 font-bold text-white transition hover:bg-primary/90"
         >
+          <Check className="h-4 w-4" />
           Accept Session
         </button>
         <button
           onClick={() => onDecline(session)}
-          className="px-4 py-2 rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
+          className="inline-flex items-center gap-2 rounded-lg bg-surface-highlight px-4 py-2 font-bold text-text-secondary transition hover:bg-border"
         >
+          <X className="h-4 w-4" />
           Decline
         </button>
       </div>

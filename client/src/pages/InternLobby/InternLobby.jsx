@@ -1,5 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquare, Send, Paperclip, Loader2, File, Image, X, Target, HeartHandshake } from "lucide-react";
+import {
+  MessageSquare,
+  Send,
+  Paperclip,
+  Loader2,
+  File,
+  Image,
+  X,
+  Target,
+  HeartHandshake,
+} from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { useToast } from "../../context/ToastContext";
@@ -221,99 +231,63 @@ export default function InternLobby() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] animate-fade-in">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-neutral-dark mb-1">Intern Lobby</h1>
-        <p className="text-sm text-text-secondary">
-          Communicate with your mentors and administration to guide your project journey.
-        </p>
+    <div className="page-shell flex h-[calc(100vh-120px)] flex-col animate-fade-in">
+      <div className="brand-card mb-3 flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <HeartHandshake className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-black text-neutral-dark">
+                Intern Lobby
+              </h1>
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-black text-primary">
+                {user?.cycle || "Cycle not set"}
+              </span>
+            </div>
+            <p className="mt-0.5 text-sm text-text-secondary">
+              Mentors, admins, and cohort support in one place.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 rounded-lg border border-border bg-surface-highlight p-1">
+          <button
+            onClick={() => setLobbyTab("connections")}
+            className={`rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+              lobbyTab === "connections" ?
+                "bg-primary text-white shadow-sm"
+              : "text-text-secondary hover:bg-surface hover:text-neutral-dark"
+            }`}
+          >
+            Connections
+          </button>
+          <button
+            onClick={() => setLobbyTab("cohort")}
+            className={`rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+              lobbyTab === "cohort" ?
+                "bg-primary text-white shadow-sm"
+              : "text-text-secondary hover:bg-surface hover:text-neutral-dark"
+            }`}
+          >
+            Cohort
+          </button>
+        </div>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-3">
         <EncouragementBoard targetCycle={user?.cycle} mode="read" compact />
-      </div>
-
-      {/* Tab Switcher */}
-      <div className="flex border-b border-border mb-4">
-        <button
-          onClick={() => setLobbyTab("connections")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            lobbyTab === "connections"
-              ? "border-primary text-primary"
-              : "border-transparent text-text-secondary hover:text-neutral-dark"
-          }`}
-        >
-          Mentors & Connections
-        </button>
-        <button
-          onClick={() => setLobbyTab("cohort")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            lobbyTab === "cohort"
-              ? "border-primary text-primary"
-              : "border-transparent text-text-secondary hover:text-neutral-dark"
-          }`}
-        >
-          My Cohort {user?.cycle && `(${user.cycle})`}
-        </button>
       </div>
 
       {lobbyTab === "connections" ? (
         <div className="flex flex-1 gap-4 overflow-hidden">
-          {/* Left Sidebar */}
-          <div className="w-72 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
-            <div className="p-3 border-b border-border bg-surface-highlight/30">
-              <span className="text-xs font-semibold text-text-secondary uppercase">
-                Connections
-              </span>
-              <p className="text-xs text-text-secondary mt-1 max-w-[90%]">
-                Direct access to ICAA community mentors.
-              </p>
-            </div>
-
-            <div className="p-3 flex-1 overflow-y-auto">
-              <div className="space-y-1">
-                {dmUsers.length === 0 ?
-                  <p className="text-sm text-text-secondary">No active connections yet. Request a session through the Mentorship Bridge!</p>
-                : dmUsers.map((dmUser) => (
-                  <button
-                    key={dmUser.id}
-                    onClick={() => setActiveDM(dmUser)}
-                    className={`w-full flex items-center gap-3 p-2 rounded-lg text-left text-sm transition-all ${
-                      activeDM?.id === dmUser.id ?
-                        "bg-primary text-white shadow-sm"
-                      : "text-neutral-dark hover:bg-surface-highlight"
-                    }`}
-                  >
-                    <div className="relative flex-shrink-0">
-                      <UserAvatar user={dmUser} size="md" />
-                      <div
-                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
-                          dmUser.status === "online" ? "bg-green-500" : "bg-gray-400"
-                        }`}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className={`truncate font-semibold ${activeDM?.id === dmUser.id ? 'text-white' : 'text-neutral-dark'}`}>
-                          {dmUser.name}
-                        </span>
-                      </div>
-                      <div className="mt-0.5">
-                        <RoleBadge role={dmUser.role} size="xs" />
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
           {/* Main Chat Panel */}
-          <div className="flex-1 bg-surface border border-border rounded-lg overflow-hidden flex flex-col shadow-sm">
+          <div className="brand-card flex flex-1 flex-col overflow-hidden">
             {selectedDM ?
               <>
                 {/* Header */}
-                <div className="px-4 py-3 border-b border-border bg-surface-highlight/20 flex items-center gap-3">
+                <div className="flex items-center gap-3 border-b border-border bg-surface-highlight/40 px-4 py-3">
                   <div className="relative">
                     <UserAvatar user={selectedDM} size="md" />
                     <div
@@ -336,9 +310,7 @@ export default function InternLobby() {
                 </div>
 
                 {/* Messages Area */}
-                <div
-                  className="flex-1 overflow-y-auto p-6 space-y-6 bg-background/30"
-                >
+                <div className="flex-1 space-y-6 overflow-y-auto bg-neutralLight/60 p-6">
                   {messages.length > 0 ?
                     messages.map((message) => {
                       const isMe = message.sender_id === user.id;
@@ -378,7 +350,7 @@ export default function InternLobby() {
                               className={`px-4 py-2.5 rounded-2xl shadow-sm text-[15px] leading-relaxed ${
                                 isMe ?
                                   "bg-primary text-white rounded-br-sm"
-                                : "bg-white text-neutral-dark rounded-bl-sm border border-border"
+                                : "bg-surface text-neutral-dark rounded-bl-sm border border-border"
                               }`}
                             >
                               <p className="whitespace-pre-wrap break-words">
@@ -411,9 +383,9 @@ export default function InternLobby() {
                         You are now connected with <span className="font-semibold text-primary">{selectedDM.name}</span>. 
                         Reach out to ask technical questions, seek portfolio advice, or prepare for your upcoming sessions!
                       </p>
-                      <div className="bg-surface border border-border rounded-lg p-4 w-full text-left">
+                      <div className="w-full rounded-lg border border-border bg-surface p-4 text-left shadow-sm">
                         <div className="flex items-center gap-2 mb-2">
-                          <Target className="w-4 h-4 text-accent" />
+                          <Target className="w-4 h-4 text-primary" />
                           <span className="font-semibold text-sm text-neutral-dark">Conversation Starters</span>
                         </div>
                         <ul className="text-xs text-text-secondary space-y-2 list-disc list-inside">
@@ -477,7 +449,7 @@ export default function InternLobby() {
                         }
                       }}
                       placeholder={`Write a message to ${selectedDM.name}...`}
-                      className="flex-1 px-4 py-2.5 border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl text-[15px] bg-background text-neutral-dark placeholder-text-secondary transition-all outline-none"
+                      className="flex-1 rounded-xl border border-border bg-surface px-4 py-2.5 text-[15px] text-neutral-dark outline-none transition-all placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary"
                       disabled={sending}
                     />
                     <button
@@ -491,12 +463,73 @@ export default function InternLobby() {
                   </div>
                 </div>
               </>
-            : <div className="flex flex-col items-center justify-center h-full bg-background/50">
-                <div className="w-16 h-16 bg-surface-highlight rounded-full flex items-center justify-center mb-4">
+            : <div className="flex h-full flex-col items-center justify-center bg-neutralLight/60">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                   <MessageSquare className="w-8 h-8 text-text-secondary opacity-50" />
                 </div>
                 <p className="text-text-secondary font-medium">Select a connection to start messaging</p>
               </div>}
+          </div>
+
+          {/* Connections List */}
+          <div className="brand-card flex w-64 flex-shrink-0 flex-col overflow-hidden">
+            <div className="border-b border-border bg-surface-highlight/50 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase text-text-secondary">
+                  Connections
+                </span>
+                <span className="rounded-full bg-surface px-2 py-0.5 text-xs font-semibold text-text-secondary">
+                  {dmUsers.length}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2">
+              <div className="space-y-1">
+                {dmUsers.length === 0 ?
+                  <p className="p-3 text-sm text-text-secondary">
+                    No active connections yet. Request a session through the
+                    Mentorship Bridge.
+                  </p>
+                : dmUsers.map((dmUser) => (
+                    <button
+                      key={dmUser.id}
+                      onClick={() => setActiveDM(dmUser)}
+                      className={`flex w-full items-center gap-2 rounded-lg p-2 text-left text-sm transition-all ${
+                        activeDM?.id === dmUser.id ?
+                          "bg-primary text-white shadow-sm"
+                        : "text-neutral-dark hover:bg-surface-highlight"
+                      }`}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <UserAvatar user={dmUser} size="sm" />
+                        <div
+                          className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                            dmUser.status === "online" ?
+                              "bg-green-500"
+                            : "bg-gray-400"
+                          }`}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`truncate text-sm font-semibold ${
+                            activeDM?.id === dmUser.id ?
+                              "text-white"
+                            : "text-neutral-dark"
+                          }`}
+                        >
+                          {dmUser.name}
+                        </p>
+                        <div className="mt-0.5">
+                          <RoleBadge role={dmUser.role} size="xs" />
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                }
+              </div>
+            </div>
           </div>
         </div>
       ) : (
@@ -505,4 +538,3 @@ export default function InternLobby() {
     </div>
   );
 }
-

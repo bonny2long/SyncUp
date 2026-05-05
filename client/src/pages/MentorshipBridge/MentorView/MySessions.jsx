@@ -5,11 +5,12 @@ import {
   deleteSession,
 } from "../../../utils/api";
 import { useToast } from "../../../context/ToastContext";
-import { Calendar, Target, User, Clock } from "lucide-react";
+import { Calendar, CheckCircle, Clock, Target, User } from "lucide-react";
 import SkillSelectModal from "../shared/SkillSelectModal";
 import ConfirmModal from "../../../components/shared/ConfirmModal";
 import RescheduleModal from "../../../components/shared/RescheduleModal";
 import SessionChat from "../shared/SessionChat";
+import EmptyState from "../../../components/brand/EmptyState";
 
 export default function MySessions({ sessions, loading, error, onRefresh }) {
   const { addToast } = useToast();
@@ -47,7 +48,7 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
           : "Session completed!",
       });
       onRefresh();
-    } catch (err) {
+    } catch {
       addToast({ type: "error", message: "Failed to complete session" });
     }
   };
@@ -78,7 +79,7 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
       setShowRescheduleModal(false);
       setSessionToAction(null);
       onRefresh();
-    } catch (err) {
+    } catch {
       addToast({ type: "error", message: "Failed to reschedule session" });
     } finally {
       setActionLoading(false);
@@ -100,7 +101,7 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
       setShowConfirmModal(false);
       setSessionToAction(null);
       onRefresh();
-    } catch (err) {
+    } catch {
       addToast({ type: "error", message: "Failed to cancel session" });
     } finally {
       setActionLoading(false);
@@ -109,19 +110,22 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <p className="text-sm text-text-secondary">Loading sessions...</p>
+      <div className="brand-card flex h-48 items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm font-semibold text-text-secondary">Loading sessions...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">{error}</p>
+      <div className="brand-card border-red-200 p-4">
+        <p className="font-semibold text-red-700">{error}</p>
         <button
           onClick={onRefresh}
-          className="mt-2 text-sm text-red-600 hover:underline"
+          className="mt-2 text-sm font-bold text-red-600 hover:underline"
         >
           Try again
         </button>
@@ -131,24 +135,23 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
 
   if (sessions.length === 0) {
     return (
-      <div className="text-center py-12">
-        <Calendar className="w-16 h-16 text-text-secondary mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-neutral-dark mb-2">
-          No upcoming sessions
-        </h3>
-          <p className="text-sm text-text-secondary">
-            Your upcoming mentorship sessions will appear here
-          </p>
-      </div>
+      <EmptyState
+        icon={Calendar}
+        title="No upcoming sessions"
+        message="Your accepted mentorship sessions will appear here."
+      />
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-neutral-dark">
-          Upcoming Sessions ({sessions.length})
-        </h2>
+      <div className="brand-card flex items-center justify-between p-4">
+        <div>
+          <p className="text-xs font-bold uppercase text-primary">Mentorship Calendar</p>
+          <h2 className="text-lg font-black text-neutral-dark">
+            Upcoming Sessions ({sessions.length})
+          </h2>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -240,15 +243,16 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
   const isUpcoming = new Date(session.session_date) > new Date();
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-4 hover:shadow-md transition">
+    <div className="brand-card brand-card-hover overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between border-b border-border p-4">
         <div className="flex-1">
-          <h3 className="font-semibold text-neutral-dark text-lg">
+          <h3 className="text-lg font-black text-neutral-dark">
             {session.topic}
           </h3>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-black text-primary">
+              <CheckCircle className="h-3 w-3" />
               Accepted
             </span>
             {isUpcoming && (
@@ -262,14 +266,14 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
       </div>
 
       {/* Intern Info */}
-      <div className="bg-surface-highlight rounded-lg p-3 mb-3">
+      <div className="m-4 rounded-xl bg-surface-highlight p-3">
         <div className="flex items-center gap-2 text-sm">
           <User className="w-4 h-4 text-text-secondary" />
-          <span className="font-medium text-neutral-dark">
+          <span className="font-black text-neutral-dark">
             {session.intern_name}
           </span>
           {session.intern_role && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
               {session.intern_role}
             </span>
           )}
@@ -277,16 +281,16 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
       </div>
 
       {/* Session Details */}
-      <div className="space-y-2 mb-3">
+      <div className="mx-4 mb-3 space-y-2">
         <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Calendar className="w-4 h-4 text-primary" />
           {formatDate(session.session_date)}
         </div>
         <div className="flex items-center gap-2 text-sm text-text-secondary">
-          <Target className="w-4 h-4 text-secondary" />
+          <Target className="w-4 h-4 text-primary" />
           {formatFocus(session.session_focus)}
           {isTechnical && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
               Technical (3x signals)
             </span>
           )}
@@ -294,28 +298,28 @@ function SessionCard({ session, onComplete, onReschedule, onCancel }) {
       </div>
 
       {session.details && (
-        <div className="bg-surface-highlight rounded-lg p-3 mb-3">
+        <div className="mx-4 mb-3 rounded-xl bg-surface-highlight p-3">
           <p className="text-sm text-text-secondary">{session.details}</p>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 pt-3 border-t border-border">
+      <div className="flex flex-wrap gap-2 border-t border-border p-4">
         <button
           onClick={() => onComplete(session.id, session.session_focus)}
-          className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition font-medium"
+          className="rounded-lg bg-primary px-4 py-2 font-bold text-white transition hover:bg-primary/90"
         >
           Mark Complete{isTechnical ? " + Skills" : ""}
         </button>
         <button
           onClick={() => onReschedule(session)}
-          className="px-4 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 transition"
+          className="rounded-lg bg-primary/10 px-4 py-2 font-bold text-primary transition hover:bg-primary/20"
         >
           Reschedule
         </button>
         <button
           onClick={() => onCancel(session)}
-          className="px-4 py-2 rounded-lg bg-surface-highlight text-text-secondary hover:bg-border transition"
+          className="rounded-lg bg-surface-highlight px-4 py-2 font-bold text-text-secondary transition hover:bg-border"
         >
           Cancel
         </button>
