@@ -4,6 +4,7 @@ import {
   notifySessionAccepted,
   notifySessionDeclined,
   notifySessionCompleted,
+  notifyNewSessionRequest,
 } from "../services/notificationService.js";
 import { checkBadges } from "../services/checkBadges.js";
 
@@ -299,6 +300,21 @@ export const createSession = async (req, res) => {
         project_id || null,
       ],
     );
+
+    // Notify mentor
+    try {
+      const [internRows] = await pool.query("SELECT name FROM users WHERE id = ?", [intern_id]);
+      if (internRows.length > 0) {
+        await notifyNewSessionRequest(
+          mentor_id,
+          internRows[0].name,
+          topic,
+          result.insertId
+        );
+      }
+    } catch (notifErr) {
+      console.error("Failed to notify mentor:", notifErr);
+    }
 
     res.status(201).json({
       id: result.insertId,

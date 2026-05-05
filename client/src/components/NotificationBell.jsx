@@ -1,28 +1,35 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import { useUser } from "../context/UserContext";
-import { fetchNotifications, fetchUnreadCount } from "../utils/api";
+import { fetchNotifications, fetchUnifiedCounts } from "../utils/api";
 import NotificationDropdown from "./NotificationDropdown";
 
 export default function NotificationBell() {
   const { user } = useUser();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [counts, setCounts] = useState({
+    notifications: 0,
+    mentorship: 0,
+    join_requests: 0,
+    verifications: 0,
+    chat: 0,
+    total: 0,
+  });
   const [showDropdown, setShowDropdown] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Load unread count on mount
+  // Load unified counts on mount
   useEffect(() => {
     if (!user?.id) return;
-    loadUnreadCount();
+    loadCounts();
 
-    // Poll for new notifications every 5 seconds
-    const interval = setInterval(loadUnreadCount, 5000);
+    // Poll for new counts every 5 seconds
+    const interval = setInterval(loadCounts, 5000);
     return () => clearInterval(interval);
   }, [user?.id]);
 
-  // Load notifications when dropdown opens
+  // Load notifications data when dropdown opens
   useEffect(() => {
     if (showDropdown && user?.id) {
       loadNotifications();
@@ -44,14 +51,14 @@ export default function NotificationBell() {
     }
   }, [showDropdown]);
 
-  const loadUnreadCount = async () => {
+  const loadCounts = async () => {
     if (!user?.id) return;
 
     try {
-      const data = await fetchUnreadCount(user.id);
-      setUnreadCount(data.count);
+      const data = await fetchUnifiedCounts(user.id);
+      setCounts(data);
     } catch (err) {
-      console.error("Failed to load unread count:", err);
+      console.error("Failed to load counts:", err);
     }
   };
 
@@ -71,11 +78,12 @@ export default function NotificationBell() {
 
   const handleRefresh = () => {
     loadNotifications();
-    loadUnreadCount();
+    loadCounts();
   };
 
   if (!user) return null;
 
+  const isActive = counts.total > 0;
   const digestMode = user?.digest_mode;
 
   return (
@@ -83,17 +91,25 @@ export default function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="relative p-2 rounded-full hover:bg-gray-100 transition"
+        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         aria-label="Notifications"
       >
-        <Bell className={`w-5 h-5 ${!digestMode && unreadCount > 0 ? 'text-primary animate-bounce' : 'text-gray-700'}`} />
+        <Bell
+          className={`w-5 h-5 transition-transform ${
+            !digestMode && isActive
+              ? "text-primary animate-bounce"
+              : "text-gray-600 dark:text-gray-400"
+          }`}
+        />
 
         {/* Unread Badge */}
-        {unreadCount > 0 && (
-          <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full text-white text-xs flex items-center justify-center font-bold ${
-            digestMode ? 'bg-gray-400' : 'bg-red-500'
-          }`}>
-            {unreadCount > 99 ? '99+' : unreadCount}
+        {counts.total > 0 && (
+          <span
+            className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-white text-xs flex items-center justify-center font-bold shadow-sm ${
+              digestMode ? "bg-gray-400" : "bg-red-500"
+            }`}
+          >
+            {counts.total > 99 ? "99+" : counts.total}
           </span>
         )}
       </button>
@@ -102,6 +118,7 @@ export default function NotificationBell() {
       {showDropdown && (
         <NotificationDropdown
           notifications={notifications}
+          counts={counts}
           loading={loading}
           onRefresh={handleRefresh}
           onClose={() => setShowDropdown(false)}

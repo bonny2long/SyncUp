@@ -32,9 +32,9 @@ export default function HealthStatus() {
   }, []);
 
   return (
-    <div className="p-4 rounded-2xl shadow bg-white border border-gray-200 w-fit text-center">
-      <h2 className="text-lg font-semibold mb-2 text-neutralDark">
-        Backend Connection /Database Health
+    <div className="p-4 rounded-2xl shadow bg-surface border border-border w-fit text-center">
+      <h2 className="text-lg font-semibold mb-2 text-neutral-dark">
+        Backend Health
       </h2>
 
       {status === "connected" ? (

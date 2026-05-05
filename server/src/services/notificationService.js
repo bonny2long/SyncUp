@@ -162,6 +162,28 @@ export const notifyJoinRequestApproved = async (
   });
 };
 
+// New Join Request
+export const notifyNewJoinRequest = async (
+  ownerId,
+  requesterName,
+  projectTitle,
+  projectId,
+  connection = null,
+) => {
+  return createSmartNotification({
+    recipientId: ownerId,
+    type: "new_join_request",
+    title: "New Join Request",
+    message: `${requesterName} wants to join your project "${projectTitle}"`,
+    link: `/collaboration`,
+    relatedId: projectId,
+    relatedType: "join_request",
+    preferenceKey: "join_request",
+    connection,
+  });
+};
+
+
 // Join Request Rejected
 export const notifyJoinRequestRejected = async (
   userId,
@@ -197,6 +219,27 @@ export const notifySessionAccepted = async (
     link: `/mentorship`,
     relatedId: sessionId,
     relatedType: "session",
+    connection,
+  });
+};
+
+// New Session Request
+export const notifyNewSessionRequest = async (
+  mentorId,
+  internName,
+  topic,
+  sessionId,
+  connection = null,
+) => {
+  return createSmartNotification({
+    recipientId: mentorId,
+    type: "new_session_request",
+    title: "New Mentorship Request",
+    message: `${internName} requested a session: "${topic}"`,
+    link: `/mentorship`,
+    relatedId: sessionId,
+    relatedType: "session",
+    preferenceKey: "session",
     connection,
   });
 };

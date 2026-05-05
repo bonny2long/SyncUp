@@ -64,7 +64,7 @@ export default function DiscoverProjects({
                     e.stopPropagation();
                     onJoinClick(project);
                   }}
-                  className="px-3 py-1 bg-secondary/10 text-secondary border border-secondary/30 text-xs rounded-lg hover:bg-secondary hover:text-white transition font-medium flex items-center gap-1 shrink-0"
+                  className="px-3 py-1 bg-primary text-white text-xs rounded-lg hover:bg-primary/90 transition font-medium flex items-center gap-1 shrink-0"
                 >
                   <UserPlus className="w-3 h-3" />
                   Join

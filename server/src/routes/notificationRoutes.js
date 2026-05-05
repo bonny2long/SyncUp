@@ -2,6 +2,7 @@ import express from "express";
 import {
   getUserNotifications,
   getUnreadCount,
+  getUnifiedCounts,
   markAsRead,
   markAllAsRead,
   deleteNotification,
@@ -23,6 +24,7 @@ const userIdValidation = [
 
 router.get("/:userId", userIdValidation, getUserNotifications);
 router.get("/:userId/unread-count", userIdValidation, getUnreadCount);
+router.get("/:userId/unified-counts", userIdValidation, getUnifiedCounts);
 router.put("/:id/read", idValidation, markAsRead);
 router.put("/:userId/read-all", userIdValidation, markAllAsRead);
 router.delete("/:id", idValidation, deleteNotification);

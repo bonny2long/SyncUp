@@ -3,6 +3,7 @@ import {
   notifyJoinRequestApproved,
   notifyJoinRequestRejected,
   notifyProjectCompleted,
+  notifyNewJoinRequest,
 } from "../services/notificationService.js";
 import { checkBadges } from "../services/checkBadges.js";
 
@@ -1066,6 +1067,29 @@ export const createJoinRequest = async (req, res) => {
        VALUES (?, ?, 'pending')`,
       [projectId, user_id],
     );
+
+    // Notify owner
+    try {
+      const [projectRows] = await pool.query(
+        "SELECT title, owner_id FROM projects WHERE id = ?",
+        [projectId],
+      );
+      const [userRows] = await pool.query(
+        "SELECT name FROM users WHERE id = ?",
+        [user_id],
+      );
+
+      if (projectRows.length > 0 && userRows.length > 0) {
+        await notifyNewJoinRequest(
+          projectRows[0].owner_id,
+          userRows[0].name,
+          projectRows[0].title,
+          projectId,
+        );
+      }
+    } catch (notifErr) {
+      console.error("Failed to notify project owner:", notifErr);
+    }
 
     res.status(201).json({
       id: result.insertId,

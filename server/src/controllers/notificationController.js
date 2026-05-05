@@ -80,6 +80,92 @@ export const getUnreadCount = async (req, res) => {
   }
 };
 
+// GET /api/notifications/:userId/unified-counts
+// Aggregate all pending items for the user
+export const getUnifiedCounts = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    if (!requesterCanAccess(req, userId)) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    // 1. Unread notifications
+    const [notifRows] = await pool.query(
+      "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0",
+      [userId],
+    );
+
+    // 2. Pending mentorship sessions as mentor
+    const [mentorRows] = await pool.query(
+      "SELECT COUNT(*) as count FROM mentorship_sessions WHERE mentor_id = ? AND status = 'pending'",
+      [userId],
+    );
+
+    // 3. Pending join requests for owned projects
+    const [requestRows] = await pool.query(
+      `SELECT COUNT(*) as count 
+       FROM project_join_requests pjr
+       JOIN projects p ON pjr.project_id = p.id
+       WHERE p.owner_id = ? AND pjr.status = 'pending'`,
+      [userId],
+    );
+
+    // 4. Pending skill verifications (team member claims in shared projects)
+    const [userProjects] = await pool.query(
+      "SELECT project_id FROM project_members WHERE user_id = ?",
+      [userId],
+    );
+    const projectIds = userProjects.map((p) => p.project_id);
+    let verificationCount = 0;
+    if (projectIds.length > 0) {
+      try {
+        const [verificationRows] = await pool.query(
+          "SELECT COUNT(*) as count FROM skill_verifications WHERE project_id IN (?) AND claimant_id != ? AND status = 'pending'",
+          [projectIds, userId],
+        );
+        verificationCount = verificationRows[0].count;
+      } catch (verifErr) {
+        console.error("Error fetching verification count:", verifErr);
+        // If table doesn't exist yet, just continue with 0
+      }
+    }
+
+    // 5. Unread chat messages (Currently disabled until schema includes last_read_at)
+    // Counting DMs for this user that are not from them (placeholder for real unread logic)
+    let chatCount = 0;
+    /*
+    try {
+      const [chatRows] = await pool.query(
+        `SELECT COUNT(*) as count FROM messages WHERE recipient_id = ?`,
+        [userId]
+      );
+      chatCount = chatRows[0].count;
+    } catch (chatErr) {
+       console.error("Error fetching chat count:", chatErr);
+    }
+    */
+
+    res.json({
+      notifications: notifRows[0].count,
+      mentorship: mentorRows[0].count,
+      join_requests: requestRows[0].count,
+      verifications: verificationCount,
+      chat: chatCount,
+      total:
+        notifRows[0].count +
+        mentorRows[0].count +
+        requestRows[0].count +
+        verificationCount +
+        chatCount,
+    });
+  } catch (err) {
+    console.error("Error fetching unified counts:", err);
+    res.status(500).json({ error: "Failed to fetch unified counts" });
+  }
+};
+
+
 // PUT /api/notifications/:id/read
 // Mark notification as read
 export const markAsRead = async (req, res) => {

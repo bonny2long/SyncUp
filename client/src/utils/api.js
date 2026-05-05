@@ -736,6 +736,14 @@ export async function fetchUnreadCount(userId) {
   return res.json();
 }
 
+export async function fetchUnifiedCounts(userId) {
+  const res = await fetch(`${API_BASE}/notifications/${userId}/unified-counts`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch unified counts");
+  return res.json();
+}
+
 // Mark notification as read
 export async function markNotificationAsRead(notificationId) {
   const res = await fetch(`${API_BASE}/notifications/${notificationId}/read`, {
