@@ -131,20 +131,17 @@ export const getUnifiedCounts = async (req, res) => {
       }
     }
 
-    // 5. Unread chat messages (Currently disabled until schema includes last_read_at)
-    // Counting DMs for this user that are not from them (placeholder for real unread logic)
+    // 5. Unread DM notifications (subset of notifRows — not added to total to avoid double-count)
     let chatCount = 0;
-    /*
     try {
       const [chatRows] = await pool.query(
-        `SELECT COUNT(*) as count FROM messages WHERE recipient_id = ?`,
-        [userId]
+        "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0 AND type = 'dm'",
+        [userId],
       );
       chatCount = chatRows[0].count;
     } catch (chatErr) {
-       console.error("Error fetching chat count:", chatErr);
+      console.error("Error fetching chat count:", chatErr);
     }
-    */
 
     res.json({
       notifications: notifRows[0].count,
@@ -156,8 +153,7 @@ export const getUnifiedCounts = async (req, res) => {
         notifRows[0].count +
         mentorRows[0].count +
         requestRows[0].count +
-        verificationCount +
-        chatCount,
+        verificationCount,
     });
   } catch (err) {
     console.error("Error fetching unified counts:", err);

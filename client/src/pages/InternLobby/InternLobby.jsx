@@ -390,7 +390,7 @@ export default function InternLobby() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className={`block mt-2 text-sm font-medium hover:underline flex items-center gap-1.5 ${
-                                    isMe ? "text-blue-100" : "text-primary"
+                                    isMe ? "text-white/80" : "text-[#b9123f]"
                                   }`}
                                 >
                                   <Paperclip className="w-4 h-4" />

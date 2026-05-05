@@ -80,7 +80,7 @@ export default function UpdateCard({
           </div>
 
           {update.project_title && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full whitespace-nowrap">
+            <span className="text-xs bg-[#b9123f]/10 text-[#b9123f] px-2.5 py-1 rounded-full whitespace-nowrap leading-none">
               {update.project_title}
             </span>
           )}

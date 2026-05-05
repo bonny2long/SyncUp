@@ -56,7 +56,7 @@ const TopContributors = ({ data }) => {
     if (index === 0) return { icon: Trophy, color: "text-yellow-500", bg: "bg-yellow-500/10" };
     if (index === 1) return { icon: Award, color: "text-gray-400", bg: "bg-gray-400/10" };
     if (index === 2) return { icon: Award, color: "text-orange-600", bg: "bg-orange-600/10" };
-    return { icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/10" };
+    return { icon: TrendingUp, color: "text-[#b9123f]", bg: "bg-[#b9123f]/10" };
   };
 
   if (topContributors.length === 0) {
@@ -133,7 +133,7 @@ const TopContributors = ({ data }) => {
                 </div>
                 <div className="flex items-center gap-3 text-xs text-text-secondary">
                   <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#b9123f]"></span>
                     {contributor.signalCount} {contributor.signalCount === 1 ? 'update' : 'updates'}
                   </span>
                   {contributor.signalWeight > 0 && (

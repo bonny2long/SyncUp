@@ -264,7 +264,7 @@ export default function CommunityFeed() {
                       key={item.id}
                       type="button"
                       onClick={() => openItem("announcement", item)}
-                      className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full hover:bg-primary/15 transition-colors"
+                      className="inline-flex items-center gap-1 text-xs bg-[#b9123f]/10 text-[#b9123f] px-2 py-1 rounded-full hover:bg-[#b9123f]/15 transition-colors"
                       title={item.content}
                     >
                       <Pin className="w-3 h-3" />
@@ -452,7 +452,7 @@ export default function CommunityFeed() {
                     "Welcome"
                   : selectedItem.item.announcement_type || "Announcement"}
                 </p>
-                <h2 className="text-lg font-semibold text-primary break-words">
+                <h2 className="text-lg font-bold text-[#b9123f] break-words uppercase">
                   {selectedItem.type === "event" ?
                     selectedItem.item.title
                   : selectedItem.type === "introduction" ?

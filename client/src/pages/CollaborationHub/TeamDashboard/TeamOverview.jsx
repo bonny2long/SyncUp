@@ -46,11 +46,11 @@ const TeamOverview = ({
   const getSourceColor = (source) => {
     switch (source) {
       case "project":
-        return "bg-blue-100 text-blue-700";
+        return "bg-[#b9123f]/10 text-[#b9123f]";
       case "update":
         return "bg-green-100 text-green-700";
       case "mentorship":
-        return "bg-purple-100 text-purple-700";
+        return "bg-[#383838]/10 text-[#383838]";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -61,8 +61,8 @@ const TeamOverview = ({
       label: "Skills Tracked",
       value: formatNumber(data?.skills_tracked),
       icon: <Target className="w-4 h-4" />,
-      color: "bg-surface border-blue-200/30",
-      textColor: "text-blue-500",
+      color: "bg-surface border-[#b9123f]/20",
+      textColor: "text-[#b9123f]",
       onClick: () => setModalType("skills"),
     },
     {
@@ -85,8 +85,8 @@ const TeamOverview = ({
       label: "Total Signals",
       value: formatNumber(data?.total_signals),
       icon: <BarChart3 className="w-4 h-4" />,
-      color: "bg-surface border-purple-200/30",
-      textColor: "text-purple-500",
+      color: "bg-surface border-[#383838]/20",
+      textColor: "text-[#383838]",
       onClick: () => setModalType("signals"),
     },
   ];

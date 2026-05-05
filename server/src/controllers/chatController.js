@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import { createSmartNotification } from "../services/notificationService.js";
 
 // =============================================
 // CHANNELS
@@ -277,7 +278,25 @@ export const sendMessage = async (req, res) => {
       [result.insertId],
     );
 
-    res.status(201).json(rows[0]);
+    const messageData = rows[0];
+
+    // Fire DM notification without blocking the response
+    if (recipient_id) {
+      const preview = content.length > 80 ? `${content.slice(0, 80)}...` : content;
+      createSmartNotification({
+        recipientId: Number(recipient_id),
+        type: "dm",
+        title: `Message from ${messageData.sender_name}`,
+        message: preview,
+        link: `/chat?user=${user_id}`,
+        relatedId: result.insertId,
+        relatedType: "message",
+        groupKey: `dm:${user_id}:${recipient_id}`,
+        preferenceKey: "dm",
+      }).catch((err) => console.error("DM notification error:", err));
+    }
+
+    res.status(201).json(messageData);
   } catch (err) {
     console.error("Error sending message:", err);
     res.status(500).json({ error: "Failed to send message" });
@@ -341,7 +360,7 @@ export const updatePresence = async (req, res) => {
 
 // Get users I can DM (project teammates + all users)
 export const getDMUsers = async (req, res) => {
-  const { user_id, scope = "chat" } = req.query;
+  const { user_id, scope = "chat", recent_only = "false", target_user_id } = req.query;
 
   try {
     const [requestingUser] = await pool.query(
@@ -349,51 +368,65 @@ export const getDMUsers = async (req, res) => {
       [user_id]
     );
 
+    if (!requestingUser.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
     const requesterRole = requestingUser[0]?.role || "intern";
     const isPreCommencedIntern =
       requesterRole === 'intern' &&
       !requestingUser[0]?.has_commenced;
 
-    let query, params;
+    let baseFilter = "";
+    let params = [user_id];
 
     if (scope === "lobby" && requesterRole !== "intern") {
-      // Community helpers use the lobby to support incoming interns.
-      query = `
-        SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
-               COALESCE(up.status, 'offline') as status
-        FROM users u
-        LEFT JOIN user_presence up ON u.id = up.user_id
-        WHERE u.id != ?
-          AND u.role = 'intern'
-          AND COALESCE(u.has_commenced, FALSE) = FALSE
-        ORDER BY u.name
-      `;
-      params = [user_id];
+      // Community helpers see interns
+      baseFilter = "u.role = 'intern' AND COALESCE(u.has_commenced, FALSE) = FALSE";
     } else if (isPreCommencedIntern) {
-      // Pre-commencement interns only see mentors/alumni/residents/admin
-      query = `
-        SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
-               COALESCE(up.status, 'offline') as status
-        FROM users u
-        LEFT JOIN user_presence up ON u.id = up.user_id
-        WHERE u.id != ? 
-          AND (u.role IN ('alumni', 'resident') OR u.is_admin = TRUE)
-        ORDER BY u.name
-      `;
-      params = [user_id];
+      // Pre-commencemet interns see support staff
+      baseFilter = "(u.role IN ('alumni', 'resident') OR u.is_admin = TRUE)";
     } else {
-      // SyncChat is the commenced ICAA community; incoming interns stay in the lobby.
-      query = `
-        SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
-               COALESCE(up.status, 'offline') as status
-        FROM users u
-        LEFT JOIN user_presence up ON u.id = up.user_id
-        WHERE u.id != ?
-          AND u.role != 'intern'
-        ORDER BY u.name
-      `;
-      params = [user_id];
+      // Commenced community see other community members
+      baseFilter = "u.role != 'intern'";
     }
+
+    // Recent activity filtering (last 3 days)
+    // We include users who:
+    // 1. Are currently online
+    // 2. Have messaged the user in the last 3 days
+    // 3. Are the specific target_user_id (from directory)
+    let recentCondition = "";
+    if (recent_only === "true") {
+      recentCondition = `
+        AND (
+          up.status = 'online'
+          OR u.id IN (
+            SELECT DISTINCT recipient_id FROM messages WHERE sender_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 3 DAY)
+            UNION
+            SELECT DISTINCT sender_id FROM messages WHERE recipient_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 3 DAY)
+          )
+          ${target_user_id ? "OR u.id = ?" : ""}
+        )
+      `;
+      params.push(user_id, user_id);
+      if (target_user_id) params.push(target_user_id);
+    }
+
+    const query = `
+      SELECT u.id, u.name, u.role, u.profile_pic, u.cycle,
+             COALESCE(up.status, 'offline') as status,
+             up.last_seen
+      FROM users u
+      LEFT JOIN user_presence up ON u.id = up.user_id
+      WHERE u.id != ?
+        AND ${baseFilter}
+        ${recentCondition}
+      ORDER BY 
+        CASE up.status WHEN 'online' THEN 0 ELSE 1 END,
+        up.last_seen DESC,
+        u.name ASC
+    `;
 
     const [rows] = await pool.query(query, params);
     res.json(rows);

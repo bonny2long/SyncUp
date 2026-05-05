@@ -884,11 +884,13 @@ export async function updatePresence(userId, status, channelId = null, lastPage 
   return res.json();
 }
 
-export async function fetchDMUsers(userId, scope = "chat") {
+export async function fetchDMUsers(userId, scope = "chat", recentOnly = false, targetUserId = null) {
   const params = new URLSearchParams({
     user_id: userId,
     scope,
+    recent_only: recentOnly,
   });
+  if (targetUserId) params.set("target_user_id", targetUserId);
   const res = await fetch(`${API_BASE}/chat/dm-users?${params.toString()}`, {
     headers: getUserHeaders(),
   });

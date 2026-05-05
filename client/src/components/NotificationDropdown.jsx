@@ -233,7 +233,7 @@ export default function NotificationDropdown({
           {activeTab === "projects" && "Project Join Requests"}
           {activeTab === "verifications" && "Skill Verifications"}
           {counts?.chat > 0 && activeTab === "notifications" && (
-             <span className="flex items-center gap-1 text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 px-1.5 py-0.5 rounded-full">
+             <span className="flex items-center gap-1 text-[10px] bg-[#b9123f]/10 text-[#b9123f] px-1.5 py-0.5 rounded-full font-bold">
                <MessageSquare className="w-2.5 h-2.5" />
                {counts.chat} unread chat
              </span>
@@ -296,7 +296,7 @@ export default function NotificationDropdown({
                   {mentorshipRequests.slice(0, 5).map((s) => (
                     <div key={s.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-[#b9123f]/10 flex items-center justify-center text-[#b9123f] font-bold shrink-0">
                           {s.intern_name?.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -409,7 +409,7 @@ export default function NotificationDropdown({
                             <span className="text-[10px] text-gray-500 bg-gray-100 dark:bg-gray-800 px-1 rounded uppercase tracking-wider">{v.claimant_role}</span>
                           </div>
                           <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                            Claimed <span className="font-bold text-primary">{v.skill_name}</span> on{" "}
+                            Claimed <span className="font-bold text-[#b9123f]">{v.skill_name}</span> on{" "}
                             <span className="opacity-70 italic">"{v.project_title}"</span>
                           </p>
                           <p className="text-[10px] text-text-secondary mt-1">
@@ -472,7 +472,7 @@ function TabButton({ active, onClick, icon, label, count }) {
       </div>
       {label}
       {count > 0 && (
-        <span className="absolute top-2 right-2 bg-red-500 text-white text-[9px] min-w-[14px] h-[14px] rounded-full flex items-center justify-center shadow-lg transform translate-x-1 -translate-y-1">
+        <span className="absolute top-2 right-2 bg-[#b9123f] text-white text-[9px] min-w-[14px] h-[14px] rounded-full flex items-center justify-center shadow-lg transform translate-x-1 -translate-y-1">
           {count > 9 ? '9+' : count}
         </span>
       )}
@@ -514,17 +514,19 @@ function NotificationItem({ notification, onClick, onDelete }) {
       case "session_accepted":
         return <Check className={`${iconClass} text-green-600`} />;
       case "new_session_request":
-        return <Users className={`${iconClass} text-blue-600`} />;
+        return <Users className={`${iconClass} text-[#b9123f]`} />;
        case "new_join_request":
         return <Briefcase className={`${iconClass} text-primary`} />;
       case "session_declined":
-        return <Pause className={`${iconClass} text-orange-600`} />;
+        return <Pause className={`${iconClass} text-[#383838]`} />;
       case "session_completed":
-        return <Award className={`${iconClass} text-blue-600`} />;
+        return <Award className={`${iconClass} text-[#b9123f]`} />;
       case "project_update":
         return <FileText className={`${iconClass} text-gray-500`} />;
       case "project_completed":
         return <Trophy className={`${iconClass} text-yellow-600`} />;
+      case "dm":
+        return <MessageSquare className={`${iconClass} text-primary`} />;
       default:
         return <Bell className={`${iconClass} text-gray-500`} />;
     }
@@ -535,12 +537,12 @@ function NotificationItem({ notification, onClick, onDelete }) {
       onClick={onClick}
       className={`p-4 cursor-pointer transition relative group ${
         notification.is_read ? "hover:bg-gray-50 dark:hover:bg-gray-800/40" : (
-          "bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+          "bg-[#b9123f]/5 dark:bg-[#b9123f]/10 hover:bg-[#b9123f]/10 dark:hover:bg-[#b9123f]/20"
         )
       }`}
     >
       {!notification.is_read && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#b9123f]" />
       )}
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 mt-0.5">{getIcon(notification.type)}</div>

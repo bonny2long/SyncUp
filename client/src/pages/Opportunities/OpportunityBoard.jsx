@@ -28,12 +28,12 @@ const TYPE_LABELS = {
 };
 
 const TYPE_CLASSES = {
-  full_time: "bg-green-100 text-green-700",
-  part_time: "bg-blue-100 text-blue-700",
-  contract: "bg-purple-100 text-purple-700",
-  internship: "bg-yellow-100 text-yellow-700",
-  apprenticeship: "bg-orange-100 text-orange-700",
-  scholarship: "bg-pink-100 text-pink-700",
+  full_time: "bg-[#b9123f] text-white",           // iCAA Red — premium role
+  part_time: "bg-[#b9123f]/15 text-[#b9123f]",    // Red tinted — partial
+  contract: "bg-[#383838] text-white",             // iCAA Gray — professional
+  internship: "bg-[#282827] text-white",           // iCAA Black — structured
+  apprenticeship: "bg-[#383838]/15 text-[#383838]", // Gray tinted
+  scholarship: "bg-[#b9123f]/10 text-[#b9123f]",
   event: "bg-slate-100 text-slate-700",
 };
 

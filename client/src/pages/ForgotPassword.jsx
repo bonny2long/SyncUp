@@ -25,8 +25,8 @@ export default function ForgotPassword() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-16 h-16 bg-[#b9123f]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-[#b9123f]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
@@ -44,8 +44,9 @@ export default function ForgotPassword() {
     <div className="min-h-[60vh] flex items-center justify-center py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Reset Your Password</h1>
-          <p className="text-text-secondary mt-2">Enter your email to receive a reset link.</p>
+          <div className="text-4xl font-black text-[#b9123f] tracking-tighter">*iCAA</div>
+          <h1 className="text-2xl font-bold mt-1">Reset Your Password</h1>
+          <p className="text-text-secondary mt-2">Enter your @icstars.org email to receive a reset link.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

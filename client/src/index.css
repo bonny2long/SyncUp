@@ -46,7 +46,7 @@
 body {
   background-color: var(--color-neutral-light);
   color: var(--color-neutral-dark);
-  font-family: sans-serif;
+  font-family: 'League Spartan', sans-serif;
 }
 
 /* Toast animations */

@@ -28,6 +28,7 @@ export default function Chat() {
   const [presence, setPresence] = useState([]);
   const [activeChannel, setActiveChannel] = useState(null);
   const [activeDM, setActiveDM] = useState(null);
+  const [isDMOpen, setIsDMOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -133,25 +134,31 @@ export default function Chat() {
 
     try {
       setLoading(true);
-      const [channelsData, presenceData, dmUsersData] = await Promise.all([
+      const searchParams = new URLSearchParams(location.search);
+      const urlUserId = searchParams.get("user");
+
+      const [channelsData, presenceData] = await Promise.all([
         fetchChannels(user.id),
         fetchPresence(user.id),
-        fetchDMUsers(user.id),
       ]);
 
       setChannels(channelsData);
       setPresence(presenceData);
-      setDmUsers(dmUsersData);
 
-      const searchParams = new URLSearchParams(location.search);
-      const urlUserId = searchParams.get("user");
-      
+      // Only pre-select DM if coming from directory link — only add that one person
       if (urlUserId) {
-        const targetDMUser = dmUsersData.find((u) => u.id === Number(urlUserId));
-        if (targetDMUser) {
-          setActiveDM(targetDMUser);
-          setActiveChannel(null);
-          return;
+        try {
+          const dmUsersData = await fetchDMUsers(user.id, "chat", false, urlUserId);
+          const targetDMUser = dmUsersData.find((u) => u.id === Number(urlUserId));
+          if (targetDMUser) {
+            setDmUsers([targetDMUser]);
+            setActiveDM(targetDMUser);
+            setActiveChannel(null);
+            setIsDMOpen(true);
+            return;
+          }
+        } catch (err) {
+          console.error("Error loading target DM user:", err);
         }
       }
 
@@ -301,19 +308,19 @@ export default function Chat() {
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
-    );
+  );
   }
-
   return (
     <div className="flex flex-col h-[calc(100vh-200px)]">
-      <div className="flex flex-1 gap-4 overflow-hidden">
-        <div className="w-72 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
-          <div className="p-3 border-b border-border">
+      <div className="flex flex-1 gap-4 overflow-hidden relative">
+        {/* Main Channels Sidebar */}
+        <div className="w-72 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col z-10">
+          {/* Channels header */}
+          <div className="p-3 border-b border-border shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-gray-500 uppercase">
                 Channels
               </span>
-              {/* Only admins can create channels */}
               {user?.is_admin && (
                 <button
                   onClick={() => setShowCreateChannel(true)}
@@ -324,174 +331,167 @@ export default function Chat() {
                 </button>
               )}
             </div>
-            <div className="mt-2 space-y-1">
-              {channels.length === 0 ?
-                <p className="text-xs text-text-secondary">
-                  No channels available.
-                </p>
-              : channels.map((channel) => (
-                  <button
-                    key={channel.id}
-                    onClick={() => {
-                      setActiveChannel(channel);
-                      setActiveDM(null);
-                    }}
-                    className={`w-full flex items-center gap-2 px-2 py-2 rounded text-left text-sm transition-colors ${
-                      activeChannel?.id === channel.id ?
-                        "bg-primary/10 text-primary"
-                      : "text-neutral-dark hover:bg-surface-highlight"
-                    }`}
-                  >
-                    <Hash className="w-4 h-4" />
-                    <span className="truncate">#{channel.name}</span>
-                  </button>
-                ))
-              }
-              {/* Create Channel Form */}
-              {showCreateChannel && (
-                <div className="mt-2 p-2 bg-surface-highlight rounded-lg border border-border">
-                  <input
-                    type="text"
-                    value={newChannelName}
-                    onChange={(e) => setNewChannelName(e.target.value)}
-                    placeholder="Channel name..."
-                    className="w-full px-2 py-1 text-sm bg-surface border border-border rounded mb-2"
-                    maxLength={100}
-                  />
-                  <input
-                    type="text"
-                    value={newChannelDesc}
-                    onChange={(e) => setNewChannelDesc(e.target.value)}
-                    placeholder="Description (optional)..."
-                    className="w-full px-2 py-1 text-sm bg-surface border border-border rounded mb-2"
-                    maxLength={255}
-                  />
-                  <div className="flex gap-1">
-                    <button
-                      onClick={async () => {
-                        if (!newChannelName.trim()) return;
-                        setCreatingChannel(true);
-                        try {
-                          const newChannel = await createChannel(
-                            newChannelName.trim(),
-                            newChannelDesc.trim(),
-                            user.id,
-                          );
-                          setChannels((prev) => [...prev, newChannel]);
-                          setNewChannelName("");
-                          setNewChannelDesc("");
-                          setShowCreateChannel(false);
-                          setActiveChannel(newChannel);
-                          setActiveDM(null);
-                        } catch (err) {
-                          console.error("Failed to create channel:", err);
-                          addToast("Failed to create channel", "error");
-                        } finally {
-                          setCreatingChannel(false);
-                        }
-                      }}
-                      disabled={!newChannelName.trim() || creatingChannel}
-                      className="flex-1 px-2 py-1 text-xs bg-primary text-white rounded disabled:opacity-50"
-                    >
-                      {creatingChannel ? "Creating..." : "Create"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowCreateChannel(false);
-                        setNewChannelName("");
-                        setNewChannelDesc("");
-                      }}
-                      className="px-2 py-1 text-xs border border-border rounded hover:bg-surface-highlight"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
-          <div className="p-3 flex-1 overflow-y-auto">
-            <span className="text-xs font-semibold text-text-secondary uppercase">
-              Direct Messages
-            </span>
-            <div className="mt-2 space-y-1">
-              {dmUsers.length === 0 ?
-                <p className="text-xs text-text-secondary">No users available.</p>
-              : dmUsers.map((dmUser) => (
+          {/* Channels list — scrollable, compresses when DMs expand */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1">
+            {channels.length === 0 ?
+              <p className="text-xs text-text-secondary">
+                No channels available.
+              </p>
+            : channels.map((channel) => (
+                <button
+                  key={channel.id}
+                  onClick={() => {
+                    setActiveChannel(channel);
+                    setActiveDM(null);
+                    setIsDMOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-2 py-2 rounded text-left text-sm transition-colors ${
+                    activeChannel?.id === channel.id ?
+                      "bg-primary/10 text-primary"
+                    : "text-neutral-dark hover:bg-surface-highlight"
+                  }`}
+                >
+                  <Hash className="w-4 h-4" />
+                  <span className="truncate">#{channel.name}</span>
+                </button>
+              ))
+            }
+            {showCreateChannel && (
+              <div className="mt-2 p-2 bg-surface-highlight rounded-lg border border-border">
+                <input
+                  type="text"
+                  value={newChannelName}
+                  onChange={(e) => setNewChannelName(e.target.value)}
+                  placeholder="Channel name..."
+                  className="w-full px-2 py-1 text-sm bg-surface border border-border rounded mb-2"
+                />
+                <div className="flex gap-1">
                   <button
-                    key={dmUser.id}
-                    onClick={() => {
-                      setActiveDM(dmUser);
-                      setActiveChannel(null);
+                    onClick={async () => {
+                      if (!newChannelName.trim()) return;
+                      setCreatingChannel(true);
+                      try {
+                        const newChannel = await createChannel(newChannelName.trim(), newChannelDesc.trim(), user.id);
+                        setChannels((prev) => [...prev, newChannel]);
+                        setNewChannelName("");
+                        setShowCreateChannel(false);
+                        setActiveChannel(newChannel);
+                        setActiveDM(null);
+                      } catch (err) {
+                        addToast("Failed to create channel", "error");
+                      } finally {
+                        setCreatingChannel(false);
+                      }
                     }}
-                    className={`w-full flex items-center gap-2 px-2 py-2 rounded text-left text-sm transition-colors ${
-                      activeDM?.id === dmUser.id ?
-                        "bg-primary/10 text-primary"
-                      : "text-neutral-dark hover:bg-surface-highlight"
-                    }`}
+                    disabled={!newChannelName.trim() || creatingChannel}
+                    className="flex-1 px-2 py-1 text-xs bg-primary text-white rounded disabled:opacity-50"
                   >
-                    <div className="relative flex-shrink-0">
-                      <UserAvatar user={dmUser} size="sm" />
-                      <div
-                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
-                          dmUser.status === "online" ? "bg-green-500" : "bg-gray-400"
-                        }`}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <span className="truncate font-medium">{dmUser.name}</span>
-                        <RoleBadge role={dmUser.role} size="xs" />
-                      </div>
-                      {dmUser.cycle && (
-                        <p className="text-xs text-text-secondary truncate">
-                          {formatCycle(dmUser)}
-                        </p>
-                      )}
-                    </div>
+                    Create
                   </button>
-                ))
-              }
+                  <button
+                    onClick={() => setShowCreateChannel(false)}
+                    className="px-2 py-1 text-xs border border-border rounded hover:bg-surface-highlight"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* DM section — expands inline at bottom, never overlaps chat area */}
+          <div className={`border-t border-border shrink-0 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ${isDMOpen ? "max-h-80" : "max-h-13"}`}>
+            <button
+              onClick={() => setIsDMOpen(!isDMOpen)}
+              className="shrink-0 w-full flex items-center justify-between px-3 py-3 bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                <span>Direct Messages</span>
+              </div>
+              {dmUsers.length > 0 && (
+                <span className="bg-white/20 px-1.5 rounded-full text-[10px]">
+                  {dmUsers.length}
+                </span>
+              )}
+            </button>
+
+            <div className="overflow-y-auto p-2 space-y-1 bg-surface">
+              {dmUsers.length === 0 ? (
+                <div className="py-5 text-center">
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <Users className="w-5 h-5 text-gray-300" />
+                  </div>
+                  <p className="text-xs font-semibold text-neutral-dark">No active DMs</p>
+                  <p className="text-[11px] text-text-secondary mt-0.5">
+                    Start from the Directory or online users list.
+                  </p>
+                </div>
+              ) : dmUsers.map((dmUser) => (
+                <button
+                  key={dmUser.id}
+                  onClick={() => {
+                    setActiveDM(dmUser);
+                    setActiveChannel(null);
+                  }}
+                  className={`w-full flex items-center gap-3 p-2 rounded-lg text-left text-sm transition-all ${
+                    activeDM?.id === dmUser.id ?
+                      "bg-[#b9123f]/10 text-[#b9123f] border border-[#b9123f]/20 shadow-sm"
+                    : "text-neutral-dark hover:bg-surface-highlight"
+                  }`}
+                >
+                  <div className="relative flex-shrink-0">
+                    <UserAvatar user={dmUser} size="md" />
+                    <div
+                      className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
+                        dmUser.status === "online" ? "bg-green-500" : "bg-gray-400"
+                      }`}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="truncate font-semibold block">{dmUser.name}</span>
+                    <RoleBadge role={dmUser.role} size="xs" />
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="flex-1 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            {activeChannel ?
-              <>
-                <Hash className="w-5 h-5 text-gray-400" />
-                <span className="font-semibold text-neutral-dark">
-                  {activeChannel.name}
-                </span>
-              </>
-            : selectedDM ?
-              <>
-                <div className="relative">
-                  <UserAvatar user={selectedDM} size="sm" />
-                  <div
-                    className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
-                      selectedDM.status === "online" ? "bg-green-500" : "bg-gray-400"
-                    }`}
-                  />
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
+        {/* Chat Area */}
+        <div className="flex-1 bg-surface border border-border rounded-lg overflow-hidden flex flex-col relative">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-white relative z-10">
+            <div className="flex items-center gap-2">
+              {activeChannel ?
+                <>
+                  <Hash className="w-5 h-5 text-gray-400" />
                   <span className="font-semibold text-neutral-dark">
-                    {selectedDM.name}
+                    {activeChannel.name}
                   </span>
-                  <RoleBadge role={selectedDM.role} size="xs" />
-                  {selectedDM.cycle && (
-                    <span className="text-xs text-text-secondary">
-                      {formatCycle(selectedDM)}
+                </>
+              : selectedDM ?
+                <>
+                  <div className="relative">
+                    <UserAvatar user={selectedDM} size="sm" />
+                    <div
+                      className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
+                        selectedDM.status === "online" ? "bg-green-500" : "bg-gray-400"
+                      }`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-neutral-dark">
+                      {selectedDM.name}
                     </span>
-                  )}
-                </div>
-              </>
-            : <span className="text-text-secondary">Select a channel or DM</span>}
-            <span className="ml-auto text-xs text-text-secondary">
-              Logged in as{" "}
-              <span className="font-medium text-primary">{user?.name}</span>
+                    <RoleBadge role={selectedDM.role} size="xs" />
+                  </div>
+                </>
+              : <span className="text-text-secondary">Select a channel or DM</span>}
+            </div>
+            <span className="text-xs text-text-secondary">
+              Logged in as <span className="font-medium text-[#b9123f]">{user?.name}</span>
             </span>
           </div>
 
@@ -537,11 +537,6 @@ export default function Chat() {
                               {message.sender_role && (
                                 <RoleBadge role={message.sender_role} size="xs" />
                               )}
-                              {message.sender_cycle && (
-                                <span className="text-xs text-text-secondary">
-                                  {message.sender_cycle}
-                                </span>
-                              )}
                             </>
                           )}
                           <span className="text-xs text-text-secondary">
@@ -552,7 +547,7 @@ export default function Chat() {
                         <div
                           className={`px-4 py-2 rounded-2xl shadow-sm text-sm ${
                             isMe ?
-                              "bg-primary text-white rounded-br-none"
+                              "bg-[#b9123f] text-white rounded-br-none"
                             : "bg-surface-highlight text-neutral-dark rounded-bl-none border border-border"
                           }`}
                         >
@@ -565,7 +560,7 @@ export default function Chat() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className={`block mt-2 text-xs hover:underline flex items-center gap-1 ${
-                                isMe ? "text-blue-100" : "text-primary"
+                                isMe ? "text-white/80" : "text-[#b9123f]"
                               }`}
                             >
                               <Paperclip className="w-3 h-3" />
@@ -577,8 +572,6 @@ export default function Chat() {
                     </div>
                   );
                 })
-              : isAnnouncementsChannel ?
-                <CommunityArchive />
               : <div className="flex flex-col items-center justify-center h-full text-text-secondary">
                   <MessageSquare className="w-12 h-12 mb-2" />
                   <p>
@@ -594,7 +587,7 @@ export default function Chat() {
           </div>
 
           {(activeChannel || selectedDM) && (
-            <div className="p-3 border-t border-border">
+            <div className="p-3 border-t border-border bg-white">
               {selectedFile && (
                 <div className="flex items-center gap-2 mb-2 p-2 bg-surface-highlight rounded-lg border border-border">
                   {selectedFile.type.startsWith("image/") ?
@@ -603,11 +596,7 @@ export default function Chat() {
                   <span className="text-sm text-neutral-dark flex-1 truncate">
                     {selectedFile.name}
                   </span>
-                  <button
-                    onClick={clearSelectedFile}
-                    className="p-1 hover:bg-surface rounded"
-                    aria-label="Remove file"
-                  >
+                  <button onClick={clearSelectedFile} className="p-1 hover:bg-surface rounded">
                     <X className="w-4 h-4 text-text-secondary" />
                   </button>
                 </div>
@@ -618,9 +607,7 @@ export default function Chat() {
                   type="file"
                   ref={fileInputRef}
                   onChange={(event) => {
-                    if (event.target.files?.[0]) {
-                      setSelectedFile(event.target.files[0]);
-                    }
+                    if (event.target.files?.[0]) setSelectedFile(event.target.files[0]);
                   }}
                   className="hidden"
                 />
@@ -628,30 +615,24 @@ export default function Chat() {
                   onClick={() => fileInputRef.current?.click()}
                   className="p-2 hover:bg-surface-highlight rounded text-text-secondary"
                   disabled={uploading}
-                  aria-label="Attach file"
                 >
-                  {uploading ?
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  : <Paperclip className="w-5 h-5" />}
+                  {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
                 </button>
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(event) => setNewMessage(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      handleSendMessage();
-                    }
+                    if (event.key === "Enter") handleSendMessage();
                   }}
                   placeholder={`Message ${activeChannel ? `#${activeChannel.name}` : selectedDM?.name}`}
-                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-surface-highlight text-neutral-dark placeholder-text-secondary"
+                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-surface-highlight text-neutral-dark outline-none focus:ring-1 focus:ring-primary/30"
                   disabled={sending}
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={(!newMessage.trim() && !selectedFile) || sending}
-                  className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50"
-                  aria-label="Send message"
+                  className="px-4 py-2 bg-[#b9123f] text-white rounded-lg disabled:opacity-50"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -660,14 +641,12 @@ export default function Chat() {
           )}
         </div>
 
+        {/* Right Sidebar - Online Members */}
         <div className="w-56 flex-shrink-0 bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
           <div className="p-3 border-b border-border flex items-center gap-2">
             <Users className="w-4 h-4 text-text-secondary" />
             <span className="font-semibold text-sm text-neutral-dark">
               Online Now
-            </span>
-            <span className="ml-auto text-xs text-text-secondary">
-              {onlineMembers.length}
             </span>
           </div>
 
@@ -676,8 +655,10 @@ export default function Chat() {
               <button
                 key={member.id}
                 onClick={() => {
+                  setDmUsers((prev) => prev.find((u) => u.id === member.id) ? prev : [...prev, member]);
                   setActiveDM(member);
                   setActiveChannel(null);
+                  setIsDMOpen(true);
                 }}
                 className="w-full flex items-center gap-2 p-2 hover:bg-surface-highlight rounded-lg text-left transition-colors"
               >
@@ -686,59 +667,39 @@ export default function Chat() {
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-green-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-neutral-dark truncate">
-                    {member.name}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <RoleBadge role={member.role} size="xs" />
-                    {member.cycle && (
-                      <span className="text-xs text-text-secondary">
-                        {formatCycle(member)}
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-sm font-medium text-neutral-dark truncate">{member.name}</p>
+                  <RoleBadge role={member.role} size="xs" />
                 </div>
               </button>
             ))}
 
-            {onlineMembers.length === 0 && offlineMembers.length === 0 && (
-              <p className="p-2 text-xs text-text-secondary">
-                No community members available yet.
-              </p>
+            {onlineMembers.length === 0 && (
+              <p className="p-2 text-xs text-text-secondary">No one online.</p>
             )}
 
-            {offlineMembers.length > 0 && onlineMembers.length > 0 && (
-              <div className="my-2 border-t border-border" />
+            {offlineMembers.length > 0 && (
+              <>
+                <div className="my-2 border-t border-border" />
+                <p className="px-2 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recently Active</p>
+                {offlineMembers.slice(0, 10).map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => {
+                      setDmUsers((prev) => prev.find((u) => u.id === member.id) ? prev : [...prev, member]);
+                      setActiveDM(member);
+                      setActiveChannel(null);
+                      setIsDMOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2 p-2 hover:bg-surface-highlight rounded-lg text-left transition-colors opacity-60"
+                  >
+                    <div className="relative flex-shrink-0">
+                      <UserAvatar user={member} size="sm" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-sm">{member.name}</div>
+                  </button>
+                ))}
+              </>
             )}
-
-            {offlineMembers.map((member) => (
-              <button
-                key={member.id}
-                onClick={() => {
-                  setActiveDM(member);
-                  setActiveChannel(null);
-                }}
-                className="w-full flex items-center gap-2 p-2 hover:bg-surface-highlight rounded-lg text-left transition-colors opacity-60"
-              >
-                <div className="relative flex-shrink-0">
-                  <UserAvatar user={member} size="sm" />
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-gray-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-neutral-dark truncate">
-                    {member.name}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <RoleBadge role={member.role} size="xs" />
-                    {member.cycle && (
-                      <span className="text-xs text-text-secondary">
-                        {formatCycle(member)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
           </div>
         </div>
       </div>

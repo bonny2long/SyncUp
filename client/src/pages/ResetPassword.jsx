@@ -47,8 +47,8 @@ export default function ResetPassword() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-16 h-16 bg-[#b9123f]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-[#b9123f]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
@@ -64,7 +64,8 @@ export default function ResetPassword() {
     <div className="min-h-[60vh] flex items-center justify-center py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Set New Password</h1>
+          <div className="text-4xl font-black text-[#b9123f] tracking-tighter">*iCAA</div>
+          <h1 className="text-2xl font-bold mt-1">Set New Password</h1>
           <p className="text-text-secondary mt-2">Enter your new password below.</p>
         </div>
 

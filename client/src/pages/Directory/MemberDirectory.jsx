@@ -6,6 +6,7 @@ import {
   ExternalLink,
   FolderKanban,
   Github,
+  MessageSquare,
   Search,
   Users,
 } from "lucide-react";
@@ -238,14 +239,21 @@ export default function MemberDirectory() {
                       )}
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Link
-                        to={`/p/${member.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-neutral-dark hover:border-primary/40 hover:text-primary"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Public profile
-                      </Link>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Link
+                          to={`/chat?user=${member.id}`}
+                          className="inline-flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-white hover:bg-primary/90"
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          Chat
+                        </Link>
+                        <Link
+                          to={`/p/${member.id}`}
+                          className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-neutral-dark hover:border-primary/40 hover:text-primary"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Public profile
+                        </Link>
                       {member.github_url && (
                         <a
                           href={member.github_url}

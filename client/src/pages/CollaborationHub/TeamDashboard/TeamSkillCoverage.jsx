@@ -44,7 +44,7 @@ const TeamSkillCoverage = ({ data = [] }) => {
 
   const getCoverageLevel = (coverage) => {
     if (coverage >= 80) return { label: "Expert", color: "bg-green-500", textColor: "text-green-500" };
-    if (coverage >= 50) return { label: "Good", color: "bg-blue-500", textColor: "text-blue-500" };
+    if (coverage >= 50) return { label: "Good", color: "bg-[#b9123f]", textColor: "text-[#b9123f]" };
     if (coverage >= 20) return { label: "Learning", color: "bg-orange-500", textColor: "text-orange-500" };
     return { label: "Beginner", color: "bg-gray-400", textColor: "text-gray-400" };
   };
@@ -57,7 +57,7 @@ const TeamSkillCoverage = ({ data = [] }) => {
 
   const getCoverageScore = () => {
     if (averageCoverage >= 80) return { text: "Excellent!", color: "text-green-500", icon: Award };
-    if (averageCoverage >= 60) return { text: "Good", color: "text-blue-500", icon: TrendingUp };
+    if (averageCoverage >= 60) return { text: "Good", color: "text-[#b9123f]", icon: TrendingUp };
     if (averageCoverage >= 40) return { text: "Fair", color: "text-orange-500", icon: Target };
     return { text: "Growing", color: "text-gray-500", icon: Target };
   };

@@ -74,10 +74,10 @@ const TeamAchievements = ({ data }) => {
         label: "Active",
         value: `${activePercentage}%`,
         subtitle: activePercentage === 100 ? "Perfect!" : activePercentage >= 75 ? "Great!" : "Good",
-        color: "blue",
-        bgColor: "bg-blue-500/10",
-        textColor: "text-blue-500",
-        iconColor: "text-blue-500",
+        borderColor: "border-[#b9123f]/20",
+        bgColor: "bg-[#b9123f]/10",
+        textColor: "text-[#b9123f]",
+        iconColor: "text-[#b9123f]",
       },
     ];
   }, [data]);
@@ -89,7 +89,7 @@ const TeamAchievements = ({ data }) => {
         return (
           <div
             key={index}
-            className={`${achievement.bgColor} border border-${achievement.color}-500/20 rounded-lg p-5 hover:scale-[1.02] transition-transform`}
+            className={`${achievement.bgColor} border ${achievement.borderColor || `border-${achievement.color}-500/20`} rounded-lg p-5 hover:scale-[1.02] transition-transform`}
           >
             <div className="flex items-center justify-between mb-3">
               <div className={`p-2 rounded-lg ${achievement.bgColor}`}>

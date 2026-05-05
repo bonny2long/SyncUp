@@ -50,7 +50,7 @@ export default function DiscoverProjects({
                   <span>{project.skill_count ?? 0}</span>
                 </div>
                 {project.visibility === "public" && (
-                  <span className="flex items-center gap-1 text-blue-400">
+                  <span className="flex items-center gap-1 text-[#b9123f]">
                     <Globe className="w-3 h-3" />
                     Public
                   </span>

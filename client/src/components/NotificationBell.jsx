@@ -105,8 +105,8 @@ export default function NotificationBell() {
         {/* Unread Badge */}
         {counts.total > 0 && (
           <span
-            className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-white text-xs flex items-center justify-center font-bold shadow-sm ${
-              digestMode ? "bg-gray-400" : "bg-red-500"
+            className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-white text-[10px] flex items-center justify-center font-bold shadow-sm ${
+              digestMode ? "bg-[#383838]" : "bg-[#b9123f]"
             }`}
           >
             {counts.total > 99 ? "99+" : counts.total}
