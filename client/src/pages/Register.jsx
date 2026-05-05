@@ -129,22 +129,31 @@ export default function Register() {
       <div className="min-h-screen bg-neutralLight px-4 py-10 flex items-center justify-center">
         <div className="brand-card max-w-md p-8 text-center">
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-8 h-8 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
           <h2 className="text-2xl font-bold mb-2">
             {isSpecial ? "Account Created!" : "Check Your Email"}
           </h2>
           <p className="text-text-secondary mb-4">
-            {isSpecial ? (
+            {isSpecial ?
               "Your account is ready. You can log in immediately."
-            ) : (
-              <>
+            : <>
                 We sent a verification link to <strong>{form.email}</strong>.
                 You&apos;ll be able to log in once you verify.
               </>
-            )}
+            }
           </p>
           {!isSpecial && (
             <button
@@ -184,7 +193,7 @@ export default function Register() {
     <div className="min-h-dvh bg-surface text-neutral-dark lg:grid lg:h-dvh lg:grid-cols-[minmax(0,0.52fr)_minmax(440px,0.48fr)] lg:overflow-hidden">
       <aside className="relative hidden h-dvh overflow-hidden bg-accent lg:block">
         <ChicagoAccent
-          image="sunriseCity"
+          image="groupPhoto"
           variant="panel"
           className="absolute inset-0 border-0 shadow-none"
         />
@@ -222,8 +231,8 @@ export default function Register() {
               Join the iCAA Community
             </h1>
             <p className="mt-3 text-sm leading-6 text-text-secondary">
-              Create your account to connect with members, projects,
-              mentorship, and opportunities.
+              Create your account to connect with members, projects, mentorship,
+              and opportunities.
             </p>
           </div>
 
@@ -235,12 +244,16 @@ export default function Register() {
 
           <form onSubmit={handleSubmit} className="mt-5 space-y-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Full Name</label>
+              <label className="block text-sm font-medium mb-1">
+                Full Name
+              </label>
               <input
                 type="text"
                 className="input w-full"
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, name: e.target.value }))
+                }
                 placeholder="Your full name"
                 required
               />
@@ -253,29 +266,36 @@ export default function Register() {
                   type="email"
                   className="input w-full"
                   value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, email: e.target.value }))
+                  }
                   placeholder="you@icstars.org"
                   required
                 />
                 <p className="text-xs text-text-secondary mt-1">
-                  Use your @icstars.org email so we can verify your community access.
+                  Use your @icstars.org email so we can verify your community
+                  access.
                 </p>
               </div>
             )}
 
             {mode === "normal" && (
               <div>
-                <label className="block text-sm font-medium mb-2">I am a...</label>
+                <label className="block text-sm font-medium mb-2">
+                  I am a...
+                </label>
                 <div className="grid grid-cols-3 gap-3">
                   {statusOptions.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => setForm((f) => ({ ...f, status: opt.value }))}
+                      onClick={() =>
+                        setForm((f) => ({ ...f, status: opt.value }))
+                      }
                       className={`p-3 rounded-lg border-2 text-sm font-medium transition ${
-                        form.status === opt.value
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border hover:border-primary/50"
+                        form.status === opt.value ?
+                          "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-primary/50"
                       }`}
                     >
                       {opt.label}
@@ -287,7 +307,10 @@ export default function Register() {
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                Cycle {mode === "normal" && form.status === "intern" ? "(required)" : "(optional)"}
+                Cycle{" "}
+                {mode === "normal" && form.status === "intern" ?
+                  "(required)"
+                : "(optional)"}
               </label>
               <input
                 type="text"
@@ -307,7 +330,9 @@ export default function Register() {
                 type="password"
                 className="input w-full"
                 value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, password: e.target.value }))
+                }
                 placeholder="At least 8 characters"
                 minLength={8}
                 required
@@ -331,7 +356,11 @@ export default function Register() {
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn btn-primary w-full">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary w-full"
+            >
               {loading ? "Creating Account..." : "Create My Account"}
             </button>
           </form>
