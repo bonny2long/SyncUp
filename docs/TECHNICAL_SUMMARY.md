@@ -28,6 +28,26 @@ SyncUp is a full-stack intern collaboration and mentorship platform that tracks 
 
 ---
 
+## Sidebar Navigation
+
+The sidebar provides role-based navigation with the following tabs:
+
+| Tab | Route | Access | Description |
+|-----|--------|--------|-------------|
+| Admin Dashboard | `/admin` | Admin only | Platform management and settings |
+| Collaboration Hub | `/collaboration` | Non-admin users | Project collaboration workspace |
+| SyncChat | `/chat` | Community members + commenced interns | Community chat and messaging |
+| Member Directory | `/directory` | Community members + admins | Browse member profiles |
+| Opportunity Board | `/opportunities` | Community members + admins | Job and opportunity sharing |
+| Mentorship Bridge | `/mentorship` | Non-admin users | Mentorship session management |
+| Project Portfolio | `/portfolio` | All authenticated | Professional project showcase |
+| Intern Lobby | `/lobby` | Interns only | Pre-commencement space |
+| Skill Tracker | `/skills` | Interns only | Evidence-based skill analytics |
+
+See [sidebar-tabs/](sidebar-tabs/) for detailed documentation on each tab.
+
+---
+
 ## API Endpoints
 
 ### Health
@@ -139,6 +159,11 @@ SyncUp is a full-stack intern collaboration and mentorship platform that tracks 
 | GET | `/api/chat/presence` | Get user presence |
 | POST | `/api/chat/presence` | Update presence |
 | GET | `/api/chat/dm-users` | Get DM users |
+| GET | `/api/chat/cohort/:cycleId/messages` | Get cohort messages |
+| POST | `/api/chat/cohort/:cycleId/messages` | Send cohort message |
+| GET | `/api/chat/encouragements` | Get encouragement messages |
+| POST | `/api/chat/encouragements` | Create encouragement |
+| DELETE | `/api/chat/encouragements/:id` | Delete encouragement |
 
 ### Announcements
 | Method | Endpoint | Description |
@@ -200,6 +225,7 @@ SyncUp is a full-stack intern collaboration and mentorship platform that tracks 
 | GET | `/api/admin/stats` | Platform stats (users, projects, sessions, inactive) |
 | GET | `/api/admin/platform-stats` | Platform info (total counts, version, timezone) |
 | GET | `/api/admin/growth-stats` | Daily user/project growth (30 days) |
+| GET | `/api/admin/hq-analytics` | ICAA HQ operations snapshot |
 | GET | `/api/admin/settings/maintenance` | Get maintenance mode status |
 | PUT | `/api/admin/settings/maintenance` | Toggle maintenance mode |
 | POST | `/api/admin/invitations` | Create invitation |
@@ -208,6 +234,33 @@ SyncUp is a full-stack intern collaboration and mentorship platform that tracks 
 | GET | `/api/admin/invitations/validate` | Validate invitation token |
 | POST | `/api/admin/register` | Register with invitation |
 | POST | `/api/admin/reset-demo` | Reset and seed demo data (API key protected) |
+
+### Governance
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/governance/positions` | List governance positions |
+| POST | `/api/governance/assign` | Assign governance position |
+| DELETE | `/api/governance/remove/:id` | Remove governance position |
+
+### Cycles
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/cycles` | List all cycles |
+| POST | `/api/cycles` | Create new cycle |
+| PUT | `/api/cycles/:id/status` | Update cycle status |
+
+### Opportunities
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/opportunities` | List active opportunities |
+| POST | `/api/opportunities` | Create opportunity |
+| DELETE | `/api/opportunities/:id` | Soft-delete opportunity |
+
+### Users (Additional Admin Endpoints)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/users/directory` | Get member directory (filtered) |
+| GET | `/api/users/cohort/:cycleId` | Get cohort members |
 
 ### Analytics
 | Method | Endpoint | Description |
@@ -285,6 +338,9 @@ CREATE TABLE projects (
 ### Core Tables
 | Table | Purpose |
 |-------|---------|
+| `users` | User accounts with roles, commencement, cycle, profile links, privacy settings |
+| `intern_cycles` | Intern cohort cycles (cycle_name, start_date, end_date, status) |
+| `governance_positions` | Governance roles (president, vp, treasurer, etc.) |
 | `project_members` | User-project membership (project_id, user_id, role, joined_at) |
 | `project_skills` | Skills associated with projects (project_id, skill_id) |
 | `project_discussions` | Project-specific discussions |
@@ -296,15 +352,19 @@ CREATE TABLE projects (
 | `skill_verifications` | Team member skill claim verification |
 | `mentorship_sessions` | Mentorship sessions (intern_id, mentor_id, topic, details, session_focus, scheduled_at, status) |
 | `mentorship_session_skills` | Skills practiced in sessions |
+| `mentor_availability` | Mentor available time slots |
 | `notifications` | In-app notifications |
 | `channels` | Chat channels |
 | `channel_members` | Channel membership |
 | `messages` | Chat messages (channel + DM) |
+| `cohort_messages` | Intern lobby cohort messages |
+| `encouragements` | Community encouragement messages |
 | `user_presence` | Online/offline/away status |
 | `announcements` | Org-wide announcements |
 | `announcement_reads` | Read tracking for announcements |
 | `events` | Community events |
 | `event_rsvps` | Event RSVPs |
+| `opportunities` | Job/opportunity postings |
 | `badges` | Badge definitions (name, description, icon, category) |
 | `user_badges` | Earned badges per user |
 | `system_errors` | Error tracking |

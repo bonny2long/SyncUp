@@ -1,15 +1,18 @@
-# Skill Tracker Signal Pipeline
+# Skill Signal Pipeline (A -> B -> C -> D)
 
-A -> B -> C -> D Architecture and Guardrails
+Architecture and Guardrails for Evidence-Based Skill Tracking
 
 ## Purpose
 
-Skill Tracker is a read-only analytics layer that reflects real activity across the platform.
-It does not ask users to self-rate skills.
-It does not infer skills from vague intent.
-It only aggregates append-only skill signals that originate from explicit, scoped events.
+The Skill Signal Pipeline is the backbone of SyncUp's evidence-based skill tracking system. It ensures that all skill data displayed in the Skill Tracker (sidebar tab) is derived from real, verifiable activities across the platform.
 
-The system is designed to be correct first, then expandable later.
+The system:
+- Does not ask users to self-rate skills
+- Does not infer skills from vague intent
+- Only aggregates append-only skill signals from explicit, scoped events
+- Uses a single source of truth: `user_skill_signals` table
+
+The pipeline is designed to be correct first, then expandable later.
 
 ## Core Idea
 
@@ -217,15 +220,36 @@ Those features may be added later, but they must still route through emitSkillSi
 
 ## Definition of Done for A -> B -> C -> D
 
-A:
-Project skills exist and are queryable.
+### A - Project Context
+- Project skills exist and are queryable via `project_skills` table
+- Project metadata `skill_ideas` is informational only and never generates signals
+- Skills are explicitly defined when creating/editing projects
 
-B:
-Mentorship sessions exist with session_focus and optional project_id.
-No mentorship signal inserts occur without explicit skill selection.
+### B - Mentorship Sessions
+- Mentorship sessions exist with `session_focus` and optional `project_id`
+- No mentorship signal inserts occur without explicit skill selection
+- Only technical sessions (`project_support`, `technical_guidance`) generate signals
+- Skills are selected via `SkillSelectModal` during session completion
 
-C:
-Progress update inserts create signals for all project skills.
+### C - Progress Updates
+- Progress update inserts create signals for all project skills
+- Signals are emitted via `emitSkillSignals()` function
+- If no `project_skills` exist, no signals are emitted (no-op)
 
-D:
-Analytics endpoints read from user_skill_signals only and power the charts.
+### D - Analytics Layer (Skill Tracker)
+- Analytics endpoints read exclusively from `user_skill_signals`
+- All skill charts (distribution, momentum, activity) use the canonical `/api/skills/user/:id/summary` endpoint
+- No writes occur in this layer
+- Read-only analytics derived from append-only signals
+
+---
+
+## Integration with Sidebar Tabs
+
+The Skill Signal Pipeline powers the following sidebar tabs:
+- **Skill Tracker** (`/skills`): Read-only analytics dashboard (D-layer)
+- **Collaboration Hub** (`/collaboration`): Projects and progress updates generate signals (A + C layers)
+- **Mentorship Bridge** (`/mentorship`): Session skill verification generates signals (B-layer)
+- **Project Portfolio** (`/portfolio`): Showcases projects that contributed to skill growth
+
+See [sidebar-tabs/](sidebar-tabs/) for detailed documentation on each tab.

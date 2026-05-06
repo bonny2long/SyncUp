@@ -6,15 +6,15 @@ Frontend application for the SyncUp / ICAA platform, built with React 19 and Vit
 
 ## Tech Stack
 
-- React 19 - UI component library
-- Vite 7 - Build tool and development server
-- Tailwind CSS v4 - Utility-first CSS framework
-- Recharts - Charting library
-- AG Charts - High-performance charting library
-- Lucide React - Beautiful and consistent icons
-- React Router DOM - Client-side routing
-- PostCSS - CSS processing
-- jsPDF + jsPDF-AutoTable - PDF resume export
+- **React 19** - UI component library
+- **Vite 7** - Build tool and development server
+- **Tailwind CSS v4** - Utility-first CSS framework
+- **Recharts** - Charting library
+- **AG Charts** - High-performance charting library
+- **Lucide React** - Beautiful and consistent icons
+- **React Router DOM** - Client-side routing
+- **PostCSS** - CSS processing
+- **jsPDF + jsPDF-AutoTable** - PDF resume export
 
 ## Design System
 
@@ -123,21 +123,32 @@ VITE_API_BASE=http://localhost:5000/api
 
 ## Pages and Routes
 
+### Sidebar Tabs (Main Navigation)
+
+| Route | Component | Access | Sidebar ID |
+|-------|-----------|--------|-------------|
+| `/admin` | AdminDashboard | Admin only | `admin` |
+| `/collaboration` | CollaborationHub | Non-admin only | `collaboration` |
+| `/chat` | Chat (SyncChat) | Community members + commenced interns | `chat` |
+| `/directory` | MemberDirectory | Community members + admins | `directory` |
+| `/opportunities` | OpportunityBoard | Community members + admins | `opportunities` |
+| `/mentorship` | MentorshipBridge | Non-admin only | `mentorship` |
+| `/portfolio` | ProjectPortfolio | Authenticated | `portfolio` |
+| `/lobby` | InternLobby | Interns only (non-admin) | `lobby` |
+| `/skills` | SkillTracker | Interns only (non-admin) | `skills` |
+
+### Other Routes
+
 | Route | Component | Access |
 |-------|-----------|--------|
 | `/` | HomeRedirect | Redirects to /admin or /collaboration |
 | `/login` | Login | Public |
 | `/register` | Register | Invitation required |
 | `/maintenance` | Maintenance | Public |
-| `/collaboration` | CollaborationHub | Non-admin only |
-| `/chat` | Chat (SyncChat) | Community members + commenced interns |
-| `/lobby` | InternLobby | Interns only (non-admin) |
-| `/mentorship` | MentorshipBridge | Non-admin only |
-| `/skills` | SkillTracker | Interns only (non-admin) |
 | `/profile/:userId` | UserProfile | Authenticated |
-| `/portfolio` | ProjectPortfolio | Authenticated |
 | `/settings` | Settings | Authenticated |
-| `/admin` | AdminDashboard | Admin only |
+
+See [sidebar-tabs/](sidebar-tabs/) for detailed documentation on each sidebar tab.
 
 ## Contributing
 

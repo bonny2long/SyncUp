@@ -1,12 +1,15 @@
-# SyncUp - Community Chat (SyncChat)
+# SyncChat (Community Chat)
 
-**Last Updated:** May 2, 2026
+**Route:** `/chat`
+**Access:** Community members (residents, alumni) + commenced interns
+**Sidebar ID:** `chat`
+**Last Updated:** May 6, 2026
 
 ---
 
 ## Overview
 
-SyncChat is the community communication layer for SyncUp / ICAA. It provides channel-based group messaging, direct messaging, and the ICAA HQ information strip. Access to SyncChat is granted after an intern is commenced into the community.
+SyncChat is the community communication layer for SyncUp / ICAA. It provides channel-based group messaging, direct messaging, cohort chat for interns, and the ICAA HQ information strip. Access to SyncChat is granted after an intern is commenced into the community.
 
 ---
 
@@ -119,6 +122,10 @@ client/src/pages/Chat/
 ├── Chat.jsx              # Main chat component
 ├── CommunityFeed.jsx     # Community feed view
 └── CommunityArchive.jsx  # Announcement/event archive
+
+client/src/pages/InternLobby/
+├── InternLobby.jsx       # Intern lobby with cohort chat
+└── CohortChat.jsx       # Cohort-specific messaging
 ```
 
 ### Key Frontend Components
@@ -128,6 +135,8 @@ client/src/pages/Chat/
 - **Right Sidebar**: Community members with online status
 - **ICAA HQ Strip**: Announcements, events, and welcomes above chat
 - **Archive View**: Browse active announcements and events
+- **Cohort Chat**: Intern-to-intern messaging within same cycle (Intern Lobby)
+- **Encouragement Board**: Motivational messages from community (in Intern Lobby)
 
 ---
 
@@ -172,17 +181,22 @@ When migrating to Supabase for production, polling can be replaced with Supabase
 ## Files
 
 ### Backend
-- `server/src/controllers/chatController.js` - API controllers
+- `server/src/controllers/chatController.js` - API controllers (channels, messages, presence, cohort, encouragements)
 - `server/src/routes/chatRoutes.js` - API routes
 - `server/src/database/chat.sql` - Database schema
+- `server/src/database/cohort_messages.sql` - Cohort chat schema
+- `server/src/database/intern_cycles.sql` - Intern cycles schema
 
 ### Frontend
 - `client/src/pages/Chat/Chat.jsx` - Main chat component
 - `client/src/pages/Chat/CommunityFeed.jsx` - Community feed
 - `client/src/pages/Chat/CommunityArchive.jsx` - Announcement archive
+- `client/src/pages/InternLobby/InternLobby.jsx` - Intern lobby with cohort chat
+- `client/src/pages/InternLobby/CohortChat.jsx` - Cohort-specific messaging
+- `client/src/components/community/EncouragementBoard.jsx` - Encouragement board
 - `client/src/utils/api.js` - Chat API functions
 
 ### Modified
 - `server/src/server.js` - Added chat routes
 - `client/src/components/layout/Sidebar.jsx` - Added SyncChat nav item
-- `client/src/App.jsx` - Added /chat route
+- `client/src/App.jsx` - Added /chat and /lobby routes

@@ -6,20 +6,20 @@ Backend API for the SyncUp / ICAA platform, powered by Node.js, Express 5, and M
 
 ## Tech Stack
 
-- Node.js v20+ - JavaScript runtime
-- Express 5 - Web application framework
-- MySQL2 - MySQL client with Promise support
-- MSSQL - Microsoft SQL Server client (Azure SQL, installed but not active)
-- dotenv - Environment variable management
-- CORS - Cross-Origin Resource Sharing
-- Helmet - Security headers
-- multer - File upload handling
-- express-rate-limit - API rate limiting
-- express-validator - Request validation
-- swagger-jsdoc + swagger-ui-express - API documentation
-- axios - HTTP client
-- @faker-js/faker - Demo data generation
-- Nodemon - Development auto-restart
+- **Node.js v20+** - JavaScript runtime
+- **Express 5** - Web application framework
+- **MySQL2** - MySQL client with Promise support
+- **MSSQL** - Microsoft SQL Server client (Azure SQL, installed but not active)
+- **dotenv** - Environment variable management
+- **CORS** - Cross-Origin Resource Sharing
+- **Helmet** - Security headers
+- **multer** - File upload handling
+- **express-rate-limit** - API rate limiting
+- **express-validator** - Request validation
+- **swagger-jsdoc + swagger-ui-express** - API documentation
+- **axios** - HTTP client
+- **@faker-js/faker** - Demo data generation
+- **Nodemon** - Development auto-restart
 
 ## Getting Started
 
@@ -88,23 +88,43 @@ server/
 │   │   ├── db.js        # MySQL connection pool
 │   │   ├── rateLimit.js # Rate limiting rules
 │   │   └── swagger.js   # Swagger API docs config
-│   ├── controllers/     # Request handlers (13 files)
+│   ├── controllers/     # Request handlers
 │   │   ├── adminController.js
 │   │   ├── analyticsController.js
 │   │   ├── announcementController.js
 │   │   ├── authController.js
 │   │   ├── badgeController.js
 │   │   ├── chatController.js
+│   │   ├── cyclesController.js
 │   │   ├── errorController.js
 │   │   ├── eventController.js
+│   │   ├── governanceController.js
 │   │   ├── mentorshipController.js
 │   │   ├── notificationController.js
+│   │   ├── opportunitiesController.js
 │   │   ├── progressController.js
 │   │   ├── projectsController.js
 │   │   ├── skillsController.js
 │   │   └── usersController.js
-│   ├── routes/          # API route definitions (15 files)
-│   ├── services/        # Business logic (4 files)
+│   ├── routes/          # API route definitions
+│   │   ├── adminRoutes.js
+│   │   ├── analyticsRoutes.js
+│   │   ├── announcementsRoutes.js
+│   │   ├── authRoutes.js
+│   │   ├── badgesRoutes.js
+│   │   ├── chatRoutes.js
+│   │   ├── cyclesRoutes.js
+│   │   ├── errorsRoutes.js
+│   │   ├── eventsRoutes.js
+│   │   ├── governanceRoutes.js
+│   │   ├── mentorshipRoutes.js
+│   │   ├── notificationsRoutes.js
+│   │   ├── opportunitiesRoutes.js
+│   │   ├── progressRoutes.js
+│   │   ├── projectsRoutes.js
+│   │   ├── skillsRoutes.js
+│   │   └── usersRoutes.js
+│   ├── services/        # Business logic
 │   │   ├── skillSignalService.js
 │   │   ├── badgeService.js
 │   │   ├── checkBadges.js
@@ -170,4 +190,5 @@ The application uses the `syncup_local` MySQL database with 20+ tables including
 1. Create a feature branch from `main`
 2. Follow RESTful API design principles
 3. Document any new endpoints in TECHNICAL_SUMMARY.md
-4. Test thoroughly before submitting a pull request
+4. Update relevant sidebar tab documentation in `docs/sidebar-tabs/`
+5. Test thoroughly before submitting a pull request
