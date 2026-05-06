@@ -565,6 +565,37 @@ export async function postProjectDiscussion(projectId, userId, content) {
   return res.json();
 }
 
+export async function updateProjectDiscussion(projectId, discussionId, userId, content) {
+  const res = await fetch(
+    `${API_BASE}/projects/${projectId}/discussions/${discussionId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...getUserHeaders() },
+      body: JSON.stringify({ user_id: userId, content }),
+    },
+  );
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to update project discussion");
+  }
+  return res.json();
+}
+
+export async function deleteProjectDiscussion(projectId, discussionId, userId) {
+  const res = await fetch(
+    `${API_BASE}/projects/${projectId}/discussions/${discussionId}?user_id=${userId}`,
+    {
+      method: "DELETE",
+      headers: getUserHeaders(),
+    },
+  );
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to delete project discussion");
+  }
+  return res.json();
+}
+
 // ============================================================
 // PROJECT JOIN REQUESTS
 // ============================================================
@@ -830,6 +861,18 @@ export async function createChannel(
   return res.json();
 }
 
+export async function deleteChannel(channelId, userId) {
+  const res = await fetch(
+    `${API_BASE}/chat/channels/${channelId}?user_id=${userId}`,
+    {
+      method: "DELETE",
+      headers: getUserHeaders(),
+    },
+  );
+  if (!res.ok) throw new Error("Failed to delete channel");
+  return res.json();
+}
+
 export async function joinChannel(channelId, userId) {
   const res = await fetch(
     `${API_BASE}/chat/channels/${channelId}/join?user_id=${userId}`,
@@ -963,6 +1006,17 @@ export async function fetchIntroductions(userId, limit = 5) {
   return res.json();
 }
 
+export async function markIntroductionsSeen(userId, messageIds) {
+  const ids = Array.isArray(messageIds) ? messageIds : [messageIds];
+  const res = await fetch(`${API_BASE}/chat/introductions/read`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getUserHeaders() },
+    body: JSON.stringify({ user_id: userId, message_ids: ids }),
+  });
+  if (!res.ok) throw new Error("Failed to mark welcomes seen");
+  return res.json();
+}
+
 // ============================================================
 // ANNOUNCEMENTS
 // ============================================================
@@ -1018,7 +1072,10 @@ export const deleteAnnouncement = async (id, userId = null) => {
     method: "DELETE",
     headers: getUserHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to delete announcement");
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to delete announcement");
+  }
   return res.json();
 };
 
@@ -1089,7 +1146,10 @@ export const rsvpEvent = async (eventId, userId, status = "attending") => {
     headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({ user_id: userId, status }),
   });
-  if (!res.ok) throw new Error("Failed to RSVP");
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to RSVP");
+  }
   return res.json();
 };
 
@@ -1099,7 +1159,10 @@ export const deleteEvent = async (eventId, userId = null) => {
     method: "DELETE",
     headers: getUserHeaders(),
   });
-  if (!res.ok) throw new Error("Failed to delete event");
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to delete event");
+  }
   return res.json();
 };
 
@@ -1470,6 +1533,14 @@ export async function fetchGrowthStats() {
     headers: getUserHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch growth stats");
+  return res.json();
+}
+
+export async function fetchHqAnalytics() {
+  const res = await fetch(`${API_BASE}/admin/hq-analytics`, {
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch HQ analytics");
   return res.json();
 }
 

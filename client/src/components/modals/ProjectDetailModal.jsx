@@ -6,8 +6,10 @@ import {
   FileText,
   Github,
   MessageSquare,
+  Pencil,
   Send,
   Star,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -19,6 +21,8 @@ import {
   removeProjectMember,
   fetchProjectDiscussions,
   postProjectDiscussion,
+  updateProjectDiscussion,
+  deleteProjectDiscussion,
   updateUser as updateUserProfile,
 } from "../../utils/api";
 import { useUser } from "../../context/UserContext";
@@ -47,6 +51,9 @@ export default function ProjectDetailModal({
   const [discussionError, setDiscussionError] = useState("");
   const [discussionDraft, setDiscussionDraft] = useState("");
   const [discussionPosting, setDiscussionPosting] = useState(false);
+  const [editingDiscussionId, setEditingDiscussionId] = useState(null);
+  const [discussionEditDraft, setDiscussionEditDraft] = useState("");
+  const [discussionSaving, setDiscussionSaving] = useState(false);
   const [linkEditing, setLinkEditing] = useState(false);
   const [linkSaving, setLinkSaving] = useState(false);
   const [featureSaving, setFeatureSaving] = useState(false);
@@ -88,6 +95,8 @@ export default function ProjectDetailModal({
     setDiscussionMessages([]);
     setDiscussionDraft("");
     setDiscussionError("");
+    setEditingDiscussionId(null);
+    setDiscussionEditDraft("");
     setLinkEditing(false);
     setIsFeaturedProject(
       Number(currentUser?.featured_project_id) === Number(project?.id),
@@ -229,6 +238,70 @@ export default function ProjectDetailModal({
       setDiscussionError(err.message || "Could not post discussion message.");
     } finally {
       setDiscussionPosting(false);
+    }
+  };
+
+  const canManageDiscussionMessage = (message) =>
+    Boolean(
+      currentUser?.id &&
+        (Number(message.user_id) === Number(currentUser.id) ||
+          Number(localProject?.owner_id) === Number(currentUser.id) ||
+          currentUser?.is_admin),
+    );
+
+  const beginDiscussionEdit = (message) => {
+    setEditingDiscussionId(message.id);
+    setDiscussionEditDraft(message.content || "");
+    setDiscussionError("");
+  };
+
+  const cancelDiscussionEdit = () => {
+    setEditingDiscussionId(null);
+    setDiscussionEditDraft("");
+  };
+
+  const handleDiscussionUpdate = async (message) => {
+    if (!currentUser?.id || !discussionEditDraft.trim()) return;
+
+    try {
+      setDiscussionSaving(true);
+      setDiscussionError("");
+      const updatedMessage = await updateProjectDiscussion(
+        project.id,
+        message.id,
+        currentUser.id,
+        discussionEditDraft.trim(),
+      );
+      setDiscussionMessages((prev) =>
+        prev.map((item) => (item.id === message.id ? updatedMessage : item)),
+      );
+      cancelDiscussionEdit();
+    } catch (err) {
+      console.error("Failed to update project discussion:", err);
+      setDiscussionError(err.message || "Could not update discussion message.");
+    } finally {
+      setDiscussionSaving(false);
+    }
+  };
+
+  const handleDiscussionDelete = async (message) => {
+    if (!currentUser?.id || !canManageDiscussionMessage(message)) return;
+
+    const confirmed = window.confirm("Delete this discussion message?");
+    if (!confirmed) return;
+
+    try {
+      setDiscussionError("");
+      await deleteProjectDiscussion(project.id, message.id, currentUser.id);
+      setDiscussionMessages((prev) =>
+        prev.filter((item) => item.id !== message.id),
+      );
+      if (editingDiscussionId === message.id) {
+        cancelDiscussionEdit();
+      }
+    } catch (err) {
+      console.error("Failed to delete project discussion:", err);
+      setDiscussionError(err.message || "Could not delete discussion message.");
     }
   };
 
@@ -914,15 +987,74 @@ export default function ProjectDetailModal({
                               {message.user_cycle ?
                                 ` - ${message.user_cycle}`
                               : ""}
+                              {message.updated_at &&
+                              message.updated_at !== message.created_at ?
+                                " - edited"
+                              : ""}
                             </p>
                           </div>
-                          <span className="text-xs text-text-secondary flex-shrink-0">
-                            {new Date(message.created_at).toLocaleDateString()}
-                          </span>
+                          <div className="flex flex-shrink-0 items-center gap-2">
+                            <span className="text-xs text-text-secondary">
+                              {new Date(message.created_at).toLocaleDateString()}
+                            </span>
+                            {canManageDiscussionMessage(message) && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => beginDiscussionEdit(message)}
+                                  className="rounded p-1 text-text-secondary transition hover:bg-surface hover:text-primary"
+                                  aria-label="Edit discussion message"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDiscussionDelete(message)}
+                                  className="rounded p-1 text-text-secondary transition hover:bg-red-50 hover:text-red-600"
+                                  aria-label="Delete discussion message"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm text-neutral-dark whitespace-pre-wrap">
-                          {message.content}
-                        </p>
+                        {editingDiscussionId === message.id ? (
+                          <div className="mt-3 space-y-2">
+                            <textarea
+                              value={discussionEditDraft}
+                              onChange={(event) =>
+                                setDiscussionEditDraft(event.target.value)
+                              }
+                              rows={3}
+                              className="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm text-neutral-dark outline-none focus:border-primary"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={cancelDiscussionEdit}
+                                className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-text-secondary transition hover:bg-surface"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDiscussionUpdate(message)}
+                                disabled={
+                                  discussionSaving ||
+                                  discussionEditDraft.trim().length === 0
+                                }
+                                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-neutral-dark whitespace-pre-wrap">
+                            {message.content}
+                          </p>
+                        )}
                       </div>
                     ))
                   )}

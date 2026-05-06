@@ -5,6 +5,66 @@ import { createSmartNotification } from "../services/notificationService.js";
 // CHANNELS
 // =============================================
 
+const SYSTEM_CHANNELS = [
+  {
+    name: "announcements",
+    description: "Important iCAA announcements and HQ archive",
+    channel_type: "announcements",
+  },
+  {
+    name: "general",
+    description: "General community discussion",
+    channel_type: "general",
+  },
+  {
+    name: "introductions",
+    description: "Welcome new iCAA community members",
+    channel_type: "community",
+  },
+  {
+    name: "opportunities",
+    description: "Jobs and opportunities shared by the community",
+    channel_type: "community",
+  },
+  {
+    name: "events",
+    description: "Upcoming iCAA events and activities",
+    channel_type: "community",
+  },
+];
+
+const SYSTEM_CHANNEL_NAMES = SYSTEM_CHANNELS.map((channel) => channel.name);
+
+async function getSystemChannelCreatorId(fallbackUserId) {
+  if (fallbackUserId) return fallbackUserId;
+
+  const [rows] = await pool.query(
+    "SELECT id FROM users WHERE is_admin = TRUE ORDER BY id ASC LIMIT 1",
+  );
+  return rows[0]?.id || 1;
+}
+
+async function ensureSystemChannels(fallbackUserId) {
+  const creatorId = await getSystemChannelCreatorId(fallbackUserId);
+
+  for (const channel of SYSTEM_CHANNELS) {
+    await pool.query(
+      `INSERT IGNORE INTO channels
+        (name, description, created_by, is_private, channel_type, allowed_roles)
+       VALUES (?, ?, ?, FALSE, ?, NULL)`,
+      [channel.name, channel.description, creatorId, channel.channel_type],
+    );
+
+    await pool.query(
+      `UPDATE channels
+       SET description = COALESCE(description, ?),
+           channel_type = ?
+       WHERE name = ?`,
+      [channel.description, channel.channel_type, channel.name],
+    );
+  }
+}
+
 // Get all channels
 export const getChannels = async (req, res) => {
   const { user_id } = req.query;
@@ -26,6 +86,8 @@ export const getChannels = async (req, res) => {
     if (userRole === "intern") {
       return res.json([]);
     }
+
+    await ensureSystemChannels(Number(user_id) || null);
 
     const [rows] = await pool.query(`
       SELECT c.*, 
@@ -54,8 +116,9 @@ export const getChannels = async (req, res) => {
 export const createChannel = async (req, res) => {
   const { name, description, is_private } = req.body;
   const { user_id } = req.query;
+  const normalizedName = String(name || "").trim().replace(/^#+/, "");
 
-  if (!name || !user_id) {
+  if (!normalizedName || !user_id) {
     return res.status(400).json({ error: "Name and user_id required" });
   }
 
@@ -69,9 +132,15 @@ export const createChannel = async (req, res) => {
       return res.status(403).json({ error: "Admin access required" });
     }
 
+    if (SYSTEM_CHANNEL_NAMES.includes(normalizedName.toLowerCase())) {
+      return res.status(400).json({ error: "System channel already exists" });
+    }
+
     const [result] = await pool.query(
-      "INSERT INTO channels (name, description, created_by, is_private) VALUES (?, ?, ?, ?)",
-      [name, description || null, user_id, is_private || false],
+      `INSERT INTO channels
+        (name, description, created_by, is_private, channel_type, allowed_roles)
+       VALUES (?, ?, ?, ?, 'community', NULL)`,
+      [normalizedName, description || null, user_id, is_private || false],
     );
 
     const channelId = result.insertId;
@@ -92,6 +161,59 @@ export const createChannel = async (req, res) => {
     }
     console.error("Error creating channel:", err);
     res.status(500).json({ error: "Failed to create channel" });
+  }
+};
+
+export const deleteChannel = async (req, res) => {
+  const { channelId } = req.params;
+  const { user_id } = req.query;
+
+  try {
+    const [userRows] = await pool.query(
+      "SELECT is_admin FROM users WHERE id = ?",
+      [user_id],
+    );
+
+    if (!userRows[0]?.is_admin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const [channelRows] = await pool.query(
+      "SELECT id, name FROM channels WHERE id = ?",
+      [channelId],
+    );
+
+    if (channelRows.length === 0) {
+      return res.status(404).json({ error: "Channel not found" });
+    }
+
+    const channelName = String(channelRows[0].name || "").toLowerCase();
+    if (SYSTEM_CHANNEL_NAMES.includes(channelName)) {
+      return res.status(400).json({ error: "System channels cannot be deleted" });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.query("DELETE FROM messages WHERE channel_id = ?", [
+        channelId,
+      ]);
+      await connection.query("DELETE FROM channel_members WHERE channel_id = ?", [
+        channelId,
+      ]);
+      await connection.query("DELETE FROM channels WHERE id = ?", [channelId]);
+      await connection.commit();
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error deleting channel:", err);
+    res.status(500).json({ error: "Failed to delete channel" });
   }
 };
 
@@ -136,11 +258,12 @@ export const leaveChannel = async (req, res) => {
 // Get recent commencement introductions for the community HQ strip
 export const getIntroductionMessages = async (req, res) => {
   const { limit = 5, user_id } = req.query;
+  const userId = parseInt(user_id, 10) || null;
 
   try {
-    if (user_id) {
+    if (userId) {
       const [users] = await pool.query("SELECT role FROM users WHERE id = ?", [
-        user_id,
+        userId,
       ]);
       if (users[0]?.role === "intern") {
         return res.status(403).json({
@@ -150,24 +273,100 @@ export const getIntroductionMessages = async (req, res) => {
     }
 
     const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 5, 1), 10);
-    const [rows] = await pool.query(
-      `
-      SELECT m.id, m.content, m.created_at,
-             u.name AS sender_name, u.role AS sender_role, u.cycle AS sender_cycle
-      FROM messages m
-      JOIN channels c ON m.channel_id = c.id
-      JOIN users u ON m.sender_id = u.id
-      WHERE c.name = 'introductions'
-      ORDER BY m.created_at DESC
-      LIMIT ?
-    `,
-      [safeLimit],
-    );
+    let rows;
+    try {
+      [rows] = await pool.query(
+        `
+        SELECT m.id, m.content, m.created_at,
+               m.introduced_user_id, m.introduction_cycle, m.commencement_id,
+               u.name AS sender_name, u.role AS sender_role, u.cycle AS sender_cycle,
+               introduced.name AS introduced_user_name,
+               introduced.role AS introduced_user_role,
+               introduced.cycle AS introduced_user_cycle,
+               CASE WHEN wr.user_id IS NULL THEN FALSE ELSE TRUE END AS is_seen
+        FROM messages m
+        JOIN channels c ON m.channel_id = c.id
+        JOIN users u ON m.sender_id = u.id
+        LEFT JOIN users introduced ON m.introduced_user_id = introduced.id
+        LEFT JOIN welcome_reads wr ON wr.message_id = m.id AND wr.user_id = ?
+        WHERE c.name = 'introductions'
+        ORDER BY m.created_at DESC
+        LIMIT ?
+      `,
+        [userId, safeLimit],
+      );
+    } catch (err) {
+      if (err.code !== "ER_BAD_FIELD_ERROR") {
+        if (err.code !== "ER_NO_SUCH_TABLE") {
+          throw err;
+        }
+      }
+
+      [rows] = await pool.query(
+        `
+        SELECT m.id, m.content, m.created_at,
+               u.name AS sender_name, u.role AS sender_role, u.cycle AS sender_cycle
+        FROM messages m
+        JOIN channels c ON m.channel_id = c.id
+        JOIN users u ON m.sender_id = u.id
+        WHERE c.name = 'introductions'
+        ORDER BY m.created_at DESC
+        LIMIT ?
+      `,
+        [safeLimit],
+      );
+    }
 
     res.json(rows);
   } catch (err) {
     console.error("Error fetching introductions:", err);
     res.status(500).json({ error: "Failed to fetch introductions" });
+  }
+};
+
+export const markIntroductionMessagesSeen = async (req, res) => {
+  const { user_id, message_ids } = req.body;
+  const userId = parseInt(user_id, 10);
+  const messageIds = Array.isArray(message_ids) ? message_ids : [message_ids];
+  const safeMessageIds = messageIds
+    .map((id) => parseInt(id, 10))
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  if (!userId) {
+    return res.status(400).json({ error: "user_id is required" });
+  }
+
+  if (safeMessageIds.length === 0) {
+    return res.status(400).json({ error: "message_ids are required" });
+  }
+
+  try {
+    const [users] = await pool.query("SELECT role FROM users WHERE id = ?", [
+      userId,
+    ]);
+    if (!users.length || users[0].role === "intern") {
+      return res.status(403).json({
+        error: "Welcome reads are for commenced community members",
+      });
+    }
+
+    const placeholders = safeMessageIds.map(() => "?").join(", ");
+    await pool.query(
+      `
+      INSERT IGNORE INTO welcome_reads (message_id, user_id)
+      SELECT m.id, ?
+      FROM messages m
+      JOIN channels c ON m.channel_id = c.id
+      WHERE c.name = 'introductions'
+        AND m.id IN (${placeholders})
+      `,
+      [userId, ...safeMessageIds],
+    );
+
+    res.json({ success: true, seen_count: safeMessageIds.length });
+  } catch (err) {
+    console.error("Error marking introductions seen:", err);
+    res.status(500).json({ error: "Failed to mark welcomes seen" });
   }
 };
 

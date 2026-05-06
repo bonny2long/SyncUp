@@ -15,6 +15,7 @@ import {
   fetchEvents,
   fetchIntroductions,
   markAnnouncementRead,
+  markIntroductionsSeen,
   rsvpEvent,
 } from "../../utils/api";
 import PollWidget from "./PollWidget";
@@ -27,6 +28,7 @@ export default function CommunityFeed() {
   const [expanded, setExpanded] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function CommunityFeed() {
       try {
         setLoading(true);
         setError("");
+        setActionError("");
         const [announcementsData, eventsData, introductionsData] =
           await Promise.all([
             fetchAnnouncements(user.id),
@@ -73,6 +76,7 @@ export default function CommunityFeed() {
     if (!user?.id) return;
 
     try {
+      setActionError("");
       await rsvpEvent(eventId, user.id);
       setEvents((prev) =>
         prev.map((event) => {
@@ -107,6 +111,7 @@ export default function CommunityFeed() {
       });
     } catch (err) {
       console.error("Failed to RSVP:", err);
+      setActionError("RSVP could not be saved. Please try again.");
     }
   };
 
@@ -114,6 +119,7 @@ export default function CommunityFeed() {
     if (!user?.id) return;
 
     try {
+      setActionError("");
       await markAnnouncementRead(announcementId, user.id);
       setAnnouncements((prev) =>
         prev.map((item) =>
@@ -135,11 +141,37 @@ export default function CommunityFeed() {
       });
     } catch (err) {
       console.error("Failed to mark announcement read:", err);
+      setActionError("Announcement could not be marked read. Please try again.");
+    }
+  };
+
+  const markWelcomesSeen = async (messageIds) => {
+    if (!user?.id || !messageIds.length) return;
+
+    try {
+      setActionError("");
+      await markIntroductionsSeen(user.id, messageIds);
+      setIntroductions((prev) =>
+        prev.map((intro) =>
+          messageIds.includes(intro.id) ? { ...intro, is_seen: true } : intro,
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to mark welcomes seen:", err);
+      setActionError("Welcome could not be marked seen. Please try again.");
     }
   };
 
   const openItem = (type, item) => {
     setSelectedItem({ type, item });
+
+    if (type === "introduction") {
+      markWelcomesSeen([item.id]);
+    }
+
+    if (type === "introductionGroup") {
+      markWelcomesSeen(item.items.map((intro) => intro.id));
+    }
   };
 
   const closeItem = () => {
@@ -161,24 +193,31 @@ export default function CommunityFeed() {
     });
 
   const getIntroductionCycle = (intro) => {
+    if (intro.introduction_cycle) return intro.introduction_cycle;
+    if (intro.introduced_user_cycle) return intro.introduced_user_cycle;
+
     const cycleMatch = intro.content?.match(/Cycle\s+([A-Za-z0-9-]+)/i);
     return cycleMatch?.[1] || "ICAA";
   };
 
   const getIntroductionName = (intro) => {
+    if (intro.introduced_user_name) return intro.introduced_user_name;
+
     const nameMatch = intro.content?.match(/Please welcome (.+?) to /i);
     return nameMatch?.[1] || intro.sender_name || "New resident";
   };
 
   const buildWelcomeItems = () => {
-    const groups = introductions.reduce((acc, intro) => {
-      const cycle = getIntroductionCycle(intro);
-      if (!acc.has(cycle)) {
-        acc.set(cycle, []);
-      }
-      acc.get(cycle).push(intro);
-      return acc;
-    }, new Map());
+    const groups = introductions
+      .filter((intro) => !intro.is_seen)
+      .reduce((acc, intro) => {
+        const cycle = getIntroductionCycle(intro);
+        if (!acc.has(cycle)) {
+          acc.set(cycle, []);
+        }
+        acc.get(cycle).push(intro);
+        return acc;
+      }, new Map());
 
     return Array.from(groups.entries())
       .flatMap(([cycle, items]) => {
@@ -266,6 +305,11 @@ export default function CommunityFeed() {
             </p>
           ) : (
             <div className="max-h-56 space-y-3 overflow-y-auto pr-1">
+              {actionError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                  {actionError}
+                </p>
+              )}
               {pinned.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {pinned.map((item) => (

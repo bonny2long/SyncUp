@@ -2,9 +2,11 @@ import express from "express";
 import {
   getChannels,
   createChannel,
+  deleteChannel,
   joinChannel,
   leaveChannel,
   getIntroductionMessages,
+  markIntroductionMessagesSeen,
   getChannelMessages,
   getDMMessages,
   sendMessage,
@@ -21,11 +23,13 @@ const router = express.Router();
 // Channels
 router.get("/channels", getChannels);
 router.post("/channels", chatValidators.createChannel, createChannel);
+router.delete("/channels/:channelId", deleteChannel);
 router.post("/channels/:channelId/join", joinChannel);
 router.delete("/channels/:channelId/leave", leaveChannel);
 
 // Messages
 router.get("/introductions", getIntroductionMessages);
+router.post("/introductions/read", markIntroductionMessagesSeen);
 router.get("/channels/:channelId/messages", getChannelMessages);
 router.get("/dm/:userId", getDMMessages);
 router.post("/messages", chatValidators.sendMessage, sendMessage);

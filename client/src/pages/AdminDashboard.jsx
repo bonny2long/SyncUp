@@ -32,6 +32,7 @@ import {
   fetchActiveSessions,
   fetchPlatformStats,
   fetchGrowthStats,
+  fetchHqAnalytics,
   fetchMaintenanceSettings,
   updateMaintenanceSettings,
   fetchAnnouncements,
@@ -264,6 +265,8 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [selectedError, setSelectedError] = useState(null);
+  const [selectedAnnouncementDetail, setSelectedAnnouncementDetail] =
+    useState(null);
   const [confirmModal, setConfirmModal] = useState({
     open: false,
     title: "",
@@ -306,6 +309,7 @@ export default function AdminDashboard() {
   const [platformStats, setPlatformStats] = useState(null);
   const [recentErrors, setRecentErrors] = useState([]);
   const [growthData, setGrowthData] = useState([]);
+  const [hqAnalytics, setHqAnalytics] = useState(null);
   const [settings, setSettings] = useState({
     platformName: "SyncUp",
     supportEmail: "support@syncup.com",
@@ -435,6 +439,7 @@ export default function AdminDashboard() {
           platformStatsData,
           recentErrorsData,
           growthDataResult,
+          hqAnalyticsData,
         ] = await Promise.all([
           fetchHealth().catch(() => null),
           fetchErrorStats().catch(() => ({ total: 0, open: 0, byType: [] })),
@@ -446,6 +451,10 @@ export default function AdminDashboard() {
             console.error("Failed to load growth stats:", err);
             return [];
           }),
+          fetchHqAnalytics().catch((err) => {
+            console.error("Failed to load HQ analytics:", err);
+            return null;
+          }),
         ]);
         setHealthData(health);
         setErrorStats(errorStatsData);
@@ -453,6 +462,7 @@ export default function AdminDashboard() {
         setPlatformStats(platformStatsData);
         setRecentErrors(recentErrorsData || []);
         setGrowthData(growthDataResult || []);
+        setHqAnalytics(hqAnalyticsData);
 
         // Update inactive count now that we have admin stats
         setStats((prev) => ({
@@ -508,6 +518,15 @@ export default function AdminDashboard() {
       setLoadingCommunityEvents(false);
     }
   }, [addToast, user?.id]);
+
+  const refreshHqAnalytics = useCallback(async () => {
+    try {
+      const data = await fetchHqAnalytics();
+      setHqAnalytics(data);
+    } catch (err) {
+      console.error("Failed to refresh HQ analytics:", err);
+    }
+  }, []);
 
   const loadGovernancePositions = useCallback(async () => {
     try {
@@ -828,6 +847,16 @@ export default function AdminDashboard() {
     return offsetDate.toISOString().slice(0, 16);
   };
 
+  const formatShortDate = (value) => {
+    if (!value) return "No date";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "No date";
+    return date.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   const parseRsvpAttendees = (value) => {
     if (!value) return [];
     return String(value)
@@ -847,6 +876,17 @@ export default function AdminDashboard() {
       .map((reader) => {
         const [name, role, cycle, readAt] = reader.split("::");
         return { name, role, cycle, readAt };
+      });
+  };
+
+  const parseAnnouncementUnreadUsers = (value) => {
+    if (!value) return [];
+    return String(value)
+      .split("||")
+      .filter(Boolean)
+      .map((entry) => {
+        const [name, role, cycle] = entry.split("::");
+        return { name, role, cycle };
       });
   };
 
@@ -922,6 +962,7 @@ export default function AdminDashboard() {
       }
       resetAnnouncementForm();
       await loadAnnouncements();
+      await refreshHqAnalytics();
       addToast(
         isEditing ? "Announcement updated" : "Announcement created",
         "success",
@@ -959,6 +1000,7 @@ export default function AdminDashboard() {
             resetAnnouncementForm();
           }
           await loadAnnouncements();
+          await refreshHqAnalytics();
           addToast("Announcement deleted", "success");
         } catch (err) {
           console.error("Failed to delete announcement:", err);
@@ -987,6 +1029,7 @@ export default function AdminDashboard() {
       }
       resetEventForm();
       await loadCommunityEvents();
+      await refreshHqAnalytics();
       addToast(isEditing ? "Event updated" : "Event created", "success");
     } catch (err) {
       console.error("Failed to create event:", err);
@@ -1018,6 +1061,7 @@ export default function AdminDashboard() {
             resetEventForm();
           }
           await loadCommunityEvents();
+          await refreshHqAnalytics();
           addToast("Event deleted", "success");
         } catch (err) {
           console.error("Failed to delete event:", err);
@@ -1566,6 +1610,189 @@ export default function AdminDashboard() {
               />
             </div>
 
+            {/* ICAA HQ Snapshot */}
+            <section className="brand-card p-5">
+              <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-primary">
+                    ICAA HQ
+                  </p>
+                  <h3 className="text-lg font-black text-neutral-dark dark:text-white">
+                    Operations Snapshot
+                  </h3>
+                  <p className="mt-1 text-sm font-semibold text-text-secondary">
+                    Announcements, events, RSVPs, and recent commencements in one place.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("announcements")}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/20 px-3 py-2 text-sm font-black text-primary hover:bg-primary/10"
+                >
+                  Manage HQ
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              {!hqAnalytics ?
+                <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm font-semibold text-text-secondary">
+                  Loading HQ metrics...
+                </div>
+              : <>
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+                    {[
+                      {
+                        label: "Active Announcements",
+                        value: hqAnalytics.activeAnnouncements,
+                        icon: Bell,
+                      },
+                      {
+                        label: "Unread Follow-ups",
+                        value: hqAnalytics.unreadAnnouncements,
+                        icon: MessageSquare,
+                      },
+                      {
+                        label: "Upcoming Events",
+                        value: hqAnalytics.upcomingEvents,
+                        icon: Calendar,
+                      },
+                      {
+                        label: "RSVPs",
+                        value: hqAnalytics.totalRsvps,
+                        icon: Users2,
+                      },
+                      {
+                        label: "Recent Commencements",
+                        value: hqAnalytics.recentCommencements,
+                        icon: GraduationCap,
+                      },
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <div
+                          key={item.label}
+                          className="rounded-xl border border-border bg-surface-highlight p-4"
+                        >
+                          <div className="mb-3 flex items-center justify-between">
+                            <Icon className="h-4 w-4 text-primary" />
+                            <span className="h-2 w-2 rounded-full bg-primary" />
+                          </div>
+                          <p className="text-2xl font-black text-neutral-dark dark:text-white">
+                            {item.value || 0}
+                          </p>
+                          <p className="mt-1 text-xs font-black uppercase text-text-secondary">
+                            {item.label}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <div className="rounded-xl border border-border p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h4 className="text-sm font-black text-neutral-dark dark:text-white">
+                          Needs Follow-up
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("announcements")}
+                          className="text-xs font-black text-primary hover:underline"
+                        >
+                          Announcements
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {(hqAnalytics.unreadAnnouncementsList || []).length === 0 ?
+                          <p className="rounded-lg border border-dashed border-border p-3 text-sm font-semibold text-text-secondary">
+                            No unread announcement follow-ups.
+                          </p>
+                        : hqAnalytics.unreadAnnouncementsList.map((announcement) => (
+                            <div
+                              key={announcement.id}
+                              className="rounded-lg bg-primary/5 p-3"
+                            >
+                              <p className="line-clamp-1 text-sm font-black text-neutral-dark dark:text-white">
+                                {announcement.title}
+                              </p>
+                              <p className="mt-1 text-xs font-semibold text-text-secondary">
+                                {announcement.unread_count} unread of{" "}
+                                {announcement.audience_count} community members
+                              </p>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-border p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h4 className="text-sm font-black text-neutral-dark dark:text-white">
+                          Next Events
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("events")}
+                          className="text-xs font-black text-primary hover:underline"
+                        >
+                          Events
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {(hqAnalytics.upcomingEventsList || []).length === 0 ?
+                          <p className="rounded-lg border border-dashed border-border p-3 text-sm font-semibold text-text-secondary">
+                            No upcoming events scheduled.
+                          </p>
+                        : hqAnalytics.upcomingEventsList.map((event) => (
+                            <div key={event.id} className="rounded-lg bg-surface-highlight p-3">
+                              <p className="line-clamp-1 text-sm font-black text-neutral-dark dark:text-white">
+                                {event.title}
+                              </p>
+                              <p className="mt-1 text-xs font-semibold text-text-secondary">
+                                {formatShortDate(event.event_date)}
+                                {event.location ? ` · ${event.location}` : ""}
+                              </p>
+                              <p className="mt-1 text-xs font-black text-primary">
+                                {event.rsvp_count || 0} RSVP
+                                {Number(event.rsvp_count || 0) === 1 ? "" : "s"}
+                              </p>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-border p-4">
+                      <h4 className="mb-3 text-sm font-black text-neutral-dark dark:text-white">
+                        Recent Commencements
+                      </h4>
+                      <div className="space-y-3">
+                        {(hqAnalytics.recentCommencementsList || []).length === 0 ?
+                          <p className="rounded-lg border border-dashed border-border p-3 text-sm font-semibold text-text-secondary">
+                            No recent commencement welcomes.
+                          </p>
+                        : hqAnalytics.recentCommencementsList.map((welcome) => (
+                            <div
+                              key={welcome.id}
+                              className="rounded-lg bg-surface-highlight p-3"
+                            >
+                              <p className="line-clamp-1 text-sm font-black text-neutral-dark dark:text-white">
+                                {welcome.introduced_name || welcome.content}
+                              </p>
+                              <p className="mt-1 text-xs font-semibold text-text-secondary">
+                                {welcome.cycle ? `${welcome.cycle} · ` : ""}
+                                {formatShortDate(welcome.created_at)}
+                              </p>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </>
+              }
+            </section>
+
             {/* Platform Activity Chart */}
             <div className="bg-surface rounded-xl p-5 border border-border">
               <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
@@ -2023,6 +2250,9 @@ export default function AdminDashboard() {
                     const readers = parseAnnouncementReaders(
                       announcement.read_receipts,
                     );
+                    const unreadUsers = parseAnnouncementUnreadUsers(
+                      announcement.unread_roster,
+                    );
                     const readCount = Number(announcement.read_count || 0);
                     const audienceCount = Number(
                       announcement.audience_count || 0,
@@ -2078,9 +2308,6 @@ export default function AdminDashboard() {
                       </p>
                       <div className="mt-3 border-t border-border pt-3">
                         <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <p className="text-xs font-semibold uppercase text-gray-400">
-                            Read Tracking
-                          </p>
                           <div className="flex items-center gap-2 text-xs">
                             <span className="px-2 py-1 rounded-full bg-green-500/15 text-green-400">
                               {readCount} read
@@ -2089,30 +2316,24 @@ export default function AdminDashboard() {
                               {unreadCount} unread
                             </span>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedAnnouncementDetail({
+                                ...announcement,
+                                readers,
+                                unreadUsers,
+                                readCount,
+                                unreadCount,
+                                audienceCount,
+                              })
+                            }
+                            className="inline-flex items-center gap-2 rounded-lg border border-primary/20 px-3 py-1.5 text-xs font-black text-primary hover:bg-primary/10"
+                          >
+                            View details
+                            <ChevronRight className="h-3 w-3" />
+                          </button>
                         </div>
-                        {readers.length > 0 ? (
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {readers.map((reader) => (
-                              <span
-                                key={`${announcement.id}-${reader.name}-${reader.readAt}`}
-                                className="px-2 py-1 rounded-full bg-background border border-border text-xs text-primary"
-                                title={
-                                  reader.readAt ?
-                                    new Date(reader.readAt).toLocaleString()
-                                  : ""
-                                }
-                              >
-                                {reader.name}
-                                {reader.role ? ` (${reader.role})` : ""}
-                                {reader.cycle ? ` - ${reader.cycle}` : ""}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-400 mt-3">
-                            No reads yet.
-                          </p>
-                        )}
                       </div>
                     </div>
                     );
@@ -4924,6 +5145,131 @@ export default function AdminDashboard() {
                   >
                     Save Changes
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Announcement Detail Modal */}
+        {selectedAnnouncementDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="max-h-[86vh] w-full max-w-3xl overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+              <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-primary">
+                    Announcement Detail
+                  </p>
+                  <h3 className="mt-1 text-xl font-black text-neutral-dark dark:text-white">
+                    {selectedAnnouncementDetail.title}
+                  </h3>
+                  <p className="mt-1 text-xs font-semibold text-text-secondary">
+                    {selectedAnnouncementDetail.author_name || "Admin"} ·{" "}
+                    {new Date(
+                      selectedAnnouncementDetail.created_at,
+                    ).toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAnnouncementDetail(null)}
+                  className="rounded-lg p-2 text-text-secondary hover:bg-primary/10 hover:text-primary"
+                  aria-label="Close announcement detail"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="max-h-[calc(86vh-92px)] overflow-y-auto p-5">
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-black text-primary">
+                    {selectedAnnouncementDetail.announcement_type}
+                  </span>
+                  {selectedAnnouncementDetail.has_poll ? (
+                    <span className="rounded-full bg-secondary/15 px-3 py-1 text-xs font-black text-secondary">
+                      Poll attached
+                    </span>
+                  ) : null}
+                  <span className="rounded-full border border-border px-3 py-1 text-xs font-black text-text-secondary">
+                    {selectedAnnouncementDetail.readCount} read
+                  </span>
+                  <span className="rounded-full border border-border px-3 py-1 text-xs font-black text-text-secondary">
+                    {selectedAnnouncementDetail.unreadCount} unread
+                  </span>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-border bg-surface-highlight p-4">
+                  <p className="whitespace-pre-wrap text-sm font-semibold leading-6 text-neutral-dark dark:text-gray-100">
+                    {selectedAnnouncementDetail.content}
+                  </p>
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <section className="rounded-xl border border-border p-4">
+                    <h4 className="text-sm font-black text-neutral-dark dark:text-white">
+                      Read By
+                    </h4>
+                    <p className="mt-1 text-xs font-semibold text-text-secondary">
+                      {selectedAnnouncementDetail.readCount} of{" "}
+                      {selectedAnnouncementDetail.audienceCount} community members
+                    </p>
+                    <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+                      {(selectedAnnouncementDetail.readers || []).length === 0 ?
+                        <p className="rounded-lg border border-dashed border-border p-3 text-sm font-semibold text-text-secondary">
+                          No reads yet.
+                        </p>
+                      : selectedAnnouncementDetail.readers.map((reader) => (
+                          <div
+                            key={`${selectedAnnouncementDetail.id}-reader-${reader.name}-${reader.readAt}`}
+                            className="rounded-lg bg-surface-highlight p-3"
+                          >
+                            <p className="text-sm font-black text-neutral-dark dark:text-white">
+                              {reader.name}
+                            </p>
+                            <p className="mt-1 text-xs font-semibold text-text-secondary">
+                              {[reader.role, reader.cycle]
+                                .filter(Boolean)
+                                .join(" · ")}
+                              {reader.readAt ?
+                                ` · ${new Date(reader.readAt).toLocaleString()}`
+                              : ""}
+                            </p>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </section>
+
+                  <section className="rounded-xl border border-border p-4">
+                    <h4 className="text-sm font-black text-neutral-dark dark:text-white">
+                      Still Unread
+                    </h4>
+                    <p className="mt-1 text-xs font-semibold text-text-secondary">
+                      People admins may want to follow up with.
+                    </p>
+                    <div className="mt-3 max-h-56 space-y-2 overflow-y-auto pr-1">
+                      {(selectedAnnouncementDetail.unreadUsers || []).length === 0 ?
+                        <p className="rounded-lg border border-dashed border-border p-3 text-sm font-semibold text-text-secondary">
+                          Everyone in the audience has read this.
+                        </p>
+                      : selectedAnnouncementDetail.unreadUsers.map((unreadUser) => (
+                          <div
+                            key={`${selectedAnnouncementDetail.id}-unread-${unreadUser.name}-${unreadUser.role}-${unreadUser.cycle}`}
+                            className="rounded-lg bg-primary/5 p-3"
+                          >
+                            <p className="text-sm font-black text-neutral-dark dark:text-white">
+                              {unreadUser.name}
+                            </p>
+                            <p className="mt-1 text-xs font-semibold text-text-secondary">
+                              {[unreadUser.role, unreadUser.cycle]
+                                .filter(Boolean)
+                                .join(" · ") || "Community member"}
+                            </p>
+                          </div>
+                        ))
+                      }
+                    </div>
+                  </section>
                 </div>
               </div>
             </div>

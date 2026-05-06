@@ -14,6 +14,7 @@ export default function CommunityArchive() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
@@ -25,6 +26,7 @@ export default function CommunityArchive() {
       try {
         setLoading(true);
         setError("");
+        setActionError("");
         const [announcementData, eventData] = await Promise.all([
           fetchAnnouncements(user.id),
           fetchEvents(user.id),
@@ -64,6 +66,7 @@ export default function CommunityArchive() {
     if (!user?.id) return;
 
     try {
+      setActionError("");
       await markAnnouncementRead(announcementId, user.id);
       setAnnouncements((prev) =>
         prev.map((item) =>
@@ -85,6 +88,7 @@ export default function CommunityArchive() {
       });
     } catch (err) {
       console.error("Failed to mark announcement read:", err);
+      setActionError("Announcement could not be marked read. Please try again.");
     }
   };
 
@@ -236,6 +240,11 @@ export default function CommunityArchive() {
               </p>
               {selectedItem.type === "announcement" && selectedItem.item.has_poll && (
                 <PollWidget announcementId={selectedItem.item.id} />
+              )}
+              {actionError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+                  {actionError}
+                </p>
               )}
               <div className="flex flex-wrap gap-2">
                 {selectedItem.type === "announcement" && (

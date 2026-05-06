@@ -71,12 +71,33 @@ async function postCommencementIntroduction(user) {
 
   const cycleText = user.cycle ? ` Cycle ${user.cycle}.` : "";
   const content = `Please welcome ${user.name} to the ICAA community.${cycleText}`;
+  const commencementId = `user-${user.id}-${Date.now()}`;
 
-  await pool.query(
-    `INSERT INTO messages (channel_id, sender_id, recipient_id, content)
-     VALUES (?, ?, NULL, ?)`,
-    [channelId, senderId, content],
-  );
+  try {
+    await pool.query(
+      `INSERT INTO messages (
+         channel_id,
+         sender_id,
+         recipient_id,
+         content,
+         introduced_user_id,
+         introduction_cycle,
+         commencement_id
+       )
+       VALUES (?, ?, NULL, ?, ?, ?, ?)`,
+      [channelId, senderId, content, user.id, user.cycle || null, commencementId],
+    );
+  } catch (err) {
+    if (err.code !== "ER_BAD_FIELD_ERROR") {
+      throw err;
+    }
+
+    await pool.query(
+      `INSERT INTO messages (channel_id, sender_id, recipient_id, content)
+       VALUES (?, ?, NULL, ?)`,
+      [channelId, senderId, content],
+    );
+  }
 
   await pool.query(
     "INSERT IGNORE INTO channel_members (channel_id, user_id) VALUES (?, ?)",

@@ -301,7 +301,10 @@ export const adminResetPassword = async (req, res) => {
     const [adminRows] = await pool.query(
       'SELECT is_admin FROM users WHERE id = ?', [admin_id]
     );
-    if (!adminRows.length || adminRows[0].is_admin !== true) {
+    if (
+      !adminRows.length ||
+      (adminRows[0].is_admin !== true && adminRows[0].is_admin !== 1)
+    ) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 

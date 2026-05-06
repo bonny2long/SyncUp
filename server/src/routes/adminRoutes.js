@@ -159,6 +159,158 @@ router.get("/growth-stats", async (req, res) => {
   }
 });
 
+// GET /api/admin/hq-analytics
+// Returns operational metrics for the ICAA HQ admin overview.
+router.get("/hq-analytics", async (req, res) => {
+  const communityAudienceSql = `
+    SELECT COUNT(*) AS audience_count
+    FROM users
+    WHERE (is_active IS NULL OR is_active != FALSE)
+      AND (role IN ('resident', 'alumni') OR has_commenced = TRUE)
+  `;
+
+  try {
+    const [[summary]] = await pool.query(`
+      SELECT
+        (SELECT COUNT(*)
+         FROM announcements a
+         WHERE a.is_active = TRUE
+           AND (a.expires_at IS NULL OR a.expires_at > NOW())
+        ) AS active_announcements,
+        (SELECT COUNT(*)
+         FROM events e
+         WHERE e.is_active = TRUE
+           AND e.event_date >= NOW()
+        ) AS upcoming_events,
+        (SELECT COUNT(*)
+         FROM event_rsvps er
+         JOIN events e ON e.id = er.event_id
+         WHERE e.is_active = TRUE
+           AND e.event_date >= NOW()
+           AND er.rsvp_status = 'attending'
+        ) AS total_rsvps,
+        (SELECT COUNT(*)
+         FROM messages m
+         JOIN channels c ON c.id = m.channel_id
+         WHERE c.name = 'introductions'
+           AND m.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        ) AS recent_commencements
+    `);
+
+    const [[audience]] = await pool.query(communityAudienceSql);
+    const audienceCount = Number(audience?.audience_count || 0);
+
+    const [unreadAnnouncements] = await pool.query(`
+      SELECT
+        a.id,
+        a.title,
+        a.announcement_type,
+        a.created_at,
+        COUNT(ar.user_id) AS read_count,
+        ? AS audience_count,
+        GREATEST(? - COUNT(ar.user_id), 0) AS unread_count
+      FROM announcements a
+      LEFT JOIN announcement_reads ar ON ar.announcement_id = a.id
+      WHERE a.is_active = TRUE
+        AND (a.expires_at IS NULL OR a.expires_at > NOW())
+      GROUP BY a.id, a.title, a.announcement_type, a.created_at
+      HAVING unread_count > 0
+      ORDER BY unread_count DESC, a.created_at DESC
+      LIMIT 5
+    `, [audienceCount, audienceCount]);
+
+    const [[{ unread_total: unreadTotal = 0 } = {}]] = await pool.query(`
+      SELECT COALESCE(SUM(unread_count), 0) AS unread_total
+      FROM (
+        SELECT GREATEST(? - COUNT(ar.user_id), 0) AS unread_count
+        FROM announcements a
+        LEFT JOIN announcement_reads ar ON ar.announcement_id = a.id
+        WHERE a.is_active = TRUE
+          AND (a.expires_at IS NULL OR a.expires_at > NOW())
+        GROUP BY a.id
+      ) unread_by_announcement
+    `, [audienceCount]);
+
+    const [upcomingEvents] = await pool.query(`
+      SELECT
+        e.id,
+        e.title,
+        e.event_date,
+        e.location,
+        e.max_attendees,
+        COUNT(CASE WHEN er.rsvp_status = 'attending' THEN 1 END) AS rsvp_count
+      FROM events e
+      LEFT JOIN event_rsvps er ON er.event_id = e.id
+      WHERE e.is_active = TRUE
+        AND e.event_date >= NOW()
+      GROUP BY e.id, e.title, e.event_date, e.location, e.max_attendees
+      ORDER BY e.event_date ASC
+      LIMIT 5
+    `);
+
+    let recentCommencements = [];
+    try {
+      const [rows] = await pool.query(`
+        SELECT
+          m.id,
+          m.content,
+          m.created_at,
+          introduced.name AS introduced_name,
+          COALESCE(m.introduction_cycle, introduced.cycle) AS cycle
+        FROM messages m
+        JOIN channels c ON c.id = m.channel_id
+        LEFT JOIN users introduced ON introduced.id = m.introduced_user_id
+        WHERE c.name = 'introductions'
+        ORDER BY m.created_at DESC
+        LIMIT 5
+      `);
+      recentCommencements = rows;
+    } catch (err) {
+      if (err.code !== "ER_BAD_FIELD_ERROR") {
+        throw err;
+      }
+
+      const [rows] = await pool.query(`
+        SELECT
+          m.id,
+          m.content,
+          m.created_at,
+          NULL AS introduced_name,
+          NULL AS cycle
+        FROM messages m
+        JOIN channels c ON c.id = m.channel_id
+        WHERE c.name = 'introductions'
+        ORDER BY m.created_at DESC
+        LIMIT 5
+      `);
+      recentCommencements = rows;
+    }
+
+    res.json({
+      activeAnnouncements: Number(summary?.active_announcements || 0),
+      unreadAnnouncements: Number(unreadTotal || 0),
+      upcomingEvents: Number(summary?.upcoming_events || 0),
+      totalRsvps: Number(summary?.total_rsvps || 0),
+      recentCommencements: Number(summary?.recent_commencements || 0),
+      audienceCount,
+      unreadAnnouncementsList: unreadAnnouncements.map((item) => ({
+        ...item,
+        read_count: Number(item.read_count || 0),
+        audience_count: Number(item.audience_count || 0),
+        unread_count: Number(item.unread_count || 0),
+      })),
+      upcomingEventsList: upcomingEvents.map((event) => ({
+        ...event,
+        rsvp_count: Number(event.rsvp_count || 0),
+      })),
+      recentCommencementsList: recentCommencements,
+    });
+  } catch (err) {
+    console.error("Error fetching HQ analytics:", err);
+    res.status(500).json({ error: "Failed to fetch HQ analytics" });
+  }
+});
+
 // GET /api/admin/settings/maintenance
 // Returns current maintenance mode status and message
 router.get("/settings/maintenance", async (req, res) => {

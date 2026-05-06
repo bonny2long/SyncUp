@@ -14,6 +14,8 @@ import {
   getProjectMetrics,
   getProjectDiscussions,
   createProjectDiscussion,
+  updateProjectDiscussion,
+  deleteProjectDiscussion,
   createJoinRequest,
   getProjectRequests,
   getUserProjectRequests,
@@ -144,6 +146,10 @@ router.get("/:projectId/metrics", getProjectMetrics);
 router.get("/:projectId/discussions", getProjectDiscussions);
 
 router.post("/:projectId/discussions", createProjectDiscussion);
+
+router.put("/:projectId/discussions/:discussionId", updateProjectDiscussion);
+
+router.delete("/:projectId/discussions/:discussionId", deleteProjectDiscussion);
 
 /**
  * @swagger

@@ -6,7 +6,7 @@ async function isAdminUser(userId) {
   const [rows] = await pool.query("SELECT is_admin FROM users WHERE id = ?", [
     userId,
   ]);
-  return rows[0]?.is_admin === true;
+  return rows[0]?.is_admin === true || rows[0]?.is_admin === 1;
 }
 
 const VOTING_ROLES = ["resident", "alumni"];
@@ -133,7 +133,30 @@ export const getAnnouncements = async (req, res) => {
           FROM announcement_reads receipt
           JOIN users reader ON reader.id = receipt.user_id
           WHERE receipt.announcement_id = a.id
-        ) AS read_receipts
+        ) AS read_receipts,
+        (
+          SELECT GROUP_CONCAT(
+            CONCAT(
+              unread_user.name,
+              '::',
+              unread_user.role,
+              '::',
+              COALESCE(unread_user.cycle, '')
+            )
+            ORDER BY unread_user.name
+            SEPARATOR '||'
+          )
+          FROM users unread_user
+          LEFT JOIN announcement_reads unread_receipt
+            ON unread_receipt.user_id = unread_user.id
+           AND unread_receipt.announcement_id = a.id
+          WHERE unread_receipt.user_id IS NULL
+            AND (unread_user.is_active IS NULL OR unread_user.is_active != FALSE)
+            AND (
+              unread_user.role IN ('resident', 'alumni')
+              OR unread_user.has_commenced = TRUE
+            )
+        ) AS unread_roster
       FROM announcements a
       JOIN users u ON a.author_id = u.id
       LEFT JOIN announcement_reads ar

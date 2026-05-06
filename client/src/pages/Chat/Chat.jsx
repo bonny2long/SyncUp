@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquare, Hash, Send, Paperclip, Users, Loader2, File, Image, X, Plus } from "lucide-react";
+import { MessageSquare, Hash, Send, Paperclip, Users, Loader2, File, Image, X, Plus, Trash2 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { useToast } from "../../context/ToastContext";
 import {
   fetchChannels,
   createChannel,
+  deleteChannel,
   fetchChannelMessages,
   fetchDMMessages,
   sendMessage,
@@ -90,8 +91,6 @@ export default function Chat() {
     if (hours < 24) return `${hours}h`;
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
-
-  const formatCycle = (member) => member?.cycle || "";
 
   const loadPresence = useCallback(async () => {
     if (!user?.id) return;
@@ -302,6 +301,42 @@ export default function Chat() {
   const onlineMembers = communityPresence.filter((member) => member.status === "online");
   const offlineMembers = communityPresence.filter((member) => member.status !== "online");
   const isAnnouncementsChannel = activeChannel?.name === "announcements";
+  const systemChannelNames = new Set([
+    "announcements",
+    "general",
+    "introductions",
+    "opportunities",
+    "events",
+  ]);
+  const getChannelLabel = (channel) => String(channel?.name || "").replace(/^#+/, "");
+  const canDeleteChannel = (channel) =>
+    Boolean(user?.is_admin && channel?.id && !systemChannelNames.has(getChannelLabel(channel).toLowerCase()));
+
+  const handleDeleteChannel = async (channel) => {
+    if (!user?.id || !canDeleteChannel(channel)) return;
+
+    const channelLabel = getChannelLabel(channel);
+    const confirmed = window.confirm(
+      `Delete #${channelLabel}? This removes the channel and its messages.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteChannel(channel.id, user.id);
+      setChannels((prev) => {
+        const nextChannels = prev.filter((item) => item.id !== channel.id);
+        if (activeChannel?.id === channel.id) {
+          setActiveChannel(nextChannels[0] || null);
+          setMessages([]);
+        }
+        return nextChannels;
+      });
+      addToast(`#${channelLabel} deleted`, "success");
+    } catch (err) {
+      console.error("Failed to delete channel:", err);
+      addToast("Failed to delete channel", "error");
+    }
+  };
 
   if (loading) {
     return (
@@ -340,22 +375,37 @@ export default function Chat() {
                 No channels available.
               </p>
             : channels.map((channel) => (
-                <button
+                <div
                   key={channel.id}
-                  onClick={() => {
-                    setActiveChannel(channel);
-                    setActiveDM(null);
-                    setIsDMOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-2 px-2 py-2 rounded text-left text-sm transition-colors ${
+                  className={`group flex items-center rounded text-sm transition-colors ${
                     activeChannel?.id === channel.id ?
                       "bg-primary/10 text-primary"
                     : "text-neutral-dark hover:bg-surface-highlight"
                   }`}
                 >
-                  <Hash className="w-4 h-4" />
-                  <span className="truncate">#{channel.name}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveChannel(channel);
+                      setActiveDM(null);
+                      setIsDMOpen(false);
+                    }}
+                    className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left"
+                  >
+                    <Hash className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">#{getChannelLabel(channel)}</span>
+                  </button>
+                  {canDeleteChannel(channel) && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteChannel(channel)}
+                      className="mr-1 rounded p-1 text-text-secondary opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+                      aria-label={`Delete ${getChannelLabel(channel)} channel`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               ))
             }
             {showCreateChannel && (
@@ -367,19 +417,32 @@ export default function Chat() {
                   placeholder="Channel name..."
                   className="w-full px-2 py-1 text-sm bg-surface border border-border rounded mb-2"
                 />
+                <input
+                  type="text"
+                  value={newChannelDesc}
+                  onChange={(e) => setNewChannelDesc(e.target.value)}
+                  placeholder="Description optional..."
+                  className="w-full px-2 py-1 text-sm bg-surface border border-border rounded mb-2"
+                />
                 <div className="flex gap-1">
                   <button
                     onClick={async () => {
                       if (!newChannelName.trim()) return;
                       setCreatingChannel(true);
                       try {
-                        const newChannel = await createChannel(newChannelName.trim(), newChannelDesc.trim(), user.id);
+                        const newChannel = await createChannel(
+                          newChannelName.trim(),
+                          newChannelDesc.trim(),
+                          user.id,
+                        );
                         setChannels((prev) => [...prev, newChannel]);
                         setNewChannelName("");
+                        setNewChannelDesc("");
                         setShowCreateChannel(false);
                         setActiveChannel(newChannel);
                         setActiveDM(null);
                       } catch (err) {
+                        console.error("Failed to create channel:", err);
                         addToast("Failed to create channel", "error");
                       } finally {
                         setCreatingChannel(false);
@@ -468,7 +531,7 @@ export default function Chat() {
                 <>
                   <Hash className="w-5 h-5 text-gray-400" />
                   <span className="font-semibold text-neutral-dark">
-                    {activeChannel.name}
+                    {getChannelLabel(activeChannel)}
                   </span>
                 </>
               : selectedDM ?
@@ -503,7 +566,9 @@ export default function Chat() {
             role="log"
             aria-live="polite"
           >
-            {activeChannel || selectedDM ?
+            {isAnnouncementsChannel ? (
+              <CommunityArchive />
+            ) : activeChannel || selectedDM ?
               messages.length > 0 ?
                 messages.map((message) => {
                   const isMe = message.sender_id === user.id;
@@ -586,7 +651,7 @@ export default function Chat() {
               </div>}
           </div>
 
-          {(activeChannel || selectedDM) && (
+          {(activeChannel || selectedDM) && !isAnnouncementsChannel && (
             <div className="p-3 border-t border-border bg-white">
               {selectedFile && (
                 <div className="flex items-center gap-2 mb-2 p-2 bg-surface-highlight rounded-lg border border-border">

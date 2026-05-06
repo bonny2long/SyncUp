@@ -6,7 +6,7 @@ async function isAdminUser(userId) {
   const [rows] = await pool.query("SELECT is_admin FROM users WHERE id = ?", [
     userId,
   ]);
-  return rows[0]?.is_admin === true;
+  return rows[0]?.is_admin === true || rows[0]?.is_admin === 1;
 }
 
 async function notifyEventAudience(eventId, title, authorId) {

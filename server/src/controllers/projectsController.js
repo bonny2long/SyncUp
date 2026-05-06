@@ -18,6 +18,7 @@ async function getProjectAccess(projectId, userId) {
       p.owner_id,
       p.visibility,
       u.role,
+      u.is_admin,
       EXISTS(
         SELECT 1
         FROM project_members pm
@@ -35,7 +36,10 @@ async function getProjectAccess(projectId, userId) {
   const access = rows[0];
   if (!access) return { canRead: false, canPost: false };
 
-  const isAdmin = access.role === "admin";
+  const isAdmin =
+    access.role === "admin" ||
+    access.is_admin === true ||
+    access.is_admin === 1;
   const isOwner = Number(access.owner_id) === Number(userId);
   const isMember = Boolean(access.is_member);
   const isPublic = access.visibility === "public";
@@ -43,6 +47,7 @@ async function getProjectAccess(projectId, userId) {
   return {
     canRead: isAdmin || isOwner || isMember || isPublic,
     canPost: isAdmin || isOwner || isMember,
+    canModerate: isAdmin || isOwner,
   };
 }
 
@@ -1023,6 +1028,121 @@ export const createProjectDiscussion = async (req, res) => {
   } catch (err) {
     console.error("Error creating project discussion:", err);
     res.status(500).json({ error: "Failed to post project discussion" });
+  }
+};
+
+// PUT /api/projects/:projectId/discussions/:discussionId
+export const updateProjectDiscussion = async (req, res) => {
+  const { projectId, discussionId } = req.params;
+  const userId = Number(req.body.user_id || req.query.user_id || req.user?.id);
+  const content = req.body.content?.trim();
+
+  if (!userId || !content) {
+    return res.status(400).json({ error: "user_id and content are required" });
+  }
+
+  try {
+    const access = await getProjectAccess(projectId, userId);
+    if (!access.canRead) {
+      return res.status(403).json({ error: "Project discussion access denied" });
+    }
+
+    const [messages] = await pool.query(
+      `SELECT id, user_id
+       FROM project_discussions
+       WHERE id = ? AND project_id = ? AND is_deleted = FALSE`,
+      [discussionId, projectId],
+    );
+
+    if (messages.length === 0) {
+      return res.status(404).json({ error: "Discussion message not found" });
+    }
+
+    const canEdit =
+      Number(messages[0].user_id) === userId || Boolean(access.canModerate);
+
+    if (!canEdit) {
+      return res.status(403).json({ error: "Not authorized to edit this message" });
+    }
+
+    await pool.query(
+      `UPDATE project_discussions
+       SET content = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND project_id = ?`,
+      [content, discussionId, projectId],
+    );
+
+    const [rows] = await pool.query(
+      `
+      SELECT
+        pd.id,
+        pd.project_id,
+        pd.user_id,
+        pd.content,
+        pd.created_at,
+        pd.updated_at,
+        u.name AS user_name,
+        u.role AS user_role,
+        u.cycle AS user_cycle,
+        u.profile_pic AS user_pic
+      FROM project_discussions pd
+      JOIN users u ON u.id = pd.user_id
+      WHERE pd.id = ?
+      `,
+      [discussionId],
+    );
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error updating project discussion:", err);
+    res.status(500).json({ error: "Failed to update project discussion" });
+  }
+};
+
+// DELETE /api/projects/:projectId/discussions/:discussionId
+export const deleteProjectDiscussion = async (req, res) => {
+  const { projectId, discussionId } = req.params;
+  const userId = Number(req.body.user_id || req.query.user_id || req.user?.id);
+
+  if (!userId) {
+    return res.status(400).json({ error: "user_id is required" });
+  }
+
+  try {
+    const access = await getProjectAccess(projectId, userId);
+    if (!access.canRead) {
+      return res.status(403).json({ error: "Project discussion access denied" });
+    }
+
+    const [messages] = await pool.query(
+      `SELECT id, user_id
+       FROM project_discussions
+       WHERE id = ? AND project_id = ? AND is_deleted = FALSE`,
+      [discussionId, projectId],
+    );
+
+    if (messages.length === 0) {
+      return res.status(404).json({ error: "Discussion message not found" });
+    }
+
+    const canDelete =
+      Number(messages[0].user_id) === userId || Boolean(access.canModerate);
+
+    if (!canDelete) {
+      return res.status(403).json({ error: "Not authorized to delete this message" });
+    }
+
+    await pool.query(
+      `UPDATE project_discussions
+       SET is_deleted = TRUE, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND project_id = ?`,
+      [discussionId, projectId],
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error deleting project discussion:", err);
+    res.status(500).json({ error: "Failed to delete project discussion" });
   }
 };
 
