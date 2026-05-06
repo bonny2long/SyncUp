@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   loginAccount,
   fetchUsers,
@@ -92,9 +92,9 @@ export default function Login() {
           <BrandMark
             size="sm"
             subtitle={
-              devMode
-                ? "Dev Mode - quick user selection"
-                : "For alumni, residents, and interns building the iCAA community."
+              devMode ?
+                "Dev Mode - quick user selection"
+              : "For alumni, residents, and interns building the iCAA community."
             }
           />
 
@@ -124,7 +124,7 @@ export default function Login() {
             </label>
           </div>
 
-          {devMode ? (
+          {devMode ?
             <div className="space-y-4">
               {devError && (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
@@ -176,8 +176,7 @@ export default function Login() {
                 Trigger Test Error
               </button>
             </div>
-          ) : (
-            <div>
+          : <div>
               {error && (
                 <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
                   <p className="text-sm text-red-600 dark:text-red-400">
@@ -196,7 +195,9 @@ export default function Login() {
 
               <form onSubmit={handleRealLogin} className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium">Email</label>
+                  <label className="mb-1 block text-sm font-medium">
+                    Email
+                  </label>
                   <input
                     type="email"
                     className="input w-full"
@@ -232,19 +233,25 @@ export default function Login() {
 
               <div className="mt-5 space-y-2 text-center">
                 <p className="text-sm text-text-secondary">
-                  <a href="/forgot-password" className="text-primary hover:underline">
+                  <a
+                    href="/forgot-password"
+                    className="text-primary hover:underline"
+                  >
                     Forgot your password?
                   </a>
                 </p>
                 <p className="text-sm text-text-secondary">
-                  Don&apos;t have an account?{" "}
-                  <a href="/register" className="text-primary hover:underline">
-                    Register
-                  </a>
+                  New to SyncUp?{" "}
+                  <Link
+                    to="/register"
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    Create your community account
+                  </Link>
                 </p>
               </div>
             </div>
-          )}
+          }
         </div>
       </main>
 

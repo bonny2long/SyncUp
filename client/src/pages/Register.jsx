@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import {
   registerAccount,
   validateInvitation,
@@ -164,9 +164,9 @@ export default function Register() {
             </button>
           )}
           <div className="mt-4">
-            <a href="/login" className="text-sm text-primary hover:underline">
+            <Link to="/login" className="text-sm text-primary hover:underline">
               {isSpecial ? "Log In Now" : "Back to login"}
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -181,9 +181,9 @@ export default function Register() {
           <p className="text-text-secondary mb-4">
             This invitation link is invalid or has expired.
           </p>
-          <a href="/register" className="btn btn-primary">
+          <Link to="/register" className="btn btn-primary">
             Go to Registration
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -367,18 +367,21 @@ export default function Register() {
           </form>
 
           <p className="text-center text-sm text-text-secondary mt-6">
-            Already have an account?{" "}
-            <a href="/login" className="text-primary hover:underline">
-              Log in
-            </a>
+            Already part of SyncUp?{" "}
+            <Link
+              to="/login"
+              className="font-semibold text-primary hover:underline"
+            >
+              Log in instead
+            </Link>
           </p>
 
           {mode === "normal" && (
             <p className="text-center text-xs text-text-secondary mt-4">
               Lost access to your @icstars.org email?{" "}
-              <a href="/login" className="text-primary hover:underline">
+              <Link to="/login" className="text-primary hover:underline">
                 Contact an iCAA administrator
-              </a>
+              </Link>
             </p>
           )}
         </div>
