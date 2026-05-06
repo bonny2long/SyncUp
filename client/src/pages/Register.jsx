@@ -8,10 +8,15 @@ import {
 } from "../utils/api";
 import BrandMark from "../components/brand/BrandMark";
 import ChicagoAccent from "../components/brand/ChicagoAccent";
+import chicagoAccentImages from "../components/brand/chicagoAccentImages";
+import usePreloadedImage from "../hooks/usePreloadedImage";
 
 export default function Register() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const heroReady = usePreloadedImage(chicagoAccentImages.groupPhotoAuth, {
+    desktopOnly: true,
+  });
 
   const [mode, setMode] = useState("validating");
   const [invitation, setInvitation] = useState(null);
@@ -26,6 +31,11 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const loginHero = new Image();
+    loginHero.src = chicagoAccentImages.skylineViewAuth;
+  }, []);
 
   const statusOptions = [
     { value: "intern", label: "Intern" },
@@ -189,11 +199,24 @@ export default function Register() {
     );
   }
 
+  if (!heroReady) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-surface text-neutral-dark">
+        <div className="text-center">
+          <BrandMark size="sm" subtitle="Preparing your community account" />
+          <div className="mx-auto mt-6 h-1.5 w-44 overflow-hidden rounded-full bg-surface-highlight">
+            <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-dvh bg-surface text-neutral-dark lg:grid lg:h-dvh lg:grid-cols-[minmax(0,0.52fr)_minmax(440px,0.48fr)] lg:overflow-hidden">
+    <div className="min-h-dvh animate-fade-in bg-surface text-neutral-dark lg:grid lg:h-dvh lg:grid-cols-[minmax(0,0.52fr)_minmax(440px,0.48fr)] lg:overflow-hidden">
       <aside className="relative hidden h-dvh overflow-hidden bg-accent lg:block">
         <ChicagoAccent
-          image="groupPhoto"
+          image="groupPhotoAuth"
           variant="panel"
           className="absolute inset-0 border-0 bg-accent shadow-none"
           imageClassName="object-contain object-center"

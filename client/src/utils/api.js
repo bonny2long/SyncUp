@@ -978,13 +978,16 @@ export async function fetchCohortMessages(cycleId) {
   return res.json();
 }
 
-export async function sendCohortMessage(cycleId, senderId, content) {
+export async function sendCohortMessage(cycleId, content, senderId) {
   const res = await fetch(`${API_BASE}/chat/cohort/${cycleId}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getUserHeaders() },
     body: JSON.stringify({ content, sender_id: senderId }),
   });
-  if (!res.ok) throw new Error("Failed to send cohort message");
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to send cohort message");
+  }
   return res.json();
 }
 

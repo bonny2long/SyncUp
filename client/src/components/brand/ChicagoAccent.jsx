@@ -1,15 +1,5 @@
 import React from "react";
-import skyline from "../../assets/Chicago/SkylineChicago.jpg";
-import groupPhoto from "../../assets/Chicago/GroupPhoto.jpg";
-import sunriseCity from "../../assets/Chicago/sunriseCity.jpg";
-import skylineView from "../../assets/Chicago/skylineView.jpg";
-
-const imageMap = {
-  skyline,
-  groupPhoto,
-  sunriseCity,
-  skylineView,
-};
+import chicagoAccentImages from "./chicagoAccentImages";
 
 export default function ChicagoAccent({
   image = "skyline",
@@ -17,7 +7,7 @@ export default function ChicagoAccent({
   className = "",
   imageClassName = "",
 }) {
-  const src = imageMap[image] || skyline;
+  const src = chicagoAccentImages[image] || chicagoAccentImages.skyline;
   const variants = {
     corner: "absolute right-0 top-0 h-40 w-64 rounded-bl-[3rem] opacity-90",
     strip: "h-24 w-full rounded-xl",
@@ -33,6 +23,9 @@ export default function ChicagoAccent({
       <img
         src={src}
         alt=""
+        loading={variant === "panel" ? "eager" : "lazy"}
+        fetchPriority={variant === "panel" ? "high" : "auto"}
+        decoding="async"
         className={`h-full w-full object-cover ${imageClassName}`}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-accent/80 via-primary/35 to-accent/70" />

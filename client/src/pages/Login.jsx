@@ -8,10 +8,15 @@ import {
 import { useUser } from "../context/UserContext";
 import BrandMark from "../components/brand/BrandMark";
 import ChicagoAccent from "../components/brand/ChicagoAccent";
+import chicagoAccentImages from "../components/brand/chicagoAccentImages";
+import usePreloadedImage from "../hooks/usePreloadedImage";
 
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useUser();
+  const heroReady = usePreloadedImage(chicagoAccentImages.skylineViewAuth, {
+    desktopOnly: true,
+  });
 
   const [devMode, setDevMode] = useState(() => {
     return localStorage.getItem("devMode") === "true" || false;
@@ -26,6 +31,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showResend, setShowResend] = useState(false);
+
+  useEffect(() => {
+    const registerHero = new Image();
+    registerHero.src = chicagoAccentImages.groupPhotoAuth;
+  }, []);
 
   useEffect(() => {
     if (devMode) {
@@ -85,8 +95,21 @@ export default function Login() {
     }
   };
 
+  if (!heroReady) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-surface text-neutral-dark">
+        <div className="text-center">
+          <BrandMark size="sm" subtitle="Preparing SyncUp" />
+          <div className="mx-auto mt-6 h-1.5 w-44 overflow-hidden rounded-full bg-surface-highlight">
+            <div className="h-full w-1/2 animate-pulse rounded-full bg-primary" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-dvh bg-surface text-neutral-dark lg:grid lg:h-dvh lg:grid-cols-[minmax(420px,0.48fr)_minmax(0,0.52fr)] lg:overflow-hidden">
+    <div className="min-h-dvh animate-fade-in bg-surface text-neutral-dark lg:grid lg:h-dvh lg:grid-cols-[minmax(420px,0.48fr)_minmax(0,0.52fr)] lg:overflow-hidden">
       <main className="flex min-h-dvh items-center justify-center px-6 py-8 sm:px-10 lg:h-dvh lg:min-h-0 lg:py-6">
         <div className="w-full max-w-md">
           <BrandMark
@@ -257,7 +280,7 @@ export default function Login() {
 
       <aside className="relative hidden h-dvh overflow-hidden bg-accent lg:block">
         <ChicagoAccent
-          image="skylineView"
+          image="skylineViewAuth"
           variant="panel"
           className="absolute inset-0 border-0 shadow-none"
         />

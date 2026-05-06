@@ -12,7 +12,9 @@ export default function CohortChat({ cycleId, cycle }) {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [pollingPaused, setPollingPaused] = useState(false);
   const messagesEndRef = useRef(null);
+  const pollFailureCountRef = useRef(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -28,6 +30,8 @@ export default function CohortChat({ cycleId, cycle }) {
       ]);
       setMessages(msgData);
       setCohortUsers(userData);
+      pollFailureCountRef.current = 0;
+      setPollingPaused(false);
     } catch (err) {
       console.error("Failed to load cohort data:", err);
       // Don't show toast for interval polls to avoid spamming
@@ -37,10 +41,27 @@ export default function CohortChat({ cycleId, cycle }) {
   }, [cycleId]);
 
   useEffect(() => {
+    if (!cycleId) {
+      setLoading(false);
+      return undefined;
+    }
+
     loadCohortData();
     const interval = setInterval(() => {
+      if (pollFailureCountRef.current >= 3) return;
+
       // Background poll for new messages
-      fetchCohortMessages(cycleId).then(setMessages).catch(console.error);
+      fetchCohortMessages(cycleId)
+        .then((data) => {
+          setMessages(data);
+          pollFailureCountRef.current = 0;
+          setPollingPaused(false);
+        })
+        .catch((err) => {
+          console.error("Failed to refresh cohort messages:", err);
+          pollFailureCountRef.current += 1;
+          setPollingPaused(true);
+        });
     }, 5000);
     return () => clearInterval(interval);
   }, [cycleId, loadCohortData]);
@@ -114,6 +135,11 @@ export default function CohortChat({ cycleId, cycle }) {
             {cohortUsers.length} members online
           </span>
         </div>
+        {pollingPaused && (
+          <p className="border-b border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600">
+            Cohort messages could not refresh. Sending still works if the connection returns.
+          </p>
+        )}
 
         {/* Messages */}
         <div className="flex-1 space-y-4 overflow-y-auto bg-neutralLight/60 p-4">
