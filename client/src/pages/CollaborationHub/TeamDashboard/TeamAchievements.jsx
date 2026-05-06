@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
-import { Flame, TrendingUp, Users, Award } from "lucide-react";
+import { Flame, TrendingUp, Users } from "lucide-react";
 
 const TeamAchievements = ({ data }) => {
   const achievements = useMemo(() => {
-    const overview = data?.overview || {};
     const momentum = data?.momentum || [];
     const activeThisWeek = data?.activeThisWeek || [];
     const teamMembers = data?.teamMembers || [];
@@ -54,30 +53,30 @@ const TeamAchievements = ({ data }) => {
         label: "Streak",
         value: `${streak} ${streak === 1 ? 'week' : 'weeks'}`,
         subtitle: streak >= 4 ? "On fire!" : streak >= 2 ? "Keep it up!" : "Build momentum",
-        color: "orange",
-        bgColor: "bg-orange-500/10",
-        textColor: "text-orange-500",
-        iconColor: "text-orange-500",
+        bgColor: "bg-primary/10",
+        borderColor: "border-primary/20",
+        textColor: "text-primary",
+        iconColor: "text-primary",
       },
       {
         icon: TrendingUp,
         label: "Growth",
         value: `${growth >= 0 ? '+' : ''}${growth}%`,
         subtitle: growth > 50 ? "Excellent!" : growth > 0 ? "Growing" : "Steady",
-        color: "green",
-        bgColor: "bg-green-500/10",
-        textColor: "text-green-500",
-        iconColor: "text-green-500",
+        bgColor: "bg-accent/10",
+        borderColor: "border-accent/20",
+        textColor: "text-accent",
+        iconColor: "text-accent",
       },
       {
         icon: Users,
         label: "Active",
         value: `${activePercentage}%`,
         subtitle: activePercentage === 100 ? "Perfect!" : activePercentage >= 75 ? "Great!" : "Good",
-        borderColor: "border-[#b9123f]/20",
-        bgColor: "bg-[#b9123f]/10",
-        textColor: "text-[#b9123f]",
-        iconColor: "text-[#b9123f]",
+        borderColor: "border-primary/20",
+        bgColor: "bg-primary/10",
+        textColor: "text-primary",
+        iconColor: "text-primary",
       },
     ];
   }, [data]);
@@ -89,19 +88,19 @@ const TeamAchievements = ({ data }) => {
         return (
           <div
             key={index}
-            className={`${achievement.bgColor} border ${achievement.borderColor || `border-${achievement.color}-500/20`} rounded-lg p-5 hover:scale-[1.02] transition-transform`}
+            className={`${achievement.bgColor} border ${achievement.borderColor} rounded-xl p-5 transition-transform hover:scale-[1.02]`}
           >
             <div className="flex items-center justify-between mb-3">
               <div className={`p-2 rounded-lg ${achievement.bgColor}`}>
                 <Icon className={`w-5 h-5 ${achievement.iconColor}`} />
               </div>
-              <span className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+              <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">
                 {achievement.label}
               </span>
             </div>
             
             <div>
-              <p className={`text-3xl font-bold ${achievement.textColor} mb-1`}>
+              <p className={`mb-1 text-3xl font-black ${achievement.textColor}`}>
                 {achievement.value}
               </p>
               <p className="text-sm text-text-secondary">

@@ -9,7 +9,7 @@ import MemberModal from "./MemberModal";
 import ProjectDetailModal from "../../components/modals/ProjectDetailModal";
 import ConfirmModal from "../../components/shared/ConfirmModal";
 import { useUser } from "../../context/UserContext";
-import { Search, ArrowUpDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 export default function ProjectList({
   selectedProject,
@@ -278,27 +278,27 @@ export default function ProjectList({
         {/* Search and Sort */}
         <div className="brand-card mb-2 flex flex-col gap-2 p-3 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
             <input
               type="text"
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input bg-white pl-10"
+              className="w-full rounded-lg border border-border bg-white py-2.5 pl-11 pr-4 text-sm text-neutral-dark transition-all placeholder:text-text-secondary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
-          <div className="relative">
-            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+          <div className="relative sm:w-44">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="input cursor-pointer appearance-none bg-white pl-10 pr-8"
+              className="w-full appearance-none rounded-lg border border-border bg-white py-2.5 pl-4 pr-10 text-sm text-neutral-dark transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>
               <option value="name-asc">Name (A-Z)</option>
               <option value="name-desc">Name (Z-A)</option>
             </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
           </div>
         </div>
 

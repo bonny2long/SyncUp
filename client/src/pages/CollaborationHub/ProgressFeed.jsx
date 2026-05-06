@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   fetchUpdates,
   updateProgressUpdate,
   deleteProgressUpdate,
   fetchSkills,
 } from "../../utils/api";
-import SkillMultiSelect from "../../components/shared/SkillMultiSelect";
-import { FileText, ArrowLeft } from "lucide-react";
+import { FileText } from "lucide-react";
 
 import AddUpdateForm from "./AddUpdateForm";
 import UpdateCard from "./UpdateCard";
@@ -25,7 +24,6 @@ export default function ProgressFeed({
   const [error, setError] = useState("");
 
   const [allSkills, setAllSkills] = useState([]);
-  const [selectedSkills, setSelectedSkills] = useState([]);
   const [projectSkills, setProjectSkills] = useState([]);
   const [loadingSkills, setLoadingSkills] = useState(false);
 
@@ -74,7 +72,7 @@ export default function ProgressFeed({
   }, [selectedProjectId]);
 
   // Load updates from API OR use passed-in updates
-  async function loadUpdates() {
+  const loadUpdates = useCallback(async () => {
     // If updates are passed in as props, use those
     if (passedUpdates) {
       setUpdates(passedUpdates);
@@ -94,11 +92,11 @@ export default function ProgressFeed({
     } finally {
       setLoading(false);
     }
-  }
+  }, [passedUpdates, selectedProjectId]);
 
   useEffect(() => {
     loadUpdates();
-  }, [selectedProjectId, passedUpdates]);
+  }, [loadUpdates]);
 
   const handleNewUpdate = (u) => {
     setUpdates((prev) => [u, ...prev]);
@@ -151,11 +149,11 @@ export default function ProgressFeed({
           projectSkills={projectSkills}
           loadingSkills={loadingSkills}
         />
-      : <div className="bg-surface-highlight border border-dashed border-border rounded-xl p-6 text-center">
-          <div className="flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-primary/10">
-            <FileText className="w-6 h-6 text-primary" />
+      : <div className="rounded-2xl border border-dashed border-border bg-surface-highlight p-8 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <FileText className="h-7 w-7 text-primary" />
           </div>
-          <p className="text-text-secondary text-sm mb-2">
+          <p className="mb-2 text-sm font-semibold text-neutral-dark">
             Select a project from "My Work" to post an update
           </p>
           <p className="text-xs text-text-secondary">
@@ -165,12 +163,12 @@ export default function ProgressFeed({
       }
 
       {selectedProjectId && (
-        <div className="p-3 bg-primary/10 text-primary rounded-xl font-medium text-sm flex items-center justify-between">
+        <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/10 p-3 text-sm font-medium text-primary">
           <span>Viewing updates for: {selectedProjectTitle || "Project"}</span>
           <button
             type="button"
             onClick={onClearProject}
-            className="text-xs px-3 py-1 rounded-lg bg-surface text-primary border border-primary hover:bg-primary hover:text-white transition"
+            className="rounded-full border border-primary/20 bg-surface px-3 py-1 text-xs font-bold text-primary transition hover:bg-primary hover:text-white"
           >
             Show All Updates
           </button>
@@ -184,12 +182,19 @@ export default function ProgressFeed({
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="animate-pulse bg-gray-200 h-16 rounded-xl"
+              className="h-16 animate-pulse rounded-xl bg-surface-highlight"
             />
           ))}
         </div>
       : displayUpdates.length === 0 ?
-        <p className="text-text-secondary text-sm">No updates yet...</p>
+        <div className="rounded-xl border border-dashed border-border bg-surface-highlight px-4 py-6 text-center">
+          <p className="text-sm font-semibold text-neutral-dark">
+            No updates yet
+          </p>
+          <p className="mt-1 text-xs text-text-secondary">
+            Updates you post to your projects will appear here.
+          </p>
+        </div>
       : <div className="flex flex-col gap-3">
           {displayUpdates.map((update) => (
             <UpdateCard

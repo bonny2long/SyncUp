@@ -5,6 +5,7 @@ import {
   BookOpen,
   Users,
   Code,
+  Flame,
   MessageSquare,
   Rocket,
   ChevronDown,
@@ -592,7 +593,7 @@ export default function UserProfile({ isPublic = false }) {
                           setEditForm({ ...editForm, bio: e.target.value })
                         }
                         maxLength={200}
-                        placeholder="Tell us about yourself..."
+                        placeholder="Add a short bio so members know what you are building, learning, or open to helping with."
                         className="w-full text-text-secondary text-sm mt-3 bg-surface-highlight border border-border rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
                         rows={2}
                       />
@@ -609,7 +610,7 @@ export default function UserProfile({ isPublic = false }) {
                           })
                         }
                         maxLength={160}
-                        placeholder="Professional headline"
+                        placeholder="Professional headline or focus area"
                         className="w-full text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
                       />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -623,7 +624,7 @@ export default function UserProfile({ isPublic = false }) {
                             })
                           }
                           maxLength={200}
-                          placeholder="Current title"
+                          placeholder="Current role or focus"
                           className="text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                         <input
@@ -636,7 +637,7 @@ export default function UserProfile({ isPublic = false }) {
                             })
                           }
                           maxLength={200}
-                          placeholder="Current employer"
+                          placeholder="Company, client, or organization"
                           className="text-sm bg-surface-highlight border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
                       </div>
@@ -690,14 +691,15 @@ export default function UserProfile({ isPublic = false }) {
                       )}
                       <p className="mt-2 text-sm text-text-secondary">
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}{" "}
-                        •{" "}
+                        <span aria-hidden="true">{" - "}</span>
                         {new Date(user.join_date).toLocaleDateString("en-US", {
                           month: "long",
                           year: "numeric",
                         })}
                         {activity_streak > 0 && (
-                          <span className="ml-2 text-primary">
-                            🔥 {activity_streak} day
+                          <span className="ml-2 inline-flex items-center gap-1 text-primary">
+                            <Flame className="h-3.5 w-3.5" />
+                            {activity_streak} day
                             {activity_streak !== 1 ? "s" : ""} streak
                           </span>
                         )}
@@ -757,7 +759,13 @@ export default function UserProfile({ isPublic = false }) {
                         currentUser &&
                         currentUser.id === user.id && (
                           <p className="text-text-secondary text-sm mt-3 italic">
-                            Click edit to add a bio
+                            Add a short bio so members know what you are building, learning, or open to helping with.
+                          </p>
+                        )}
+                      {!user.bio &&
+                        (!currentUser || currentUser.id !== user.id) && (
+                          <p className="text-text-secondary text-sm mt-3 italic">
+                            This member has not added a bio yet.
                           </p>
                         )}
                     </>
@@ -994,8 +1002,8 @@ export default function UserProfile({ isPublic = false }) {
                 <span className="font-medium text-neutral-dark">
                   Growth Sources:
                 </span>{" "}
-                {stats.project_count || 0} Projects • {stats.update_count || 0}{" "}
-                Updates • {stats.mentorship_count || 0} Sessions
+                {stats.project_count || 0} Projects - {stats.update_count || 0}{" "}
+                Updates - {stats.mentorship_count || 0} Sessions
               </p>
             </div>
 
@@ -1033,13 +1041,13 @@ export default function UserProfile({ isPublic = false }) {
                       key={item.key}
                       className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
                         item.complete ?
-                          "border-green-500/20 bg-green-500/10 text-green-700"
+                          "border-primary/20 bg-primary/10 text-primary"
                         : "border-border bg-surface-highlight text-text-secondary"
                       }`}
                     >
                       <CheckCircle
                         className={`w-4 h-4 flex-shrink-0 ${
-                          item.complete ? "text-green-600" : "text-gray-400"
+                          item.complete ? "text-primary" : "text-gray-400"
                         }`}
                       />
                       <span>{item.label}</span>
@@ -1232,10 +1240,10 @@ export default function UserProfile({ isPublic = false }) {
                                           disabled={
                                             validatingSkill === skill.id
                                           }
-                                          className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-surface-highlight text-text-secondary hover:bg-amber-200 hover:text-amber-800"
+                                          className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-surface-highlight text-text-secondary hover:bg-primary/10 hover:text-primary"
                                           title="Endorse skill (community mentors)"
                                         >
-                                          ★
+                                          <Award className="h-3 w-3" />
                                         </button>
                                       )}
                                       {/* Upvote - any team member can give */}
@@ -1248,10 +1256,10 @@ export default function UserProfile({ isPublic = false }) {
                                           )
                                         }
                                         disabled={validatingSkill === skill.id}
-                                        className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-surface-highlight text-text-secondary hover:bg-blue-200 hover:text-blue-800"
+                                        className="w-5 h-5 rounded-full flex items-center justify-center text-xs bg-surface-highlight text-text-secondary hover:bg-primary/10 hover:text-primary"
                                         title="Upvote skill (team members)"
                                       >
-                                        ▲
+                                        <ChevronUp className="h-3 w-3" />
                                       </button>
                                     </div>
                                   )}
@@ -1402,7 +1410,7 @@ export default function UserProfile({ isPublic = false }) {
                               onClick={() => setShowAllProjects(true)}
                               className="mt-3 text-sm text-primary hover:text-primary/80 font-medium"
                             >
-                              View all {projects.length} projects →
+                              View all {projects.length} projects
                             </button>
                           )}
                           {showAllProjects && projects.length > 5 && (
@@ -1410,7 +1418,7 @@ export default function UserProfile({ isPublic = false }) {
                               onClick={() => setShowAllProjects(false)}
                               className="mt-3 text-sm text-primary hover:text-primary/80 font-medium"
                             >
-                              Show less ↑
+                              Show less
                             </button>
                           )}
                         </>

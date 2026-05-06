@@ -4,7 +4,6 @@ import { Trophy, TrendingUp, Award, Users } from "lucide-react";
 const TopContributors = ({ data }) => {
   const topContributors = useMemo(() => {
     const activeThisWeek = data?.activeThisWeek || [];
-    const teamMembers = data?.teamMembers || [];
     const momentum = data?.momentum || [];
 
     if (activeThisWeek.length === 0) return [];
@@ -53,10 +52,10 @@ const TopContributors = ({ data }) => {
   };
 
   const getMedalIcon = (index) => {
-    if (index === 0) return { icon: Trophy, color: "text-yellow-500", bg: "bg-yellow-500/10" };
-    if (index === 1) return { icon: Award, color: "text-gray-400", bg: "bg-gray-400/10" };
-    if (index === 2) return { icon: Award, color: "text-orange-600", bg: "bg-orange-600/10" };
-    return { icon: TrendingUp, color: "text-[#b9123f]", bg: "bg-[#b9123f]/10" };
+    if (index === 0) return { icon: Trophy, color: "text-primary", bg: "bg-primary/10" };
+    if (index === 1) return { icon: Award, color: "text-accent", bg: "bg-accent/10" };
+    if (index === 2) return { icon: Award, color: "text-primary", bg: "bg-primary/10" };
+    return { icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" };
   };
 
   if (topContributors.length === 0) {
@@ -76,7 +75,7 @@ const TopContributors = ({ data }) => {
   }
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-6">
+    <div className="brand-card p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-neutral-dark mb-1">
@@ -87,7 +86,7 @@ const TopContributors = ({ data }) => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-yellow-500" />
+          <Trophy className="w-5 h-5 text-primary" />
           <span className="text-xs font-medium text-text-secondary">
             {topContributors.length} active
           </span>
@@ -102,14 +101,14 @@ const TopContributors = ({ data }) => {
           return (
             <div
               key={contributor.id}
-              className={`group flex items-center gap-4 p-4 rounded-lg border transition-all ${
+              className={`group flex items-center gap-4 rounded-xl border p-4 transition-all ${
                 index === 0
-                  ? "bg-yellow-500/5 border-yellow-500/20 hover:bg-yellow-500/10"
-                  : index === 1
-                  ? "bg-gray-400/5 border-gray-400/20 hover:bg-gray-400/10"
-                  : index === 2
-                  ? "bg-orange-600/5 border-orange-600/20 hover:bg-orange-600/10"
-                  : "bg-surface-highlight border-border hover:bg-border/50"
+                  ? "bg-primary/5 border-primary/20 hover:bg-primary/10"
+                : index === 1
+                  ? "bg-accent/5 border-accent/20 hover:bg-accent/10"
+                : index === 2
+                  ? "bg-primary/5 border-primary/20 hover:bg-primary/10"
+                : "bg-surface-highlight border-border hover:bg-border/50"
               }`}
             >
               <div className={`flex items-center justify-center w-10 h-10 rounded-full ${medal.bg}`}>
@@ -138,7 +137,7 @@ const TopContributors = ({ data }) => {
                   </span>
                   {contributor.signalWeight > 0 && (
                     <span className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
                       {contributor.signalWeight} weight
                     </span>
                   )}
@@ -146,9 +145,9 @@ const TopContributors = ({ data }) => {
               </div>
 
               {contributor.growth > 0 && (
-                <div className="flex items-center gap-1 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
-                  <TrendingUp className="w-3 h-3 text-green-500" />
-                  <span className="text-xs font-semibold text-green-500">
+                <div className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1">
+                  <TrendingUp className="w-3 h-3 text-primary" />
+                  <span className="text-xs font-semibold text-primary">
                     +{contributor.growth}%
                   </span>
                 </div>
@@ -161,7 +160,7 @@ const TopContributors = ({ data }) => {
       {topContributors.length >= 5 && (
         <div className="mt-4 pt-4 border-t border-border">
           <button className="w-full text-center text-sm font-medium text-primary hover:text-primary/80 transition-colors">
-            View Full Team Stats →
+            View Full Team Stats
           </button>
         </div>
       )}

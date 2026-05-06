@@ -5,6 +5,7 @@ import IncomingRequests from "./IncomingRequests";
 import MySessions from "./MySessions";
 import MentorshipHistory from "./MentorshipHistory";
 import MentorLeaderboard from "./MentorLeaderboard";
+import AvailabilityManager from "./AvailabilityManager";
 import EncouragementBoard from "../../../components/community/EncouragementBoard";
 
 export default function MentorView() {
@@ -121,6 +122,17 @@ export default function MentorView() {
         </button>
 
         <button
+          onClick={() => setActiveTab("availability")}
+          className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
+            activeTab === "availability" ?
+              "bg-primary text-white shadow-sm"
+            : "text-text-secondary hover:bg-surface-highlight hover:text-neutral-dark"
+          }`}
+        >
+          Availability
+        </button>
+
+        <button
           onClick={() => setActiveTab("history")}
           className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-all ${
             activeTab === "history" ?
@@ -173,6 +185,8 @@ export default function MentorView() {
             onRefresh={loadSessions}
           />
         )}
+
+        {activeTab === "availability" && <AvailabilityManager />}
 
         {activeTab === "history" && (
           <MentorshipHistory

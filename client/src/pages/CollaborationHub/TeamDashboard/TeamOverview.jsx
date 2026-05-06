@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Target, Users, TrendingUp, BarChart3, X } from "lucide-react";
 
 const TeamOverview = ({
@@ -48,7 +49,7 @@ const TeamOverview = ({
       case "project":
         return "bg-[#b9123f]/10 text-[#b9123f]";
       case "update":
-        return "bg-green-100 text-green-700";
+        return "bg-[#b9123f]/10 text-[#b9123f]";
       case "mentorship":
         return "bg-[#383838]/10 text-[#383838]";
       default:
@@ -69,16 +70,16 @@ const TeamOverview = ({
       label: "Team Size",
       value: formatNumber(data?.team_size),
       icon: <Users className="w-4 h-4" />,
-      color: "bg-surface border-green-200/30",
-      textColor: "text-green-500",
+      color: "bg-surface border-[#383838]/20",
+      textColor: "text-[#383838]",
       onClick: () => setModalType("team"),
     },
     {
       label: "Active This Week",
       value: formatNumber(data?.active_this_week),
       icon: <TrendingUp className="w-4 h-4" />,
-      color: "bg-surface border-orange-200/30",
-      textColor: "text-orange-500",
+      color: "bg-surface border-[#b9123f]/20",
+      textColor: "text-[#b9123f]",
       onClick: () => setModalType("active"),
     },
     {
@@ -90,6 +91,75 @@ const TeamOverview = ({
       onClick: () => setModalType("signals"),
     },
   ];
+
+  const getModalConfig = (type) => {
+    switch (type) {
+      case "team":
+        return {
+          icon: Users,
+          title: "Team Members",
+          summary: `${teamMembers.length} member${teamMembers.length === 1 ? "" : "s"}`,
+          emptyTitle: "No team members yet",
+          emptyDescription: "Members will appear here once they join this project.",
+        };
+      case "skills":
+        return {
+          icon: Target,
+          title: "Skills Tracked",
+          summary: `${skillDistribution.length} skill signal${skillDistribution.length === 1 ? "" : "s"}`,
+          emptyTitle: "No skills tracked yet",
+          emptyDescription: "Ask the team to tag project updates with skills to build this view.",
+        };
+      case "active":
+        return {
+          icon: TrendingUp,
+          title: "Active This Week",
+          summary: `${activeThisWeek.length} active member${activeThisWeek.length === 1 ? "" : "s"}`,
+          emptyTitle: "No activity this week",
+          emptyDescription: "Recent project updates and signals will show here.",
+        };
+      case "signals":
+      default:
+        return {
+          icon: BarChart3,
+          title: "Signal Breakdown",
+          summary: `${formatNumber(data?.total_signals)} total signals`,
+          emptyTitle: "No signals yet",
+          emptyDescription: "Signals will appear once the team posts updates, project work, or mentorship activity.",
+        };
+    }
+  };
+
+  const renderModalEmpty = (config) => {
+    const EmptyIcon = config.icon;
+    return (
+      <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface-highlight px-8 py-12 text-center">
+        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <EmptyIcon className="h-7 w-7" />
+        </div>
+        <h4 className="text-lg font-black text-neutral-dark">
+          {config.emptyTitle}
+        </h4>
+        <p className="mt-2 max-w-md text-sm leading-6 text-text-secondary">
+          {config.emptyDescription}
+        </p>
+      </div>
+    );
+  };
+
+  const modalConfig = modalType ? getModalConfig(modalType) : null;
+  const ModalIcon = modalConfig?.icon;
+
+  useEffect(() => {
+    if (!modalType) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [modalType]);
 
   return (
     <>
@@ -126,44 +196,50 @@ const TeamOverview = ({
       </div>
 
       {/* Modal */}
-      {modalType && (
+      {modalType && modalConfig && ModalIcon &&
+        createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm sm:p-6"
           onClick={() => setModalType(null)}
         >
           <div
-            className="bg-surface rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden border border-border"
+            className="flex h-[min(760px,calc(100vh-48px))] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <h3 className="text-lg font-bold text-neutral-dark">
-                {modalType === "team" && "Team Members"}
-                {modalType === "skills" && "Skills Tracked"}
-                {modalType === "active" && "Active This Week"}
-                {modalType === "signals" && "Signal Breakdown"}
-              </h3>
+            <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <ModalIcon className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-neutral-dark">
+                    {modalConfig.title}
+                  </h3>
+                  <p className="text-xs font-semibold uppercase text-text-secondary">
+                    {modalConfig.summary}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setModalType(null)}
-                className="p-1.5 rounded-full hover:bg-surface-highlight text-text-secondary hover:text-neutral-dark"
+                className="rounded-full p-2 text-text-secondary transition hover:bg-surface-highlight hover:text-primary"
               >
-                <X className="w-5 h-5" />
+                <X className="h-6 w-6" />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-5 overflow-y-auto max-h-[60vh]">
+            <div className="flex-1 overflow-y-auto p-6">
               {/* Team Members Modal */}
               {modalType === "team" && (
                 <div className="space-y-3">
                   {teamMembers.length === 0 ?
-                    <p className="text-text-secondary text-center py-4">
-                      No team members
-                    </p>
+                    renderModalEmpty(modalConfig)
                   : teamMembers.map((member) => (
                       <div
                         key={member.id}
-                        className="flex items-center justify-between p-3 bg-surface-highlight rounded-lg border border-border"
+                        className="flex items-center justify-between rounded-xl border border-border bg-surface-highlight p-4"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-primary/20 flex items-center justify-center rounded-full text-primary font-semibold text-sm">
@@ -194,9 +270,7 @@ const TeamOverview = ({
               {modalType === "skills" && (
                 <div className="space-y-2">
                   {skillDistribution.length === 0 ?
-                    <p className="text-text-secondary text-center py-4">
-                      No skills tracked
-                    </p>
+                    renderModalEmpty(modalConfig)
                   : <>
                       {/* Group by skill */}
                       {Object.entries(
@@ -217,7 +291,7 @@ const TeamOverview = ({
                         .map(([skillName, data]) => (
                           <div
                             key={skillName}
-                            className="flex items-center justify-between p-3 bg-surface-highlight rounded-lg border border-border"
+                            className="flex items-center justify-between rounded-xl border border-border bg-surface-highlight p-4"
                           >
                             <div>
                               <p className="font-medium text-neutral-dark">
@@ -247,29 +321,27 @@ const TeamOverview = ({
               {modalType === "active" && (
                 <div className="space-y-3">
                   {activeThisWeek.length === 0 ?
-                    <p className="text-text-secondary text-center py-4">
-                      No activity this week
-                    </p>
+                    renderModalEmpty(modalConfig)
                   : activeThisWeek.map((user) => (
                       <div
                         key={user.id}
-                        className="flex items-center justify-between p-3 bg-surface-highlight rounded-lg border border-border"
+                        className="flex items-center justify-between rounded-xl border border-border bg-surface-highlight p-4"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-orange-100 flex items-center justify-center rounded-full text-orange-600 font-semibold text-sm">
+                          <div className="w-10 h-10 bg-primary/10 flex items-center justify-center rounded-full text-primary font-semibold text-sm">
                             {getInitials(user.name)}
                           </div>
                           <div>
                             <p className="font-medium text-neutral-dark">
                               {user.name}
                             </p>
-                            <span className="text-xs uppercase tracking-wide bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                            <span className="text-xs uppercase tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                               {user.role}
                             </span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-semibold text-orange-600">
+                          <p className="text-sm font-semibold text-primary">
                             {user.signal_count}
                           </p>
                           <p className="text-xs text-text-secondary">signals</p>
@@ -287,13 +359,11 @@ const TeamOverview = ({
                     signalBreakdown.length === 0 ||
                     signalBreakdown.every((s) => s.count === 0)
                   ) ?
-                    <p className="text-text-secondary text-center py-4">
-                      No signals yet
-                    </p>
+                    renderModalEmpty(modalConfig)
                   : signalBreakdown.map((item) => (
                       <div
                         key={item.source}
-                        className="flex items-center justify-between p-4 bg-surface-highlight rounded-lg border border-border"
+                        className="flex items-center justify-between rounded-xl border border-border bg-surface-highlight p-4"
                       >
                         <div className="flex items-center gap-3">
                           <span
@@ -307,7 +377,7 @@ const TeamOverview = ({
                             {item.count}
                           </p>
                           <p className="text-xs text-text-secondary">
-                            signals · {item.weight} weight
+                            signals - {item.weight} weight
                           </p>
                         </div>
                       </div>
@@ -317,7 +387,8 @@ const TeamOverview = ({
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

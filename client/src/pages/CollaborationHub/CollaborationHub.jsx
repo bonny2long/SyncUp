@@ -669,6 +669,7 @@ export default function CollaborationHub() {
                       allUpdates={allUpdates}
                       currentUser={currentUser}
                       projectId={selectedProject?.id}
+                      onClearProject={() => setSelectedProject(null)}
                     />
                   </Suspense>
                 </div>

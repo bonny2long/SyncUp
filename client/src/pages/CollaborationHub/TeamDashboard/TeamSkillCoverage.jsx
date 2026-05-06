@@ -43,10 +43,32 @@ const TeamSkillCoverage = ({ data = [] }) => {
   }, [data]);
 
   const getCoverageLevel = (coverage) => {
-    if (coverage >= 80) return { label: "Expert", color: "bg-green-500", textColor: "text-green-500" };
-    if (coverage >= 50) return { label: "Good", color: "bg-[#b9123f]", textColor: "text-[#b9123f]" };
-    if (coverage >= 20) return { label: "Learning", color: "bg-orange-500", textColor: "text-orange-500" };
-    return { label: "Beginner", color: "bg-gray-400", textColor: "text-gray-400" };
+    if (coverage >= 80) {
+      return {
+        label: "Expert",
+        color: "bg-primary",
+        pill: "bg-primary/10 text-primary",
+      };
+    }
+    if (coverage >= 50) {
+      return {
+        label: "Good",
+        color: "bg-primary",
+        pill: "bg-primary/10 text-primary",
+      };
+    }
+    if (coverage >= 20) {
+      return {
+        label: "Learning",
+        color: "bg-accent",
+        pill: "bg-accent/10 text-accent",
+      };
+    }
+    return {
+      label: "Beginner",
+      color: "bg-text-secondary",
+      pill: "bg-surface-highlight text-text-secondary",
+    };
   };
 
   const averageCoverage = useMemo(() => {
@@ -56,9 +78,9 @@ const TeamSkillCoverage = ({ data = [] }) => {
   }, [skillCoverage]);
 
   const getCoverageScore = () => {
-    if (averageCoverage >= 80) return { text: "Excellent!", color: "text-green-500", icon: Award };
-    if (averageCoverage >= 60) return { text: "Good", color: "text-[#b9123f]", icon: TrendingUp };
-    if (averageCoverage >= 40) return { text: "Fair", color: "text-orange-500", icon: Target };
+    if (averageCoverage >= 80) return { text: "Excellent!", color: "text-primary", icon: Award };
+    if (averageCoverage >= 60) return { text: "Good", color: "text-primary", icon: TrendingUp };
+    if (averageCoverage >= 40) return { text: "Fair", color: "text-accent", icon: Target };
     return { text: "Growing", color: "text-gray-500", icon: Target };
   };
 
@@ -82,7 +104,7 @@ const TeamSkillCoverage = ({ data = [] }) => {
   const ScoreIcon = scoreInfo.icon;
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-6">
+    <div className="brand-card p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-neutral-dark mb-1">
@@ -118,8 +140,7 @@ const TeamSkillCoverage = ({ data = [] }) => {
                   <span className="font-medium text-neutral-dark min-w-[120px]">
                     {skill.skill}
                   </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${level.textColor} bg-opacity-10`}
-                    style={{ backgroundColor: `${level.color}20` }}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${level.pill}`}>
                     {level.label}
                   </span>
                 </div>
@@ -130,7 +151,7 @@ const TeamSkillCoverage = ({ data = [] }) => {
                 </div>
               </div>
               
-              <div className="w-full bg-surface-highlight rounded-full h-2 overflow-hidden">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-highlight">
                 <div
                   className={`h-full ${level.color} transition-all duration-500 ease-out`}
                   style={{ width: `${skill.coverage}%` }}
@@ -141,7 +162,7 @@ const TeamSkillCoverage = ({ data = [] }) => {
         })}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-border grid grid-cols-3 gap-4 text-center">
+      <div className="mt-6 grid grid-cols-3 gap-4 border-t border-border pt-4 text-center">
         <div>
           <p className="text-2xl font-bold text-primary">
             {skillCoverage.length}
@@ -149,13 +170,13 @@ const TeamSkillCoverage = ({ data = [] }) => {
           <p className="text-xs text-text-secondary mt-1">Skills Tracked</p>
         </div>
         <div>
-          <p className="text-2xl font-bold text-green-500">
+          <p className="text-2xl font-bold text-accent">
             {skillCoverage.filter(s => s.coverage >= 80).length}
           </p>
           <p className="text-xs text-text-secondary mt-1">Expert Level</p>
         </div>
         <div>
-          <p className="text-2xl font-bold text-orange-500">
+          <p className="text-2xl font-bold text-primary">
             {skillCoverage.filter(s => s.coverage < 50).length}
           </p>
           <p className="text-xs text-text-secondary mt-1">Needs Growth</p>

@@ -14,6 +14,8 @@ import {
   getInternSessions,
   getMentorSessions,
   getMentorAvailability,
+  createMentorAvailability,
+  deleteMentorAvailability,
 } from "../controllers/mentorshipController.js";
 import { mentorshipValidators, userValidators } from "../validators/index.js";
 
@@ -135,5 +137,7 @@ router.get("/sessions/intern/:internId", getInternSessions);
 router.get("/sessions/mentor/:mentorId", getMentorSessions);
 
 router.get("/mentors/:id/availability", getMentorAvailability);
+router.post("/mentors/:id/availability", createMentorAvailability);
+router.delete("/availability/:slotId", deleteMentorAvailability);
 
 export default router;

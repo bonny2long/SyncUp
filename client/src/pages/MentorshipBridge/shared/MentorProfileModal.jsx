@@ -1,6 +1,7 @@
 import React from "react";
-import { X, Mail, Briefcase, CalendarClock } from "lucide-react";
+import { Award, CalendarClock, Mail, X } from "lucide-react";
 import { formatDateTimeCompact } from "../../../utils/date";
+import RoleBadge from "../../../components/shared/RoleBadge";
 
 export default function MentorProfileModal({ mentor, onClose }) {
   if (!mentor) return null;
@@ -17,41 +18,40 @@ export default function MentorProfileModal({ mentor, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-accent/70 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-surface w-full max-w-lg rounded-2xl shadow-xl border border-border relative overflow-hidden"
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary to-secondary" />
+        <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
 
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 p-2 rounded-full hover:bg-surface-highlight transition"
+          className="absolute right-3 top-3 rounded-full p-2 text-text-secondary transition hover:bg-surface-highlight hover:text-primary"
           aria-label="Close"
         >
-          <X className="w-5 h-5 text-text-secondary" />
+          <X className="h-5 w-5" />
         </button>
 
         <div className="p-6 pt-8">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 font-bold text-primary">
               {mentor.name?.charAt(0) || "M"}
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold text-primary leading-tight">
+              <p className="text-xs font-bold uppercase text-primary">
+                Mentor Profile
+              </p>
+              <h3 className="text-2xl font-black leading-tight text-neutral-dark">
                 {mentor.name}
               </h3>
-              <div className="flex flex-wrap gap-2 mt-1 text-sm text-text-secondary items-center">
-                {mentor.role && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-semibold">
-                    <Briefcase size={14} /> {mentor.role}
-                  </span>
-                )}
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-text-secondary">
+                {mentor.role && <RoleBadge role={mentor.role} size="xs" />}
                 {mentor.email && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-surface-highlight text-neutral-dark text-xs">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-surface-highlight px-2 py-1 text-xs text-neutral-dark">
                     <Mail size={14} /> {mentor.email}
                   </span>
                 )}
@@ -59,13 +59,14 @@ export default function MentorProfileModal({ mentor, onClose }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 text-sm text-text-secondary mb-4">
-            <div className="p-3 rounded-xl bg-surface-highlight border border-border">
-              <p className="text-[11px] uppercase text-text-secondary mb-1">
+          <div className="mb-4 grid grid-cols-1 gap-3 text-sm text-text-secondary sm:grid-cols-2">
+            <div className="rounded-xl border border-border bg-surface-highlight p-3">
+              <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase text-text-secondary">
+                <Award className="h-3.5 w-3.5 text-primary" />
                 Sessions
               </p>
               <div className="flex flex-wrap gap-2 text-[11px] text-neutral-dark">
-                <span className="font-semibold text-secondary">
+                <span className="font-semibold text-primary">
                   Total: {mentor.stats?.total_sessions || 0}
                 </span>
                 <span>Completed: {mentor.stats?.completed_sessions || 0}</span>
@@ -75,8 +76,9 @@ export default function MentorProfileModal({ mentor, onClose }) {
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-surface-highlight border border-border">
-              <p className="text-[11px] uppercase text-text-secondary mb-1">
+            <div className="rounded-xl border border-border bg-surface-highlight p-3">
+              <p className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase text-text-secondary">
+                <CalendarClock className="h-3.5 w-3.5 text-primary" />
                 Availability
               </p>
               {availability.length ?
@@ -84,7 +86,7 @@ export default function MentorProfileModal({ mentor, onClose }) {
                   {availability.map((slot, idx) => (
                     <div
                       key={`${slot.available_date || idx}-${slot.available_time || idx}`}
-                      className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-surface border border-border"
+                      className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-2 py-1"
                     >
                       <CalendarClock size={14} className="text-primary" />
                       <span className="font-medium">
@@ -96,14 +98,14 @@ export default function MentorProfileModal({ mentor, onClose }) {
                     </div>
                   ))}
                 </div>
-              : <p className="text-xs text-gray-400">No availability listed.</p>
+              : <p className="text-xs text-text-secondary">No availability listed.</p>
               }
             </div>
           </div>
 
           {mentor.bio && (
-            <div className="p-3 rounded-xl bg-surface border border-border text-sm text-text-secondary">
-              <p className="text-[11px] uppercase text-text-secondary mb-1">
+            <div className="rounded-xl border border-border bg-surface p-3 text-sm text-text-secondary">
+              <p className="mb-1 text-[11px] font-bold uppercase text-text-secondary">
                 About
               </p>
               <p>{mentor.bio}</p>

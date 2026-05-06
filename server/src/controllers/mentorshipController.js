@@ -26,6 +26,24 @@ const formatDateForMySQL = (dateStr) => {
   return `${year}-${month}-${day} ${hours}:${mins}:${secs}`;
 };
 
+const normalizeAvailabilityTime = (time) => {
+  if (typeof time !== "string") return null;
+  const trimmed = time.trim();
+  if (/^\d{2}:\d{2}$/.test(trimmed)) return `${trimmed}:00`;
+  if (/^\d{2}:\d{2}:\d{2}$/.test(trimmed)) return trimmed;
+  return null;
+};
+
+const isValidAvailabilityDate = (date) => {
+  if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return false;
+  }
+  const parsed = new Date(`${date}T00:00:00`);
+  return !Number.isNaN(parsed.getTime());
+};
+
+const isMentorRole = (role) => ["mentor", "alumni", "resident"].includes(role);
+
 export const checkAndAwardMentorBadge = async (mentorId, connection) => {
   try {
     const [countRows] = await connection.query(
@@ -89,7 +107,7 @@ export const getMentorDetails = async (req, res) => {
 
     const [availability] = await pool.query(
       `
-      SELECT ma.available_date, ma.available_time
+      SELECT ma.id, ma.available_date, ma.available_time
       FROM mentor_availability ma
       WHERE ma.mentor_id = ?
         AND NOT EXISTS (
@@ -281,6 +299,22 @@ export const createSession = async (req, res) => {
       );
       return res.status(400).json({
         error: "The selected time slot is no longer available for this mentor.",
+      });
+    }
+
+    const [bookedSlot] = await pool.query(
+      `SELECT 1
+       FROM mentorship_sessions
+       WHERE mentor_id = ?
+         AND session_date = ?
+         AND status IN ('pending', 'accepted', 'completed')
+       LIMIT 1`,
+      [mentor_id, formattedDate],
+    );
+
+    if (bookedSlot.length > 0) {
+      return res.status(409).json({
+        error: "The selected time slot has already been requested.",
       });
     }
 
@@ -645,7 +679,7 @@ export const getMentorAvailability = async (req, res) => {
 
   try {
     const [slots] = await pool.query(
-      `SELECT ma.available_date, ma.available_time 
+      `SELECT ma.id, ma.available_date, ma.available_time
        FROM mentor_availability ma
        WHERE ma.mentor_id = ? 
          AND NOT EXISTS (
@@ -662,5 +696,115 @@ export const getMentorAvailability = async (req, res) => {
   } catch (err) {
     console.error("Error fetching mentor availability:", err);
     res.status(500).json({ error: "Failed to fetch availability" });
+  }
+};
+
+// POST /api/mentorship/mentors/:id/availability
+export const createMentorAvailability = async (req, res) => {
+  const { id } = req.params;
+  const { available_date, available_time } = req.body;
+  const mentorId = Number(id);
+  const normalizedTime = normalizeAvailabilityTime(available_time);
+
+  if (!Number.isInteger(mentorId) || mentorId <= 0) {
+    return res.status(400).json({ error: "Invalid mentor ID" });
+  }
+
+  if (!isValidAvailabilityDate(available_date) || !normalizedTime) {
+    return res.status(400).json({ error: "Valid date and time are required" });
+  }
+
+  try {
+    const [mentorRows] = await pool.query(
+      "SELECT id, role FROM users WHERE id = ? LIMIT 1",
+      [mentorId],
+    );
+
+    if (mentorRows.length === 0 || !isMentorRole(mentorRows[0].role)) {
+      return res.status(404).json({ error: "Mentor not found" });
+    }
+
+    const [duplicateRows] = await pool.query(
+      `SELECT id
+       FROM mentor_availability
+       WHERE mentor_id = ?
+         AND DATE(available_date) = ?
+         AND available_time = ?
+       LIMIT 1`,
+      [mentorId, available_date, normalizedTime],
+    );
+
+    if (duplicateRows.length > 0) {
+      return res.status(409).json({
+        error: "This availability slot already exists",
+      });
+    }
+
+    const [result] = await pool.query(
+      `INSERT INTO mentor_availability
+       (mentor_id, available_date, available_time)
+       VALUES (?, ?, ?)`,
+      [mentorId, available_date, normalizedTime],
+    );
+
+    const [createdRows] = await pool.query(
+      `SELECT id, available_date, available_time
+       FROM mentor_availability
+       WHERE id = ?`,
+      [result.insertId],
+    );
+
+    res.status(201).json(createdRows[0]);
+  } catch (err) {
+    console.error("Error creating mentor availability:", err);
+    res.status(500).json({ error: "Failed to create availability slot" });
+  }
+};
+
+// DELETE /api/mentorship/availability/:slotId
+export const deleteMentorAvailability = async (req, res) => {
+  const { slotId } = req.params;
+  const id = Number(slotId);
+
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "Invalid availability slot ID" });
+  }
+
+  try {
+    const [slotRows] = await pool.query(
+      `SELECT id, mentor_id, available_date, available_time
+       FROM mentor_availability
+       WHERE id = ?
+       LIMIT 1`,
+      [id],
+    );
+
+    if (slotRows.length === 0) {
+      return res.status(404).json({ error: "Availability slot not found" });
+    }
+
+    const slot = slotRows[0];
+    const [bookedRows] = await pool.query(
+      `SELECT id
+       FROM mentorship_sessions
+       WHERE mentor_id = ?
+         AND session_date = CAST(CONCAT(DATE(?), ' ', ?) AS DATETIME)
+         AND status IN ('pending', 'accepted', 'completed')
+       LIMIT 1`,
+      [slot.mentor_id, slot.available_date, slot.available_time],
+    );
+
+    if (bookedRows.length > 0) {
+      return res.status(409).json({
+        error: "This slot has already been requested and cannot be removed",
+      });
+    }
+
+    await pool.query("DELETE FROM mentor_availability WHERE id = ?", [id]);
+
+    res.json({ message: "Availability slot removed" });
+  } catch (err) {
+    console.error("Error deleting mentor availability:", err);
+    res.status(500).json({ error: "Failed to remove availability slot" });
   }
 };

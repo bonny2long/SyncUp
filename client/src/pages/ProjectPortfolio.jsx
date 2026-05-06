@@ -38,9 +38,9 @@ function getCaseStudyItems(project) {
     techStack,
     hasCaseStudy: Boolean(
       project?.case_study_problem ||
-        project?.case_study_solution ||
-        project?.case_study_outcomes ||
-        techStack.length > 0,
+      project?.case_study_solution ||
+      project?.case_study_outcomes ||
+      techStack.length > 0,
     ),
   };
 }
@@ -90,7 +90,8 @@ export default function ProjectPortfolio() {
     manuallyFeaturedProject ||
     sortedProjects.find(
       (project) =>
-        project.status === "completed" && getCaseStudyItems(project).hasCaseStudy,
+        project.status === "completed" &&
+        getCaseStudyItems(project).hasCaseStudy,
     ) ||
     sortedProjects.find((project) => getCaseStudyItems(project).hasCaseStudy) ||
     sortedProjects.find((project) => project.status === "completed") ||
@@ -145,8 +146,8 @@ export default function ProjectPortfolio() {
                   </p>
                   <h1 className="page-title mt-1">Project Portfolio</h1>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
-                    Showcase completed work, active builds, and the case
-                    studies that tell the story behind each project.
+                    Showcase completed work, active builds, and the case studies
+                    that tell the story behind each project.
                   </p>
                 </div>
               </div>
@@ -306,7 +307,9 @@ export default function ProjectPortfolio() {
                               )}
                               <button
                                 type="button"
-                                onClick={() => handleProjectClick(featuredProject)}
+                                onClick={() =>
+                                  handleProjectClick(featuredProject)
+                                }
                                 className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
                               >
                                 View Details
@@ -317,16 +320,14 @@ export default function ProjectPortfolio() {
                       )}
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-                        {gridProjects
-                          .slice(0, displayCount)
-                          .map((project) => (
-                            <ProjectCard
-                              key={project.id}
-                              project={project}
-                              variant="portfolio"
-                              onClick={() => handleProjectClick(project)}
-                            />
-                          ))}
+                        {gridProjects.slice(0, displayCount).map((project) => (
+                          <ProjectCard
+                            key={project.id}
+                            project={project}
+                            variant="portfolio"
+                            onClick={() => handleProjectClick(project)}
+                          />
+                        ))}
                       </div>
 
                       {/* Load More */}

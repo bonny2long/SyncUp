@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Send, X } from "lucide-react";
 import {
   createSession,
   fetchMentorAvailability,
@@ -29,7 +29,6 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0); // To force refresh availability
-  const [totalSlots, setTotalSlots] = useState(0);
   const [bookedSlots, setBookedSlots] = useState(new Set()); // Track booked slots for immediate validation
   const [isClearingSelection, setIsClearingSelection] = useState(false); // Prevent form submission during clearing
 
@@ -84,7 +83,6 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
           return !bookedSlotsSet.has(normalizedSlot);
         });
 
-        setTotalSlots(availabilitySlots.length);
         setAvailabilitySlots(availableSlots);
         setBookedSlots(bookedSlotsSet);
       } catch (err) {
@@ -99,7 +97,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
     }
 
     fetchAvailability();
-  }, [mentor.id, refreshKey]); // Add refreshKey to trigger refresh when needed
+  }, [addToast, mentor.id, refreshKey]); // Add refreshKey to trigger refresh when needed
 
   // If currently selected slot becomes booked, clear selection
   useEffect(() => {
@@ -120,7 +118,13 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
       });
       setTimeout(() => setIsClearingSelection(false), 100);
     }
-  }, [bookedSlots, formData.session_date, isClearingSelection, loading]);
+  }, [
+    addToast,
+    bookedSlots,
+    formData.session_date,
+    isClearingSelection,
+    loading,
+  ]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -191,24 +195,32 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-accent/70 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-surface w-full max-w-2xl rounded-2xl shadow-xl border border-border relative max-h-[90vh] overflow-y-auto"
+        className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
         {/* Header */}
-        <div className="sticky top-0 bg-surface border-b border-border p-6 pb-4 rounded-t-2xl">
+        <div className="sticky top-0 z-10 rounded-t-2xl border-b border-border bg-surface/95 p-6 pb-4 backdrop-blur">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-highlight transition"
+            className="absolute right-4 top-4 rounded-full p-2 text-text-secondary transition hover:bg-surface-highlight hover:text-primary"
+            aria-label="Close"
           >
-            <X className="w-5 h-5 text-text-secondary" />
+            <X className="h-5 w-5" />
           </button>
-          <h2 className="text-2xl font-bold text-primary">Book Session</h2>
-          <p className="text-sm text-text-secondary mt-1">
-            with <span className="font-medium">{mentor.name}</span>
+          <p className="text-xs font-bold uppercase text-primary">
+            Mentorship Request
+          </p>
+          <h2 className="text-2xl font-black text-neutral-dark">
+            Book a session
+          </h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Send a focused request to{" "}
+            <span className="font-semibold text-primary">{mentor.name}</span>.
           </p>
         </div>
 
@@ -216,27 +228,25 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Available Time Slots */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              <Calendar className="w-4 h-4 inline mr-1" />
+            <label className="mb-3 flex items-center gap-2 text-sm font-bold text-neutral-dark">
+              <Calendar className="h-4 w-4 text-primary" />
               Choose Your Preferred Time <span className="text-red-500">*</span>
             </label>
 
             {loadingSlots ?
-              <div className="flex items-center justify-center py-8">
-                <p className="text-sm text-text-secondary">
-                  Loading available times...
-                </p>
+              <div className="flex items-center justify-center rounded-xl border border-border bg-surface-highlight py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
             : availabilitySlots.length === 0 ?
-              <div className="text-center py-8 bg-surface-highlight rounded-lg">
-                <p className="text-sm text-text-secondary">
-                  {totalSlots > 0 ?
-                    `All ${totalSlots} time slots are currently booked. Please check back later.`
-                  : "No available times for this mentor"}
+              <div className="rounded-xl border border-dashed border-border bg-surface-highlight p-6 text-center">
+                <Clock className="mx-auto mb-3 h-8 w-8 text-primary" />
+                <p className="text-sm font-medium text-text-secondary">
+                  No open times right now. This mentor has not posted
+                  availability yet, or all posted times have been booked.
                 </p>
               </div>
             : <>
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                <div className="max-h-64 space-y-2 overflow-y-auto pr-2">
                   {availabilitySlots.map((slot, index) => {
                     const normalizedSlot = normalizeDateTime(
                       slot.available_date,
@@ -246,11 +256,11 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
                     return (
                       <label
-                        key={index}
-                        className={`flex items-center gap-3 p-3 rounded-lg border-2 transition ${
+                        key={slot.id || index}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition ${
                           isSelected ?
-                            "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/40 hover:bg-surface-highlight cursor-pointer"
+                            "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/40 hover:bg-surface-highlight"
                         }`}
                       >
                         <input
@@ -264,7 +274,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
                               session_date: e.target.value,
                             });
                           }}
-                          className="w-4 h-4 accent-primary"
+                          className="h-4 w-4 accent-primary"
                         />
                         <div className="flex-1">
                           <p
@@ -279,7 +289,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
                           </p>
                         </div>
                         {isSelected && (
-                          <div className="text-primary text-sm font-medium">
+                          <div className="rounded-full bg-primary px-2 py-1 text-xs font-bold text-white">
                             Selected
                           </div>
                         )}
@@ -293,7 +303,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
           {/* Session Focus */}
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="mb-2 block text-sm font-bold text-neutral-dark">
               Session Purpose <span className="text-red-500">*</span>
             </label>
             <select
@@ -301,7 +311,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
               onChange={(e) =>
                 setFormData({ ...formData, session_focus: e.target.value })
               }
-              className="w-full p-3 border border-border rounded-lg bg-surface text-neutral-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="input w-full"
               required
             >
               <option value="">Select session focus...</option>
@@ -315,7 +325,7 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
 
           {/* Topic */}
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="mb-2 block text-sm font-bold text-neutral-dark">
               Session Topic <span className="text-red-500">*</span>
             </label>
             <input
@@ -325,14 +335,14 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
                 setFormData({ ...formData, topic: e.target.value })
               }
               placeholder="e.g., React Hooks best practices"
-              className="w-full p-3 border border-border rounded-lg bg-surface text-neutral-dark placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="input w-full"
               required
             />
           </div>
 
           {/* Details */}
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="mb-2 block text-sm font-bold text-neutral-dark">
               Additional Details (Optional)
             </label>
             <textarea
@@ -342,16 +352,16 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
               }
               placeholder="Any specific questions or areas you'd like to cover..."
               rows="3"
-              className="w-full p-3 border border-border rounded-lg bg-surface text-neutral-dark placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+              className="input min-h-24 w-full resize-none"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-border">
+          <div className="flex gap-3 border-t border-border pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 rounded-lg border border-border text-text-secondary hover:bg-surface-highlight transition font-medium"
+              className="flex-1 rounded-full border border-border px-4 py-3 font-semibold text-text-secondary transition hover:border-primary/30 hover:text-primary"
             >
               Cancel
             </button>
@@ -363,17 +373,18 @@ export default function RequestSessionModal({ mentor, onClose, onSuccess }) {
                 !formData.session_focus ||
                 !formData.topic
               }
-              className={`flex-1 px-4 py-3 rounded-lg text-white font-medium transition ${
+              className={`inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-3 font-semibold text-white transition ${
                 (
                   loading ||
                   !formData.session_date ||
                   !formData.session_focus ||
                   !formData.topic
                 ) ?
-                  "bg-primary/40 cursor-not-allowed"
-                : "bg-primary hover:bg-secondary"
+                  "cursor-not-allowed bg-primary/40"
+                : "bg-primary hover:bg-primary-dark"
               }`}
             >
+              <Send className="h-4 w-4" />
               {loading ? "Sending Request..." : "Send Request"}
             </button>
           </div>

@@ -33,7 +33,7 @@ export default function SessionChat({ otherUser }) {
 
     try {
       const res = await fetch(
-        `${API_BASE}/chat/dm/${otherUser.id}?currentUserId=${user.id}`
+        `${API_BASE}/chat/dm/${otherUser.id}?currentUserId=${user.id}`,
       );
       if (!res.ok) {
         throw new Error(await getApiErrorMessage(res, "Failed to load messages"));
@@ -104,27 +104,27 @@ export default function SessionChat({ otherUser }) {
   };
 
   return (
-    <div className="mt-2 border border-border rounded-lg overflow-hidden bg-surface">
+    <div className="mt-3 overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
       {/* Collapsible Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-2.5 bg-surface-highlight hover:bg-border/50 transition-colors"
+        className="flex w-full items-center justify-between bg-surface-highlight px-4 py-3 transition-colors hover:bg-primary/5"
       >
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-neutral-dark">
-            Message {otherUser.role === "intern" ? otherUser.name : otherUser.name}
+          <MessageSquare className="h-4 w-4 text-primary" />
+          <span className="text-sm font-semibold text-neutral-dark">
+            Message {otherUser.name}
           </span>
           {messages.length > 0 && (
-            <span className="text-xs text-text-secondary">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               ({messages.length})
             </span>
           )}
         </div>
         {expanded ? (
-          <ChevronUp className="w-4 h-4 text-text-secondary" />
+          <ChevronUp className="h-4 w-4 text-text-secondary" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-text-secondary" />
+          <ChevronDown className="h-4 w-4 text-text-secondary" />
         )}
       </button>
 
@@ -132,17 +132,20 @@ export default function SessionChat({ otherUser }) {
       {expanded && (
         <>
           {/* Messages Area */}
-          <div className="flex flex-col gap-2 p-3 overflow-y-auto max-h-60 min-h-[80px] bg-surface">
+          <div className="flex max-h-60 min-h-[96px] flex-col gap-2 overflow-y-auto bg-surface p-3">
             {loading ? (
               <div className="flex items-center justify-center py-4">
-                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               </div>
             ) : loadError ? (
-              <p className="text-xs text-red-500 text-center py-3">
+              <p
+                className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-xs font-semibold text-red-700"
+                role="alert"
+              >
                 {loadError}
               </p>
             ) : messages.length === 0 ? (
-              <p className="text-xs text-text-secondary text-center py-4">
+              <p className="py-5 text-center text-xs font-medium text-text-secondary">
                 Start the conversation
               </p>
             ) : (
@@ -151,20 +154,22 @@ export default function SessionChat({ otherUser }) {
                 return (
                   <div
                     key={msg.id}
-                    className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                    className={`flex ${
+                      isMe ? "justify-end" : "justify-start"
+                    }`}
                   >
                     <div
-                      className={`max-w-[75%] px-3 py-2 rounded-xl text-sm ${
+                      className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
                         isMe
-                          ? "bg-primary text-white rounded-br-none"
-                          : "bg-surface-highlight text-neutral-dark rounded-bl-none border border-border"
+                          ? "rounded-br-md bg-primary text-white"
+                          : "rounded-bl-md border border-border bg-surface-highlight text-neutral-dark"
                       } ${msg._optimistic ? "opacity-70" : ""}`}
                     >
                       <p className="whitespace-pre-wrap break-words">
                         {msg.content}
                       </p>
                       <p
-                        className={`text-xs mt-0.5 ${
+                        className={`mt-0.5 text-xs ${
                           isMe ? "text-white/60" : "text-text-secondary"
                         }`}
                       >
@@ -182,10 +187,10 @@ export default function SessionChat({ otherUser }) {
           </div>
 
           {/* Input */}
-          <div className="flex gap-2 p-2 border-t border-border bg-surface">
+          <div className="flex gap-2 border-t border-border bg-surface p-3">
             <div className="flex-1">
               {sendError && (
-                <p className="mb-1 text-xs text-red-500" role="alert">
+                <p className="mb-2 text-xs font-semibold text-red-600" role="alert">
                   {sendError}
                 </p>
               )}
@@ -196,19 +201,21 @@ export default function SessionChat({ otherUser }) {
                   setNewMessage(e.target.value);
                   if (sendError) setSendError(null);
                 }}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !e.shiftKey && handleSend()
+                }
                 placeholder={`Message ${otherUser.name}...`}
-                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg bg-surface-highlight text-neutral-dark placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="input w-full py-2 text-sm"
                 disabled={sending}
               />
             </div>
             <button
               onClick={handleSend}
               disabled={!newMessage.trim() || sending}
-              className="self-end p-2 bg-primary text-white rounded-lg disabled:opacity-40 hover:bg-primary/90 transition-colors"
+              className="self-end rounded-full bg-primary p-2.5 text-white transition-colors hover:bg-primary-dark disabled:opacity-40"
               aria-label="Send message"
             >
-              <Send className="w-4 h-4" />
+              <Send className="h-4 w-4" />
             </button>
           </div>
         </>

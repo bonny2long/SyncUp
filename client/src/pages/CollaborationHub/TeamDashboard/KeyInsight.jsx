@@ -93,19 +93,19 @@ export default function KeyInsight({ data }) {
   const Icon = insight.icon;
 
   const colors = {
-    success: "bg-green-500/10 border-green-500/30 text-green-500",
-    warning: "bg-amber-500/10 border-amber-500/30 text-amber-500",
-    tip: "bg-blue-500/10 border-blue-500/30 text-blue-500",
+    success: "bg-primary/10 border-primary/25 text-primary",
+    warning: "bg-accent/10 border-accent/25 text-accent",
+    tip: "bg-primary/5 border-primary/20 text-primary",
   };
 
   const iconColors = {
-    success: "text-green-500",
-    warning: "text-amber-500",
-    tip: "text-blue-500",
+    success: "text-primary",
+    warning: "text-accent",
+    tip: "text-primary",
   };
 
   return (
-    <div className={`rounded-lg border p-4 ${colors[insight.type]}`}>
+    <div className={`rounded-xl border p-4 ${colors[insight.type]}`}>
       <div className="flex items-start gap-3">
         <Icon
           className={`w-5 h-5 mt-0.5 flex-shrink-0 ${iconColors[insight.type]}`}

@@ -422,6 +422,34 @@ export async function fetchMentorAvailability(mentorId) {
   return res.json();
 }
 
+export async function createMentorAvailability(mentorId, payload) {
+  const res = await fetch(
+    `${API_BASE}/mentorship/mentors/${mentorId}/availability`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getUserHeaders() },
+      body: JSON.stringify(payload),
+    },
+  );
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to create availability slot");
+  }
+  return res.json();
+}
+
+export async function deleteMentorAvailability(slotId) {
+  const res = await fetch(`${API_BASE}/mentorship/availability/${slotId}`, {
+    method: "DELETE",
+    headers: getUserHeaders(),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.error || "Failed to remove availability slot");
+  }
+  return res.json();
+}
+
 // ----------------------------------------------------
 // CREATE PROJECT
 // ----------------------------------------------------

@@ -111,10 +111,7 @@ export default function MySessions({ sessions, loading, error, onRefresh }) {
   if (loading) {
     return (
       <div className="brand-card flex h-48 items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm font-semibold text-text-secondary">Loading sessions...</p>
-        </div>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }

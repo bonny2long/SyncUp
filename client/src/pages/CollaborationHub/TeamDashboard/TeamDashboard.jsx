@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useUser } from "../../../context/UserContext";
 import { getErrorMessage } from "../../../utils/errorHandler";
 import SkeletonLoader from "../../../components/shared/SkeletonLoader";
@@ -8,6 +8,8 @@ import KeyInsight from "./KeyInsight";
 import TeamSkillCoverage from "./TeamSkillCoverage";
 import TeamAchievements from "./TeamAchievements";
 import TopContributors from "./TopContributors";
+import EmptyState from "../../../components/brand/EmptyState";
+import { BarChart3 } from "lucide-react";
 
 const TeamDashboard = ({ projectId }) => {
   const { user: currentUser } = useUser();
@@ -15,7 +17,7 @@ const TeamDashboard = ({ projectId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const loadTeamData = async () => {
+  const loadTeamData = useCallback(async () => {
     if (!projectId || !currentUser?.id) return;
 
     try {
@@ -39,11 +41,11 @@ const TeamDashboard = ({ projectId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser?.id, projectId]);
 
   useEffect(() => {
     loadTeamData();
-  }, [projectId, currentUser?.id]);
+  }, [loadTeamData]);
 
   if (loading) {
     return (
@@ -61,14 +63,14 @@ const TeamDashboard = ({ projectId }) => {
 
   if (error) {
     return (
-      <div className="bg-surface border border-border rounded-lg p-6">
-        <h3 className="text-red-500 font-medium mb-2">
+      <div className="brand-card border-red-200 bg-red-50 p-6 dark:border-red-900/50 dark:bg-red-950/30">
+        <h3 className="mb-2 font-bold text-red-700 dark:text-red-300">
           Failed to load team analytics
         </h3>
-        <p className="text-text-secondary text-sm">{error}</p>
+        <p className="text-sm text-text-secondary">{error}</p>
         <button
           onClick={loadTeamData}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          className="mt-4 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-dark"
         >
           Retry
         </button>
@@ -78,9 +80,11 @@ const TeamDashboard = ({ projectId }) => {
 
   if (!teamData) {
     return (
-      <div className="bg-surface border border-border rounded-lg p-6">
-        <p className="text-text-secondary">No team data available</p>
-      </div>
+      <EmptyState
+        icon={BarChart3}
+        title="No team data available"
+        description="Team analytics will appear once this project has members and skill activity."
+      />
     );
   }
 

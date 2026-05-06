@@ -65,8 +65,8 @@ export function calculateProfileCompleteness(user = {}, projects = []) {
     percent,
     missingItems: items.filter((item) => !item.complete),
     statusLabel:
-      percent >= 85 ? "Strong"
-      : percent >= 60 ? "In Progress"
-      : "Needs Work",
+      percent >= 85 ? "Strong profile"
+      : percent >= 60 ? "Building profile"
+      : "Profile setup in progress",
   };
 }

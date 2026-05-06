@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowUpDown, FolderSearch, Search } from "lucide-react";
+import { ChevronDown, FolderSearch, Search } from "lucide-react";
 import EmptyState from "../../components/brand/EmptyState";
 import DiscoverProjects from "./DiscoverProjects";
 import { fetchProjectSkills } from "../../utils/api";
@@ -85,51 +85,54 @@ export default function DiscoverPanel({
         </div>
 
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
           <input
             type="text"
             placeholder="Search projects..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input bg-white pl-10"
+            className="w-full rounded-lg border border-border bg-white py-2.5 pl-11 pr-4 text-sm text-neutral-dark transition-all placeholder:text-text-secondary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
         </div>
 
         <div className="mb-3 grid grid-cols-2 gap-3">
-          <select
-            value={skillFilter}
-            onChange={(e) => setSkillFilter(e.target.value)}
-            disabled={skillsLoading}
-            className="input bg-white"
-          >
-            <option value="all">
-              All Skills {!skillsLoading && `(${projects.length})`}
-            </option>
-            {availableSkills.slice(0, 15).map((skill) => (
-              <option key={skill.id} value={skill.id}>
-                {skill.skill_name} ({skill.project_count})
+          <div className="relative">
+            <select
+              value={skillFilter}
+              onChange={(e) => setSkillFilter(e.target.value)}
+              disabled={skillsLoading}
+              className="w-full appearance-none rounded-lg border border-border bg-white py-2.5 pl-4 pr-10 text-sm text-neutral-dark transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <option value="all">
+                All Skills {!skillsLoading && `(${projects.length})`}
               </option>
-            ))}
-            {availableSkills.length > 15 && <option disabled>------</option>}
-            {availableSkills.length > 15 && (
-              <option disabled>
-                {availableSkills.length - 15} more skills
-              </option>
-            )}
-          </select>
+              {availableSkills.slice(0, 15).map((skill) => (
+                <option key={skill.id} value={skill.id}>
+                  {skill.skill_name} ({skill.project_count})
+                </option>
+              ))}
+              {availableSkills.length > 15 && <option disabled>------</option>}
+              {availableSkills.length > 15 && (
+                <option disabled>
+                  {availableSkills.length - 15} more skills
+                </option>
+              )}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
+          </div>
 
           <div className="relative">
-            <ArrowUpDown className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="input bg-white pl-10"
+              className="w-full appearance-none rounded-lg border border-border bg-white py-2.5 pl-4 pr-10 text-sm text-neutral-dark transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               <option value="newest">Newest First</option>
               <option value="active">Most Active</option>
               <option value="team_large">Largest Team</option>
               <option value="team_small">Smallest Team</option>
             </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
           </div>
         </div>
 
