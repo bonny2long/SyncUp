@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import IcaaWordmark from '../components/brand/IcaaWordmark';
 import { forgotPasswordRequest } from '../utils/api';
 
 export default function ForgotPassword() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -44,7 +43,7 @@ export default function ForgotPassword() {
     <div className="min-h-[60vh] flex items-center justify-center py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-4xl font-black text-[#b9123f] tracking-tighter">*iCAA</div>
+          <IcaaWordmark size="auth" className="justify-center text-[#b9123f]" />
           <h1 className="text-2xl font-bold mt-1">Reset Your Password</h1>
           <p className="text-text-secondary mt-2">Enter your @icstars.org email to receive a reset link.</p>
         </div>

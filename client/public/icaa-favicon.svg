@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <!-- iCAA Red background -->
   <rect width="32" height="32" rx="6" fill="#b9123f"/>
-  <!-- Asterisk mark in white -->
-  <text x="4" y="22" font-family="Arial, sans-serif" font-weight="900" 
-        font-size="22" fill="white">*</text>
+  <!-- iCAA six-point mark in white -->
+  <g stroke="white" stroke-width="3.6" stroke-linecap="round">
+    <path d="M16 7v18"/>
+    <path d="M8.2 11.5l15.6 9"/>
+    <path d="M23.8 11.5l-15.6 9"/>
+  </g>
 </svg>

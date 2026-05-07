@@ -5,6 +5,7 @@ import ProfileSection from "../components/settings/ProfileSection";
 import NotificationsSection from "../components/settings/NotificationsSection";
 import PrivacySection from "../components/settings/PrivacySection";
 import AccountSection from "../components/settings/AccountSection";
+import IcaaWordmark from "../components/brand/IcaaWordmark";
 
 const sections = [
   { id: "profile", label: "Profile", icon: User },
@@ -38,7 +39,7 @@ export default function Settings() {
       {/* Sidebar */}
       <aside className="hidden w-72 flex-col bg-primary text-white shadow-xl dark:bg-accent md:flex">
         <div className="p-6">
-          <div className="text-3xl font-black leading-none tracking-normal">*iCAA</div>
+          <IcaaWordmark size="sidebar" className="text-white" />
           <div className="mt-2 text-xs font-bold uppercase text-white/75">SyncUp HQ</div>
           <div className="mt-8">
             <p className="text-xs font-bold uppercase text-white/65">Account Center</p>

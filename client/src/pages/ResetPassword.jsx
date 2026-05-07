@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import IcaaWordmark from '../components/brand/IcaaWordmark';
 import { resetPasswordWithToken } from '../utils/api';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const token = searchParams.get('token');
 
   const [password, setPassword] = useState('');
@@ -64,7 +64,7 @@ export default function ResetPassword() {
     <div className="min-h-[60vh] flex items-center justify-center py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="text-4xl font-black text-[#b9123f] tracking-tighter">*iCAA</div>
+          <IcaaWordmark size="auth" className="justify-center text-[#b9123f]" />
           <h1 className="text-2xl font-bold mt-1">Set New Password</h1>
           <p className="text-text-secondary mt-2">Enter your new password below.</p>
         </div>

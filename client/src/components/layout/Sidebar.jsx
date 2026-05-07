@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { useState, useEffect } from "react";
 import { fetchHealth } from "../../utils/api";
+import IcaaWordmark from "../brand/IcaaWordmark";
 
 function useAppVersion() {
   const [version, setVersion] = useState("2.0.0");
@@ -91,7 +92,7 @@ export default function Sidebar({ activeTab, isMobileOpen, onClose }) {
   const content = (
       <div className="relative flex h-full w-64 flex-col overflow-hidden rounded-r-2xl bg-primary p-6 text-white shadow-lg dark:bg-accent">
         <div className="mb-10 pt-2">
-          <h2 className="text-3xl font-black text-white">*iCAA</h2>
+          <IcaaWordmark size="sidebar" className="text-white" />
           <p className="mt-0.5 text-xs font-semibold uppercase text-white/60">
             SyncUp HQ
           </p>

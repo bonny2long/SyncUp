@@ -29,6 +29,7 @@ import { ChartError } from "../components/shared/ErrorBoundary";
 import RoleBadge from "../components/shared/RoleBadge";
 import GovernanceBadge from "../components/shared/GovernanceBadge";
 import SkillBadge from "../components/shared/SkillBadge";
+import IcaaWordmark from "../components/brand/IcaaWordmark";
 import { getErrorMessage } from "../utils/errorHandler";
 import { calculateProfileCompleteness } from "../utils/profileCompleteness";
 import {
@@ -508,7 +509,7 @@ export default function UserProfile({ isPublic = false }) {
           <div className="border-b border-accent bg-accent text-white">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
               <div>
-                <p className="text-xl font-black text-primary">*iCAA</p>
+                <IcaaWordmark size="xs" className="text-primary" />
                 <p className="text-sm font-semibold text-white">
                   SyncUp Public Profile
                 </p>

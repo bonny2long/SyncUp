@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import IcaaWordmark from '../components/brand/IcaaWordmark';
 import { verifyEmailToken } from '../utils/api';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const token = searchParams.get('token');
 
   const [status, setStatus] = useState('verifying');
@@ -28,7 +28,7 @@ export default function VerifyEmail() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="text-center max-w-md">
-        <div className="text-3xl font-black text-[#b9123f] tracking-tighter mb-6">*iCAA</div>
+        <IcaaWordmark size="sm" className="mb-6 justify-center text-[#b9123f]" />
         {status === 'verifying' && (
           <>
             <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
